@@ -61,7 +61,46 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// BSPCP Custom Colors
+				sage: {
+					DEFAULT: 'hsl(var(--sage-green))',
+					foreground: 'hsl(var(--warm-cream))'
+				},
+				terracotta: {
+					DEFAULT: 'hsl(var(--terracotta))',
+					foreground: 'hsl(var(--warm-cream))'
+				},
+				dusty: {
+					DEFAULT: 'hsl(var(--dusty-blue))',
+					foreground: 'hsl(var(--warm-cream))'
+				},
+				cream: {
+					DEFAULT: 'hsl(var(--warm-cream))',
+					foreground: 'hsl(var(--dark-brown))'
+				},
+				brown: {
+					DEFAULT: 'hsl(var(--dark-brown))',
+					foreground: 'hsl(var(--warm-cream))'
 				}
+			},
+			fontFamily: {
+				'poppins': ['Poppins', 'sans-serif'],
+				'source': ['Source Sans Pro', 'sans-serif'],
+				'merriweather': ['Merriweather', 'serif'],
+				'sans': ['Source Sans Pro', 'sans-serif'],
+				'serif': ['Merriweather', 'serif'],
+			},
+			backgroundImage: {
+				'gradient-warm': 'var(--gradient-warm)',
+				'gradient-gentle': 'var(--gradient-gentle)'
+			},
+			boxShadow: {
+				'soft': 'var(--shadow-soft)',
+				'warm': 'var(--shadow-warm)'
+			},
+			transitionTimingFunction: {
+				'gentle': 'cubic-bezier(0.4, 0, 0.2, 1)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

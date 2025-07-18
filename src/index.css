@@ -8,35 +8,54 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* BSPCP Warm & Approachable Color Palette */
+    --background: 30 33% 96%;  /* Warm Cream #F5F1E8 */
+    --foreground: 20 19% 22%;  /* Dark Brown #3A2F2A */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 30 33% 96%;
+    --card-foreground: 20 19% 22%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 30 33% 96%;
+    --popover-foreground: 20 19% 22%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 78 25% 48%;  /* Soft Sage Green #87A96B */
+    --primary-foreground: 30 33% 96%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 206 18% 56%;  /* Dusty Blue #7B8FA1 */
+    --secondary-foreground: 30 33% 96%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 30 20% 90%;
+    --muted-foreground: 20 19% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 16 71% 45%;  /* Terracotta #C65D21 */
+    --accent-foreground: 30 33% 96%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 30 33% 96%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 30 20% 85%;
+    --input: 30 20% 85%;
+    --ring: 78 25% 48%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+    
+    /* Custom design tokens */
+    --sage-green: 78 25% 48%;
+    --warm-cream: 30 33% 96%;
+    --terracotta: 16 71% 45%;
+    --dusty-blue: 206 18% 56%;
+    --dark-brown: 20 19% 22%;
+    
+    /* Gradients */
+    --gradient-warm: linear-gradient(135deg, hsl(var(--sage-green)), hsl(var(--dusty-blue)));
+    --gradient-gentle: linear-gradient(180deg, hsl(var(--warm-cream)), hsl(var(--muted)));
+    
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(var(--sage-green) / 0.15);
+    --shadow-warm: 0 8px 30px -8px hsl(var(--terracotta) / 0.2);
+    
+    /* Transitions */
+    --transition-gentle: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
