@@ -1,6 +1,9 @@
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -17,8 +20,11 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Globe
+  Globe,
+  Filter,
+  RefreshCw
 } from "lucide-react";
+import { useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -35,6 +41,26 @@ import {
 } from "recharts";
 
 const Reports = () => {
+  const [dateRange, setDateRange] = useState("30days");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleExportReport = async (reportType: string) => {
+    setIsLoading(true);
+    // Simulate export process
+    setTimeout(() => {
+      setIsLoading(false);
+      // In a real app, this would trigger a download
+      alert(`${reportType} report exported successfully!`);
+    }, 2000);
+  };
+
+  const handleRefreshData = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
+
   const membershipData = [
     { month: "Jan", members: 120, applications: 25 },
     { month: "Feb", members: 135, applications: 30 },
@@ -71,7 +97,7 @@ const Reports = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Select defaultValue="30days">
+            <Select value={dateRange} onValueChange={setDateRange}>
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -82,7 +108,18 @@ const Reports = () => {
                 <SelectItem value="1year">Last year</SelectItem>
               </SelectContent>
             </Select>
-            <Button>
+            <Button 
+              variant="outline" 
+              onClick={handleRefreshData}
+              disabled={isLoading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+            <Button 
+              onClick={() => handleExportReport('Summary')}
+              disabled={isLoading}
+            >
               <Download className="w-4 h-4 mr-2" />
               Export Report
             </Button>
@@ -227,49 +264,127 @@ const Reports = () => {
             </CardContent>
           </Card>
 
-          {/* Quick Reports */}
+          {/* Detailed Reports */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Quick Reports</CardTitle>
+              <CardTitle>Detailed Reports</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button variant="outline" className="justify-start h-auto p-4">
-                  <div className="text-left">
-                    <div className="font-medium">Member Directory</div>
-                    <div className="text-sm text-muted-foreground">
-                      Complete list of all members with contact details
-                    </div>
-                  </div>
-                </Button>
+            <CardContent>
+              <Tabs defaultValue="quick" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="quick">Quick Reports</TabsTrigger>
+                  <TabsTrigger value="custom">Custom Reports</TabsTrigger>
+                  <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
+                </TabsList>
                 
-                <Button variant="outline" className="justify-start h-auto p-4">
-                  <div className="text-left">
-                    <div className="font-medium">Financial Summary</div>
-                    <div className="text-sm text-muted-foreground">
-                      Membership fees and payment status report
-                    </div>
+                <TabsContent value="quick" className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-auto p-4"
+                      onClick={() => handleExportReport('Member Directory')}
+                      disabled={isLoading}
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">Member Directory</div>
+                        <div className="text-sm text-muted-foreground">
+                          Complete list of all members with contact details
+                        </div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-auto p-4"
+                      onClick={() => handleExportReport('Financial Summary')}
+                      disabled={isLoading}
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">Financial Summary</div>
+                        <div className="text-sm text-muted-foreground">
+                          Membership fees and payment status report
+                        </div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-auto p-4"
+                      onClick={() => handleExportReport('Event Analytics')}
+                      disabled={isLoading}
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">Event Analytics</div>
+                        <div className="text-sm text-muted-foreground">
+                          Attendance and engagement metrics
+                        </div>
+                      </div>
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      className="justify-start h-auto p-4"
+                      onClick={() => handleExportReport('Content Performance')}
+                      disabled={isLoading}
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">Content Performance</div>
+                        <div className="text-sm text-muted-foreground">
+                          Most viewed articles and resources
+                        </div>
+                      </div>
+                    </Button>
                   </div>
-                </Button>
+                </TabsContent>
                 
-                <Button variant="outline" className="justify-start h-auto p-4">
-                  <div className="text-left">
-                    <div className="font-medium">Event Analytics</div>
-                    <div className="text-sm text-muted-foreground">
-                      Attendance and engagement metrics
+                <TabsContent value="custom" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="start-date">Start Date</Label>
+                      <Input type="date" id="start-date" />
+                    </div>
+                    <div>
+                      <Label htmlFor="end-date">End Date</Label>
+                      <Input type="date" id="end-date" />
                     </div>
                   </div>
-                </Button>
+                  <div>
+                    <Label htmlFor="report-type">Report Type</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select report type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="membership">Membership Report</SelectItem>
+                        <SelectItem value="financial">Financial Report</SelectItem>
+                        <SelectItem value="engagement">Engagement Report</SelectItem>
+                        <SelectItem value="activity">Activity Report</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button>
+                      <Filter className="w-4 h-4 mr-2" />
+                      Generate Report
+                    </Button>
+                    <Button variant="outline">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                </TabsContent>
                 
-                <Button variant="outline" className="justify-start h-auto p-4">
-                  <div className="text-left">
-                    <div className="font-medium">Content Performance</div>
-                    <div className="text-sm text-muted-foreground">
-                      Most viewed articles and resources
-                    </div>
+                <TabsContent value="scheduled" className="space-y-4">
+                  <div className="text-center py-8">
+                    <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No Scheduled Reports</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Set up automated reports to be generated and sent regularly
+                    </p>
+                    <Button>Create Scheduled Report</Button>
                   </div>
-                </Button>
-              </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>

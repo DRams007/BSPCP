@@ -146,6 +146,9 @@ const Footer = () => {
               <Link to="/accessibility" className="font-source text-cream/60 hover:text-cream text-sm transition-colors duration-300">
                 Accessibility
               </Link>
+              <Link to="/admin" className="font-source text-cream/60 hover:text-cream text-sm transition-colors duration-300">
+                Admin
+              </Link>
             </div>
           </div>
         </div>
