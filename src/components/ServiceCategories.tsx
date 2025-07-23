@@ -1,36 +1,39 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, Users, Home, Sprout, Shield, Monitor } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ServiceCategories = () => {
+  const navigate = useNavigate();
+  
   const services = [
     {
       icon: Heart,
       title: 'Feeling Overwhelmed',
       description: 'Individual support for anxiety, depression, and life transitions',
       color: 'bg-primary/10 text-primary',
-      href: '/services/individual'
+      href: '/services/individual-therapy'
     },
     {
       icon: Users,
       title: 'Relationship Challenges',
       description: 'Couples counselling for communication and connection',
       color: 'bg-terracotta/10 text-terracotta',
-      href: '/services/couples'
+      href: '/services/couples-counselling'
     },
     {
       icon: Home,
       title: 'Family Conflicts',
       description: 'Family therapy to strengthen bonds and resolve issues',
       color: 'bg-dusty/10 text-dusty',
-      href: '/services/family'
+      href: '/services/family-therapy'
     },
     {
       icon: Sprout,
       title: 'Child & Teen Support',
       description: 'Specialized care for young people and adolescents',
       color: 'bg-accent/10 text-accent',
-      href: '/services/youth'
+      href: '/services/child-teen-support'
     },
     {
       icon: Shield,
@@ -44,7 +47,7 @@ const ServiceCategories = () => {
       title: 'Online Counselling',
       description: 'Convenient virtual sessions from the comfort of your home',
       color: 'bg-secondary/10 text-secondary',
-      href: '/services/online'
+      href: '/services/online-counselling'
     }
   ];
 
@@ -82,6 +85,7 @@ const ServiceCategories = () => {
                 <Button 
                   variant="outline" 
                   className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
+                  onClick={() => navigate(service.href)}
                 >
                   Get Started
                 </Button>
