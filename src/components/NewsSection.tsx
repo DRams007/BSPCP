@@ -2,6 +2,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import newsAwareness from '@/assets/news-awareness-campaign.jpg';
+import newsConference from '@/assets/news-conference.jpg';
+import newsResearch from '@/assets/news-research.jpg';
 
 const NewsSection = () => {
   const newsItems = [
@@ -11,7 +14,7 @@ const NewsSection = () => {
       category: 'Community Outreach',
       date: '2024-01-15',
       readTime: '3 min read',
-      image: '/api/placeholder/300/200'
+      image: newsAwareness
     },
     {
       title: 'Annual Conference on Trauma-Informed Care',
@@ -19,7 +22,7 @@ const NewsSection = () => {
       category: 'Events',
       date: '2024-01-10',
       readTime: '2 min read',
-      image: '/api/placeholder/300/200'
+      image: newsConference
     },
     {
       title: 'Research: Mental Health in Rural Communities',
@@ -27,7 +30,7 @@ const NewsSection = () => {
       category: 'Research',
       date: '2024-01-05',
       readTime: '5 min read',
-      image: '/api/placeholder/300/200'
+      image: newsResearch
     }
   ];
 

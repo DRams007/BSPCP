@@ -2,6 +2,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Star, Calendar } from 'lucide-react';
+import counselorThabo from '@/assets/counselor-thabo.jpg';
+import counselorKefilwe from '@/assets/counselor-kefilwe.jpg';
+import counselorMmoloki from '@/assets/counselor-mmoloki.jpg';
+import counselorBoitumelo from '@/assets/counselor-boitumelo.jpg';
 
 const FeaturedCounsellors = () => {
   const counsellors = [
@@ -13,7 +17,7 @@ const FeaturedCounsellors = () => {
       experience: '12 years',
       rating: 4.9,
       reviews: 156,
-      image: '/api/placeholder/200/200',
+      image: counselorThabo,
       availability: 'Available this week'
     },
     {
@@ -24,7 +28,7 @@ const FeaturedCounsellors = () => {
       experience: '8 years',
       rating: 4.8,
       reviews: 92,
-      image: '/api/placeholder/200/200',
+      image: counselorKefilwe,
       availability: 'Available next week'
     },
     {
@@ -35,7 +39,7 @@ const FeaturedCounsellors = () => {
       experience: '10 years',
       rating: 4.9,
       reviews: 134,
-      image: '/api/placeholder/200/200',
+      image: counselorMmoloki,
       availability: 'Available this week'
     },
     {
@@ -46,7 +50,7 @@ const FeaturedCounsellors = () => {
       experience: '6 years',
       rating: 4.7,
       reviews: 78,
-      image: '/api/placeholder/200/200',
+      image: counselorBoitumelo,
       availability: 'Available tomorrow'
     }
   ];
