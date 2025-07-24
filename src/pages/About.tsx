@@ -10,6 +10,10 @@ import {
   Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart,
   Building2, Scale, Lightbulb, Zap, TreePine
 } from 'lucide-react';
+import leaderKeabetswe from '@/assets/leader-keabetswe.jpg';
+import leaderTshepo from '@/assets/leader-tshepo.jpg';
+import leaderGoitseone from '@/assets/leader-goitseone.jpg';
+import leaderJohn from '@/assets/leader-john.jpg';
 
 const About = () => {
   const stats = [
@@ -91,7 +95,7 @@ const About = () => {
       credentials: 'PhD Psychology (University of Cape Town)',
       experience: '15+ years',
       description: 'Clinical psychologist specializing in trauma therapy with extensive experience in developing mental health policies in Botswana.',
-      image: '/api/placeholder/200/200'
+      image: leaderKeabetswe
     },
     {
       name: 'Tshepo Kgathi',
@@ -99,7 +103,7 @@ const About = () => {
       credentials: 'MA Counselling Psychology (University of Botswana)',
       experience: '12+ years',
       description: 'Dedicated to family therapy and community mental health, leading numerous community outreach programs.',
-      image: '/api/placeholder/200/200'
+      image: leaderTshepo
     },
     {
       name: 'Mrs. Goitseone Sebina',
@@ -107,7 +111,7 @@ const About = () => {
       credentials: 'MSW (University of Witwatersrand)',
       experience: '10+ years',
       description: 'Licensed Clinical Social Worker with extensive experience in organizational development and professional standards.',
-      image: '/api/placeholder/200/200'
+      image: leaderGoitseone
     },
     {
       name: 'John Mogomotsi',
@@ -115,7 +119,7 @@ const About = () => {
       credentials: 'MA Psychology (University of Botswana)',
       experience: '8+ years',
       description: 'Licensed Professional Counsellor with background in both clinical practice and business management.',
-      image: '/api/placeholder/200/200'
+      image: leaderJohn
     }
   ];
 
