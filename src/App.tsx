@@ -19,6 +19,7 @@ import CouplesCounselling from "./pages/services/CouplesCounselling";
 import FamilyTherapy from "./pages/services/FamilyTherapy";
 import ChildTeenSupport from "./pages/services/ChildTeenSupport";
 import OnlineCounselling from "./pages/services/OnlineCounselling";
+import TraumaCrisis from "./pages/services/TraumaCrisis";
 // Admin pages
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/services/family-therapy" element={<FamilyTherapy />} />
           <Route path="/services/child-teen-support" element={<ChildTeenSupport />} />
           <Route path="/services/online-counselling" element={<OnlineCounselling />} />
+          <Route path="/services/trauma-crisis" element={<TraumaCrisis />} />
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />

@@ -71,28 +71,33 @@ const Footer = () => {
             <h3 className="font-poppins font-semibold text-lg mb-6">Services</h3>
             <ul className="space-y-3">
               <li>
-                <Link to="/services/individual" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
+                <Link to="/services/individual-therapy" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
                   Individual Therapy
                 </Link>
               </li>
               <li>
-                <Link to="/services/couples" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
+                <Link to="/services/couples-counselling" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
                   Couples Counselling
                 </Link>
               </li>
               <li>
-                <Link to="/services/family" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
+                <Link to="/services/family-therapy" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
                   Family Therapy
                 </Link>
               </li>
               <li>
-                <Link to="/services/youth" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
+                <Link to="/services/child-teen-support" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
                   Child & Teen Support
                 </Link>
               </li>
               <li>
-                <Link to="/services/online" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
+                <Link to="/services/online-counselling" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
                   Online Counselling
+                </Link>
+              </li>
+              <li>
+                <Link to="/services/trauma-crisis" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
+                  Trauma & Crisis
                 </Link>
               </li>
             </ul>
