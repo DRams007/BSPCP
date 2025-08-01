@@ -35,7 +35,7 @@ const DonationAlert = () => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 py-8">
+    <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 py-8" data-donation-section>
       <div className="container mx-auto px-4">
         <Card className="max-w-4xl mx-auto border-2 border-primary/20 shadow-lg">
           <CardHeader className="text-center pb-4">
