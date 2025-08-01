@@ -20,7 +20,7 @@ const FloatingDonationWidget = () => {
           className="rounded-full w-16 h-16 bg-red-500 hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-300 group"
           size="icon"
         >
-          <Heart className="w-8 h-8 text-white animate-pulse" />
+          <Heart className="w-8 h-8 text-white animate-pulse" fill="currentColor" />
         </Button>
       </div>
     );
@@ -32,7 +32,7 @@ const FloatingDonationWidget = () => {
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2">
             <div className="bg-red-100 dark:bg-red-900/20 p-2 rounded-full">
-              <Heart className="w-5 h-5 text-red-500 animate-pulse" />
+              <Heart className="w-5 h-5 text-red-500 animate-pulse" fill="currentColor" />
             </div>
             <h3 className="font-semibold text-foreground text-sm">Support Mental Health</h3>
           </div>
