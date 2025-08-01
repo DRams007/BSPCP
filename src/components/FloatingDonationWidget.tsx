@@ -23,7 +23,7 @@ const FloatingDonationWidget = () => {
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2">
             <div className="bg-red-100 dark:bg-red-900/20 p-2 rounded-full">
-              <Heart className="w-5 h-5 text-red-500 animate-pulse" fill="currentColor" />
+              <Heart fill="currentColor" className="w-5 h-5 text-red-900 animate-pulse" />
             </div>
             <h3 className="font-semibold text-foreground text-sm">Support Mental Health</h3>
           </div>
