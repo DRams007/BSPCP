@@ -4,7 +4,9 @@ import ServiceCategories from '@/components/ServiceCategories';
 import HowItWorks from '@/components/HowItWorks';
 import FeaturedCounsellors from '@/components/FeaturedCounsellors';
 import AboutSection from '@/components/AboutSection';
+import Testimonials from '@/components/Testimonials';
 import NewsSection from '@/components/NewsSection';
+import DonationAlert from '@/components/DonationAlert';
 import EmergencyResources from '@/components/EmergencyResources';
 import Footer from '@/components/Footer';
 
@@ -17,7 +19,9 @@ const Index = () => {
       <HowItWorks />
       <FeaturedCounsellors />
       <AboutSection />
+      <Testimonials />
       <NewsSection />
+      <DonationAlert />
       <EmergencyResources />
       <Footer />
     </div>
