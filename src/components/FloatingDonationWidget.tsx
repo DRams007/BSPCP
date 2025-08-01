@@ -17,10 +17,10 @@ const FloatingDonationWidget = () => {
       <div className="fixed bottom-6 right-6 z-50">
         <Button
           onClick={() => setIsMinimized(false)}
-          className="rounded-full w-16 h-16 bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300 group"
+          className="rounded-full w-16 h-16 bg-red-500 hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-300 group"
           size="icon"
         >
-          <Heart className="w-8 h-8 text-primary-foreground group-hover:scale-110 transition-transform" />
+          <Heart className="w-8 h-8 text-white animate-pulse" />
         </Button>
       </div>
     );
@@ -31,8 +31,8 @@ const FloatingDonationWidget = () => {
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-border p-4 transform transition-all duration-300 hover:scale-105">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <Heart className="w-5 h-5 text-primary" />
+            <div className="bg-red-100 dark:bg-red-900/20 p-2 rounded-full">
+              <Heart className="w-5 h-5 text-red-500 animate-pulse" />
             </div>
             <h3 className="font-semibold text-foreground text-sm">Support Mental Health</h3>
           </div>
@@ -53,7 +53,7 @@ const FloatingDonationWidget = () => {
         <div className="space-y-2">
           <Button 
             onClick={scrollToDonation}
-            className="w-full text-sm bg-primary hover:bg-primary/90"
+            className="w-full text-sm bg-red-500 hover:bg-red-600 text-white"
           >
             View Donation Details
           </Button>

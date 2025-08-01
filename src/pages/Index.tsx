@@ -9,7 +9,6 @@ import TestimonialForm from '@/components/TestimonialForm';
 import NewsSection from '@/components/NewsSection';
 import DonationAlert from '@/components/DonationAlert';
 import EmergencyResources from '@/components/EmergencyResources';
-import FloatingDonationWidget from '@/components/FloatingDonationWidget';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -26,7 +25,6 @@ const Index = () => {
       <NewsSection />
       <DonationAlert />
       <EmergencyResources />
-      <FloatingDonationWidget />
       <Footer />
     </div>
   );
