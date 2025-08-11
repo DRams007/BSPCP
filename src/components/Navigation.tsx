@@ -35,7 +35,7 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center mr-12">
             <Link to="/" className="flex items-center space-x-2">
               <img src="/lovable-uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png" alt="BSPCP Logo" className="h-10 right-5" />
             </Link>
