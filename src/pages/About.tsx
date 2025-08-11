@@ -164,9 +164,7 @@ const About = () => {
       <Navigation />
       
       {/* Breadcrumb */}
-      <section className="py-4 bg-background border-b">
-        
-      </section>
+      
 
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
