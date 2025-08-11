@@ -24,7 +24,7 @@ const HeroSection = () => {
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               
-              <Button size="lg" variant="outline" className="border-cream hover:bg-cream/10 font-source font-semibold text-lg px-8 py-6 rounded-2xl text-lime-600">
+              <Button size="lg" variant="outline" className="border-cream font-source font-semibold text-lg px-8 py-6 bg-green-600 hover:bg-green-500 rounded-lg text-gray-50">
                 Browse Counsellors
               </Button>
             </div>
