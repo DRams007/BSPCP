@@ -48,7 +48,7 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            {navigationItems.map(item => <Link key={item.name} to={item.href} className={`font-source text-sm font-semibold transition-all duration-300 px-3 py-2 rounded-lg relative ${isActive(item.href) ? 'text-primary bg-primary/10 shadow-sm' : 'text-foreground hover:text-primary hover:bg-primary/5'}`}>
+            {navigationItems.map(item => <Link key={item.name} to={item.href} className={`font-source text-sm font-semibold transition-all duration-300 px-4 py-3 rounded-lg relative ${isActive(item.href) ? 'text-white bg-primary shadow-md' : 'text-foreground hover:text-primary hover:bg-primary/5'}`}>
                 {item.name}
               </Link>)}
           </div>
