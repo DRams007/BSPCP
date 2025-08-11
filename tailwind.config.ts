@@ -62,26 +62,24 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// BSPCP Custom Colors
-				sage: {
-					DEFAULT: 'hsl(var(--sage-green))',
-					foreground: 'hsl(var(--warm-cream))'
+				// Company Brand Colors
+				green: {
+					DEFAULT: 'hsl(var(--company-green))',
+					foreground: 'hsl(var(--background))'
 				},
-				terracotta: {
-					DEFAULT: 'hsl(var(--terracotta))',
-					foreground: 'hsl(var(--warm-cream))'
+				yellow: {
+					DEFAULT: 'hsl(var(--company-yellow))',
+					foreground: 'hsl(var(--company-dark))'
 				},
-				dusty: {
-					DEFAULT: 'hsl(var(--dusty-blue))',
-					foreground: 'hsl(var(--warm-cream))'
+				orange: {
+					DEFAULT: 'hsl(var(--company-orange))',
+					foreground: 'hsl(var(--background))'
 				},
-				cream: {
-					DEFAULT: 'hsl(var(--warm-cream))',
-					foreground: 'hsl(var(--dark-brown))'
-				},
-				brown: {
-					DEFAULT: 'hsl(var(--dark-brown))',
-					foreground: 'hsl(var(--warm-cream))'
+				brand: {
+					green: 'hsl(var(--company-green))',
+					yellow: 'hsl(var(--company-yellow))',
+					orange: 'hsl(var(--company-orange))',
+					dark: 'hsl(var(--company-dark))'
 				}
 			},
 			fontFamily: {

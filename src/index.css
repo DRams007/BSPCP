@@ -8,51 +8,50 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* BSPCP Warm & Approachable Color Palette */
-    --background: 30 33% 96%;  /* Warm Cream #F5F1E8 */
-    --foreground: 20 19% 22%;  /* Dark Brown #3A2F2A */
+    /* Company Brand Colors */
+    --background: 78 91% 96%;  /* Light Yellow Background */
+    --foreground: 20 19% 22%;  /* Dark text */
 
-    --card: 30 33% 96%;
+    --card: 78 91% 96%;
     --card-foreground: 20 19% 22%;
 
-    --popover: 30 33% 96%;
+    --popover: 78 91% 96%;
     --popover-foreground: 20 19% 22%;
 
-    --primary: 78 25% 48%;  /* Soft Sage Green #87A96B */
-    --primary-foreground: 30 33% 96%;
+    --primary: 98 39% 49%;  /* Company Green #67b04a */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 206 18% 56%;  /* Dusty Blue #7B8FA1 */
-    --secondary-foreground: 30 33% 96%;
+    --secondary: 78 91% 86%;  /* Company Yellow #eafeb9 */
+    --secondary-foreground: 20 19% 22%;
 
-    --muted: 30 20% 90%;
+    --muted: 78 50% 90%;
     --muted-foreground: 20 19% 45%;
 
-    --accent: 16 71% 45%;  /* Terracotta #C65D21 */
-    --accent-foreground: 30 33% 96%;
+    --accent: 22 87% 56%;  /* Company Orange #f07330 */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 30 33% 96%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 30 20% 85%;
-    --input: 30 20% 85%;
-    --ring: 78 25% 48%;
+    --border: 78 30% 85%;
+    --input: 78 30% 85%;
+    --ring: 98 39% 49%;
 
     --radius: 0.75rem;
     
-    /* Custom design tokens */
-    --sage-green: 78 25% 48%;
-    --warm-cream: 30 33% 96%;
-    --terracotta: 16 71% 45%;
-    --dusty-blue: 206 18% 56%;
-    --dark-brown: 20 19% 22%;
+    /* Company Brand Tokens */
+    --company-green: 98 39% 49%;
+    --company-yellow: 78 91% 86%;
+    --company-orange: 22 87% 56%;
+    --company-dark: 20 19% 22%;
     
     /* Gradients */
-    --gradient-warm: linear-gradient(135deg, hsl(var(--sage-green)), hsl(var(--dusty-blue)));
-    --gradient-gentle: linear-gradient(180deg, hsl(var(--warm-cream)), hsl(var(--muted)));
+    --gradient-warm: linear-gradient(135deg, hsl(var(--company-green)), hsl(var(--company-orange)));
+    --gradient-gentle: linear-gradient(180deg, hsl(var(--company-yellow)), hsl(var(--muted)));
     
     /* Shadows */
-    --shadow-soft: 0 4px 20px -4px hsl(var(--sage-green) / 0.15);
-    --shadow-warm: 0 8px 30px -8px hsl(var(--terracotta) / 0.2);
+    --shadow-soft: 0 4px 20px -4px hsl(var(--company-green) / 0.15);
+    --shadow-warm: 0 8px 30px -8px hsl(var(--company-orange) / 0.2);
     
     /* Transitions */
     --transition-gentle: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
