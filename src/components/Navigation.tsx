@@ -27,12 +27,11 @@ const Navigation = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="font-poppins font-semibold text-xl text-foreground">
-                BSPCP
-              </span>
+              <img 
+                src="/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png" 
+                alt="BSPCP Logo" 
+                className="h-10 w-auto"
+              />
             </Link>
           </div>
 
