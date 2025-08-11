@@ -28,7 +28,7 @@ const Navigation = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <img 
-                src="/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png" 
+                src="/lovable-uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png" 
                 alt="BSPCP Logo" 
                 className="h-10 w-auto"
               />
