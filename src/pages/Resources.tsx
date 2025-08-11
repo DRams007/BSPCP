@@ -79,7 +79,7 @@ const Resources = () => {
       description: 'Latest research findings and professional publications',
       color: 'bg-green-100 text-green-600',
       resources: [
-        'Botswana Society of Professional Counsellors and Psychotherapists Journal Articles',
+        'BSPCP Journal Articles',
         'Research Reports',
         'Case Studies',
         'Policy Recommendations'
@@ -89,7 +89,7 @@ const Resources = () => {
 
   const emergencyContacts = [
     {
-      service: 'Botswana Society of Professional Counsellors and Psychotherapists Crisis Line',
+      service: 'BSPCP Crisis Line',
       number: '+267 75078844',
       hours: '24/7',
       description: 'Professional mental health crisis support'
@@ -176,6 +176,17 @@ const Resources = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
+      {/* Breadcrumb */}
+      <section className="py-4 bg-background border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 text-sm">
+            <Home className="w-4 h-4" />
+            <span className="text-muted-foreground">Home</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <span className="text-foreground font-medium">Resources</span>
+          </div>
+        </div>
+      </section>
 
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
@@ -380,7 +391,7 @@ const Resources = () => {
               Educational Videos & Webinars
             </h2>
             <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto">
-              Learn from Botswana Society of Professional Counsellors and Psychotherapists' mental health professionals through our library of 
+              Learn from BSPCP's mental health professionals through our library of 
               educational videos, webinars, and workshop recordings.
             </p>
           </div>
