@@ -4,204 +4,169 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Users, Award, Heart, TrendingUp, Target, Eye, Shield, BookOpen, Calendar, FileText,
-  Building, MapPin, Phone, Mail, Globe, CheckCircle, Star, Briefcase, GraduationCap,
-  Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart,
-  Building2, Scale, Lightbulb, Zap, TreePine
-} from 'lucide-react';
+import { Users, Award, Heart, TrendingUp, Target, Eye, Shield, BookOpen, Calendar, FileText, Building, MapPin, Phone, Mail, Globe, CheckCircle, Star, Briefcase, GraduationCap, Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart, Building2, Scale, Lightbulb, Zap, TreePine } from 'lucide-react';
 import leaderKeabetswe from '@/assets/leader-keabetswe.jpg';
 import leaderTshepo from '@/assets/leader-tshepo.jpg';
 import leaderGoitseone from '@/assets/leader-goitseone.jpg';
 import leaderJohn from '@/assets/leader-john.jpg';
-
 const About = () => {
-  const stats = [
-    {
-      icon: Users,
-      value: '150+',
-      label: 'Registered Professionals',
-      description: 'Licensed mental health experts'
-    },
-    {
-      icon: Award,
-      value: '15+',
-      label: 'Years of Service',
-      description: 'Advancing mental health in Botswana'
-    },
-    {
-      icon: Heart,
-      value: '5,000+',
-      label: 'People Served',
-      description: 'Lives improved annually'
-    },
-    {
-      icon: Building2,
-      value: '12',
-      label: 'Districts Covered',
-      description: 'Nationwide professional presence'
-    },
-    {
-      icon: CheckCircle,
-      value: '100%',
-      label: 'Qualified Members',
-      description: 'Meeting strict professional standards'
-    },
-    {
-      icon: TrendingUp,
-      value: '95%',
-      label: 'Client Satisfaction',
-      description: 'Consistently high-quality care'
-    }
-  ];
-
-  const values = [
-    {
-      icon: Shield,
-      title: 'Professional Excellence',
-      description: 'We are committed to maintaining the highest standards of professional practice, ensuring that our members provide evidence-based, effective interventions that meet international best practices.'
-    },
-    {
-      icon: Scale,
-      title: 'Integrity & Ethics',
-      description: 'We uphold the highest ethical standards in all our operations, ensuring transparency, honesty, and accountability in our work with clients, members, and the public.'
-    },
-    {
-      icon: TreePine,
-      title: 'Cultural Sensitivity',
-      description: 'We recognize and respect the rich cultural diversity of Botswana, ensuring that mental health services are culturally appropriate and accessible to all communities.'
-    },
-    {
-      icon: HandHeart,
-      title: 'Accessibility & Inclusion',
-      description: 'We believe that quality mental health care should be accessible to all Batswana, regardless of economic status, geographic location, or background.'
-    },
-    {
-      icon: BookOpen,
-      title: 'Continuous Learning',
-      description: 'We promote lifelong learning and professional development, ensuring that our members stay current with evolving best practices and research.'
-    },
-    {
-      icon: Users,
-      title: 'Collaboration & Partnership',
-      description: 'We work collaboratively with government, healthcare providers, educational institutions, and other stakeholders to improve mental health outcomes in Botswana.'
-    }
-  ];
-
-  const leadership = [
-    {
-      name: 'Dr. Keabetswe Moeti',
-      position: 'President',
-      credentials: 'PhD Psychology (University of Cape Town)',
-      experience: '15+ years',
-      description: 'Clinical psychologist specializing in trauma therapy with extensive experience in developing mental health policies in Botswana.',
-      image: leaderKeabetswe
-    },
-    {
-      name: 'Tshepo Kgathi',
-      position: 'Vice President',
-      credentials: 'MA Counselling Psychology (University of Botswana)',
-      experience: '12+ years',
-      description: 'Dedicated to family therapy and community mental health, leading numerous community outreach programs.',
-      image: leaderTshepo
-    },
-    {
-      name: 'Mrs. Goitseone Sebina',
-      position: 'Secretary General',
-      credentials: 'MSW (University of Witwatersrand)',
-      experience: '10+ years',
-      description: 'Licensed Clinical Social Worker with extensive experience in organizational development and professional standards.',
-      image: leaderGoitseone
-    },
-    {
-      name: 'John Mogomotsi',
-      position: 'Treasurer',
-      credentials: 'MA Psychology (University of Botswana)',
-      experience: '8+ years',
-      description: 'Licensed Professional Counsellor with background in both clinical practice and business management.',
-      image: leaderJohn
-    }
-  ];
-
-  const milestones = [
-    {
-      year: '2009',
-      title: 'BSPCP Founded',
-      description: 'Established by dedicated mental health professionals to elevate counselling standards in Botswana',
-      period: 'Foundation & Early Years'
-    },
-    {
-      year: '2013',
-      title: 'First Annual Conference',
-      description: 'Hosted our inaugural conference with 120 attendees, establishing professional development traditions',
-      period: 'Growth & Recognition'
-    },
-    {
-      year: '2014',
-      title: 'University Partnership',
-      description: 'Established partnership with University of Botswana for student placements and training',
-      period: 'Growth & Recognition'
-    },
-    {
-      year: '2015',
-      title: 'Ministry Recognition',
-      description: 'Officially recognized by Ministry of Health as professional association',
-      period: 'Growth & Recognition'
-    },
-    {
-      year: '2016',
-      title: 'CPD Program Launch',
-      description: 'Launched Continuing Professional Development program for ongoing member training',
-      period: 'Growth & Recognition'
-    },
-    {
-      year: '2020',
-      title: 'Online Services Launch',
-      description: 'Developed telehealth guidelines and online counselling standards during COVID-19',
-      period: 'Digital Transformation'
-    },
-    {
-      year: '2022',
-      title: 'Youth Mental Health Initiative',
-      description: 'Established specialized programs addressing mental health needs of young people',
-      period: 'Digital Transformation'
-    },
-    {
-      year: '2024',
-      title: 'International Partnerships',
-      description: 'Formed partnerships with international professional associations for knowledge exchange',
-      period: 'Digital Transformation'
-    },
-    {
-      year: '2025',
-      title: 'Comprehensive Digital Platform',
-      description: 'Launch of our modern online platform connecting Batswana with qualified mental health professionals',
-      period: 'Digital Transformation'
-    }
-  ];
-
-  const subNavigation = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'story', label: 'Our Story' },
-    { id: 'leadership', label: 'Leadership' },
-    { id: 'standards', label: 'Standards' },
-    { id: 'impact', label: 'Impact' },
-    { id: 'reports', label: 'Reports' }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const stats = [{
+    icon: Users,
+    value: '150+',
+    label: 'Registered Professionals',
+    description: 'Licensed mental health experts'
+  }, {
+    icon: Award,
+    value: '15+',
+    label: 'Years of Service',
+    description: 'Advancing mental health in Botswana'
+  }, {
+    icon: Heart,
+    value: '5,000+',
+    label: 'People Served',
+    description: 'Lives improved annually'
+  }, {
+    icon: Building2,
+    value: '12',
+    label: 'Districts Covered',
+    description: 'Nationwide professional presence'
+  }, {
+    icon: CheckCircle,
+    value: '100%',
+    label: 'Qualified Members',
+    description: 'Meeting strict professional standards'
+  }, {
+    icon: TrendingUp,
+    value: '95%',
+    label: 'Client Satisfaction',
+    description: 'Consistently high-quality care'
+  }];
+  const values = [{
+    icon: Shield,
+    title: 'Professional Excellence',
+    description: 'We are committed to maintaining the highest standards of professional practice, ensuring that our members provide evidence-based, effective interventions that meet international best practices.'
+  }, {
+    icon: Scale,
+    title: 'Integrity & Ethics',
+    description: 'We uphold the highest ethical standards in all our operations, ensuring transparency, honesty, and accountability in our work with clients, members, and the public.'
+  }, {
+    icon: TreePine,
+    title: 'Cultural Sensitivity',
+    description: 'We recognize and respect the rich cultural diversity of Botswana, ensuring that mental health services are culturally appropriate and accessible to all communities.'
+  }, {
+    icon: HandHeart,
+    title: 'Accessibility & Inclusion',
+    description: 'We believe that quality mental health care should be accessible to all Batswana, regardless of economic status, geographic location, or background.'
+  }, {
+    icon: BookOpen,
+    title: 'Continuous Learning',
+    description: 'We promote lifelong learning and professional development, ensuring that our members stay current with evolving best practices and research.'
+  }, {
+    icon: Users,
+    title: 'Collaboration & Partnership',
+    description: 'We work collaboratively with government, healthcare providers, educational institutions, and other stakeholders to improve mental health outcomes in Botswana.'
+  }];
+  const leadership = [{
+    name: 'Dr. Keabetswe Moeti',
+    position: 'President',
+    credentials: 'PhD Psychology (University of Cape Town)',
+    experience: '15+ years',
+    description: 'Clinical psychologist specializing in trauma therapy with extensive experience in developing mental health policies in Botswana.',
+    image: leaderKeabetswe
+  }, {
+    name: 'Tshepo Kgathi',
+    position: 'Vice President',
+    credentials: 'MA Counselling Psychology (University of Botswana)',
+    experience: '12+ years',
+    description: 'Dedicated to family therapy and community mental health, leading numerous community outreach programs.',
+    image: leaderTshepo
+  }, {
+    name: 'Mrs. Goitseone Sebina',
+    position: 'Secretary General',
+    credentials: 'MSW (University of Witwatersrand)',
+    experience: '10+ years',
+    description: 'Licensed Clinical Social Worker with extensive experience in organizational development and professional standards.',
+    image: leaderGoitseone
+  }, {
+    name: 'John Mogomotsi',
+    position: 'Treasurer',
+    credentials: 'MA Psychology (University of Botswana)',
+    experience: '8+ years',
+    description: 'Licensed Professional Counsellor with background in both clinical practice and business management.',
+    image: leaderJohn
+  }];
+  const milestones = [{
+    year: '2009',
+    title: 'BSPCP Founded',
+    description: 'Established by dedicated mental health professionals to elevate counselling standards in Botswana',
+    period: 'Foundation & Early Years'
+  }, {
+    year: '2013',
+    title: 'First Annual Conference',
+    description: 'Hosted our inaugural conference with 120 attendees, establishing professional development traditions',
+    period: 'Growth & Recognition'
+  }, {
+    year: '2014',
+    title: 'University Partnership',
+    description: 'Established partnership with University of Botswana for student placements and training',
+    period: 'Growth & Recognition'
+  }, {
+    year: '2015',
+    title: 'Ministry Recognition',
+    description: 'Officially recognized by Ministry of Health as professional association',
+    period: 'Growth & Recognition'
+  }, {
+    year: '2016',
+    title: 'CPD Program Launch',
+    description: 'Launched Continuing Professional Development program for ongoing member training',
+    period: 'Growth & Recognition'
+  }, {
+    year: '2020',
+    title: 'Online Services Launch',
+    description: 'Developed telehealth guidelines and online counselling standards during COVID-19',
+    period: 'Digital Transformation'
+  }, {
+    year: '2022',
+    title: 'Youth Mental Health Initiative',
+    description: 'Established specialized programs addressing mental health needs of young people',
+    period: 'Digital Transformation'
+  }, {
+    year: '2024',
+    title: 'International Partnerships',
+    description: 'Formed partnerships with international professional associations for knowledge exchange',
+    period: 'Digital Transformation'
+  }, {
+    year: '2025',
+    title: 'Comprehensive Digital Platform',
+    description: 'Launch of our modern online platform connecting Batswana with qualified mental health professionals',
+    period: 'Digital Transformation'
+  }];
+  const subNavigation = [{
+    id: 'overview',
+    label: 'Overview'
+  }, {
+    id: 'story',
+    label: 'Our Story'
+  }, {
+    id: 'leadership',
+    label: 'Leadership'
+  }, {
+    id: 'standards',
+    label: 'Standards'
+  }, {
+    id: 'impact',
+    label: 'Impact'
+  }, {
+    id: 'reports',
+    label: 'Reports'
+  }];
+  return <div className="min-h-screen bg-background">
       <Navigation />
       
       {/* Breadcrumb */}
       <section className="py-4 bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-sm">
-            <Home className="w-4 h-4" />
-            <span className="text-muted-foreground">Home</span>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            <span className="text-foreground font-medium">About BSPCP</span>
-          </div>
+          
         </div>
       </section>
 
@@ -230,17 +195,11 @@ const About = () => {
 
       {/* Sub Navigation */}
       <section className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
           <nav className="flex gap-8 py-4 overflow-x-auto">
-            {subNavigation.map((item) => (
-              <a 
-                key={item.id}
-                href={`#${item.id}`}
-                className="font-source font-medium text-muted-foreground hover:text-primary transition-colors duration-200 whitespace-nowrap"
-              >
+            {subNavigation.map(item => <a key={item.id} href={`#${item.id}`} className="font-source font-medium text-muted-foreground hover:text-primary transition-colors duration-200 whitespace-nowrap">
                 {item.label}
-              </a>
-            ))}
+              </a>)}
           </nav>
         </div>
       </section>
@@ -269,13 +228,23 @@ const About = () => {
             <Card className="p-8">
               <h3 className="font-poppins font-bold text-xl mb-6 text-foreground">Our Role in Botswana</h3>
               <div className="space-y-4">
-                {[
-                  { icon: Shield, title: 'Professional Standards Guardian', desc: 'Establishing and maintaining the highest standards of practice' },
-                  { icon: HandHeart, title: 'Public Protection', desc: 'Ensuring counsellors meet rigorous qualification and ethical standards' },
-                  { icon: Users, title: 'Service Bridge', desc: 'Connecting individuals and families with qualified professionals' },
-                  { icon: Briefcase, title: 'Advocacy Champion', desc: 'Advocating for mental health awareness and policy development' }
-                ].map((role, index) => (
-                  <div key={index} className="flex items-start gap-3">
+                {[{
+                icon: Shield,
+                title: 'Professional Standards Guardian',
+                desc: 'Establishing and maintaining the highest standards of practice'
+              }, {
+                icon: HandHeart,
+                title: 'Public Protection',
+                desc: 'Ensuring counsellors meet rigorous qualification and ethical standards'
+              }, {
+                icon: Users,
+                title: 'Service Bridge',
+                desc: 'Connecting individuals and families with qualified professionals'
+              }, {
+                icon: Briefcase,
+                title: 'Advocacy Champion',
+                desc: 'Advocating for mental health awareness and policy development'
+              }].map((role, index) => <div key={index} className="flex items-start gap-3">
                     <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mt-1">
                       <role.icon className="w-4 h-4 text-primary" />
                     </div>
@@ -283,8 +252,7 @@ const About = () => {
                       <h4 className="font-source font-semibold text-foreground">{role.title}</h4>
                       <p className="font-source text-sm text-muted-foreground">{role.desc}</p>
                     </div>
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </Card>
           </div>
@@ -348,8 +316,7 @@ const About = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {stats.map((stat, index) => (
-              <Card key={index} className="text-center group hover:shadow-soft transition-all duration-300">
+            {stats.map((stat, index) => <Card key={index} className="text-center group hover:shadow-soft transition-all duration-300">
                 <CardContent className="p-8">
                   <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors duration-300">
                     <stat.icon className="w-8 h-8 text-primary" />
@@ -364,8 +331,7 @@ const About = () => {
                     {stat.description}
                   </p>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
 
           {/* Success Stories */}
@@ -434,8 +400,7 @@ const About = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {values.map((value, index) => (
-              <Card key={index} className="group hover:shadow-soft transition-all duration-300">
+            {values.map((value, index) => <Card key={index} className="group hover:shadow-soft transition-all duration-300">
                 <CardContent className="p-8">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
@@ -451,8 +416,7 @@ const About = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -471,16 +435,11 @@ const About = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            {leadership.map((leader, index) => (
-              <Card key={index} className="group hover:shadow-soft transition-all duration-300 overflow-hidden">
+            {leadership.map((leader, index) => <Card key={index} className="group hover:shadow-soft transition-all duration-300 overflow-hidden">
                 <CardContent className="p-8">
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="relative flex-shrink-0">
-                      <img 
-                        src={leader.image} 
-                        alt={leader.name}
-                        className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <img src={leader.image} alt={leader.name} className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300" />
                       <div className="absolute -top-2 -right-2">
                         <Badge className="bg-primary/90 text-primary-foreground">
                           {leader.experience}
@@ -503,8 +462,7 @@ const About = () => {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
 
           {/* Board & Advisory Members */}
@@ -513,17 +471,10 @@ const About = () => {
               <CardContent className="p-8">
                 <h3 className="font-poppins font-bold text-xl text-foreground mb-6">Board of Directors</h3>
                 <div className="space-y-4">
-                  {[
-                    'Prof. Michael Setlhare - University of Botswana, Department of Psychology',
-                    'Dr. Mpho Kgalemang - Former Director, Mental Health Services, Ministry of Health',
-                    'Mrs. Boitumelo Mokgosi - CEO, Botswana Red Cross Society',
-                    'Dr. James Moffat - Consultant Psychiatrist, Princess Marina Hospital'
-                  ].map((member, index) => (
-                    <div key={index} className="flex items-start gap-3">
+                  {['Prof. Michael Setlhare - University of Botswana, Department of Psychology', 'Dr. Mpho Kgalemang - Former Director, Mental Health Services, Ministry of Health', 'Mrs. Boitumelo Mokgosi - CEO, Botswana Red Cross Society', 'Dr. James Moffat - Consultant Psychiatrist, Princess Marina Hospital'].map((member, index) => <div key={index} className="flex items-start gap-3">
                       <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                       <p className="font-source text-sm text-muted-foreground">{member}</p>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -532,17 +483,22 @@ const About = () => {
               <CardContent className="p-8">
                 <h3 className="font-poppins font-bold text-xl text-foreground mb-6">Regional Representatives</h3>
                 <div className="space-y-4">
-                  {[
-                    { region: 'Northern Region', areas: 'Maun, Kasane, Shakawe' },
-                    { region: 'Eastern Region', areas: 'Francistown, Selebi-Phikwe, Sowa' },
-                    { region: 'Central Region', areas: 'Gaborone, Molepolole, Mochudi' },
-                    { region: 'Southern Region', areas: 'Kanye, Jwaneng, Tsabong' }
-                  ].map((rep, index) => (
-                    <div key={index}>
+                  {[{
+                  region: 'Northern Region',
+                  areas: 'Maun, Kasane, Shakawe'
+                }, {
+                  region: 'Eastern Region',
+                  areas: 'Francistown, Selebi-Phikwe, Sowa'
+                }, {
+                  region: 'Central Region',
+                  areas: 'Gaborone, Molepolole, Mochudi'
+                }, {
+                  region: 'Southern Region',
+                  areas: 'Kanye, Jwaneng, Tsabong'
+                }].map((rep, index) => <div key={index}>
                       <p className="font-source font-semibold text-foreground">{rep.region}</p>
                       <p className="font-source text-sm text-muted-foreground">{rep.areas}</p>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -565,16 +521,14 @@ const About = () => {
 
           {/* Timeline by periods */}
           <div className="space-y-16">
-            {['Foundation & Early Years', 'Growth & Recognition', 'Digital Transformation'].map((period, periodIndex) => (
-              <div key={period} className="space-y-8">
+            {['Foundation & Early Years', 'Growth & Recognition', 'Digital Transformation'].map((period, periodIndex) => <div key={period} className="space-y-8">
                 <div className="text-center">
                   <h3 className="font-poppins font-bold text-2xl text-foreground mb-2">{period}</h3>
                   <Separator className="w-24 mx-auto" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {milestones.filter(m => m.period === period).map((milestone, index) => (
-                    <Card key={index} className="hover:shadow-soft transition-all duration-300 group">
+                  {milestones.filter(m => m.period === period).map((milestone, index) => <Card key={index} className="hover:shadow-soft transition-all duration-300 group">
                       <CardContent className="p-6">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
@@ -591,11 +545,9 @@ const About = () => {
                           {milestone.description}
                         </p>
                       </CardContent>
-                    </Card>
-                  ))}
+                    </Card>)}
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
 
           {/* Future Vision */}
@@ -607,20 +559,29 @@ const About = () => {
                   Looking Forward: Strategic Vision 2025-2030
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-                  {[
-                    { icon: Users, title: 'Expand Network', desc: '300+ professionals nationwide' },
-                    { icon: Globe, title: 'Enhance Access', desc: 'Comprehensive online platform' },
-                    { icon: Award, title: 'Strengthen Standards', desc: 'Advanced certification programs' },
-                    { icon: Briefcase, title: 'Policy & Advocacy', desc: 'Mental health legislation advancement' }
-                  ].map((goal, index) => (
-                    <div key={index} className="text-center">
+                  {[{
+                  icon: Users,
+                  title: 'Expand Network',
+                  desc: '300+ professionals nationwide'
+                }, {
+                  icon: Globe,
+                  title: 'Enhance Access',
+                  desc: 'Comprehensive online platform'
+                }, {
+                  icon: Award,
+                  title: 'Strengthen Standards',
+                  desc: 'Advanced certification programs'
+                }, {
+                  icon: Briefcase,
+                  title: 'Policy & Advocacy',
+                  desc: 'Mental health legislation advancement'
+                }].map((goal, index) => <div key={index} className="text-center">
                       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                         <goal.icon className="w-6 h-6 text-primary" />
                       </div>
                       <h4 className="font-source font-semibold text-foreground mb-2">{goal.title}</h4>
                       <p className="font-source text-sm text-muted-foreground">{goal.desc}</p>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -651,18 +612,25 @@ const About = () => {
                   <h3 className="font-poppins font-bold text-xl">Core Ethical Principles</h3>
                 </div>
                 <div className="space-y-4">
-                  {[
-                    { title: 'Respect for Persons', desc: 'Acknowledge inherent dignity and worth of all individuals' },
-                    { title: 'Competence', desc: 'Practice only within areas of expertise and maintain current knowledge' },
-                    { title: 'Integrity', desc: 'Be honest and truthful in all professional relationships' },
-                    { title: 'Confidentiality', desc: 'Protect client privacy and maintain secure records' },
-                    { title: 'Social Responsibility', desc: 'Contribute to welfare of society and promote mental health awareness' }
-                  ].map((principle, index) => (
-                    <div key={index} className="border-l-2 border-primary/20 pl-4">
+                  {[{
+                  title: 'Respect for Persons',
+                  desc: 'Acknowledge inherent dignity and worth of all individuals'
+                }, {
+                  title: 'Competence',
+                  desc: 'Practice only within areas of expertise and maintain current knowledge'
+                }, {
+                  title: 'Integrity',
+                  desc: 'Be honest and truthful in all professional relationships'
+                }, {
+                  title: 'Confidentiality',
+                  desc: 'Protect client privacy and maintain secure records'
+                }, {
+                  title: 'Social Responsibility',
+                  desc: 'Contribute to welfare of society and promote mental health awareness'
+                }].map((principle, index) => <div key={index} className="border-l-2 border-primary/20 pl-4">
                       <h4 className="font-source font-semibold text-foreground">{principle.title}</h4>
                       <p className="font-source text-sm text-muted-foreground">{principle.desc}</p>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
             </Card>
@@ -853,8 +821,6 @@ const About = () => {
       </section>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default About;
