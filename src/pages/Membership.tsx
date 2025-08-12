@@ -21,6 +21,8 @@ const membershipSchema = z.object({
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']),
   nationality: z.string().min(2, 'Nationality is required'),
+  // Document Uploads
+  idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
   
   // Contact Details
   phone: z.string().min(10, 'Valid phone number is required'),
@@ -36,6 +38,8 @@ const membershipSchema = z.object({
   graduationYear: z.string().min(4, 'Graduation year is required'),
   professionalLicense: z.string().optional(),
   specializations: z.string().min(5, 'Areas of specialization are required'),
+  // Document Uploads
+  certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
   
   // Professional Experience
   employmentStatus: z.enum(['employed', 'self-employed', 'unemployed', 'retired']),
@@ -66,6 +70,9 @@ const Membership = () => {
       gender: 'prefer-not-to-say',
       employmentStatus: 'employed',
       practiceType: 'private-practice',
+      // File uploads
+      idDocument: undefined,
+      certificates: [],
     },
   });
 
@@ -387,6 +394,29 @@ const Membership = () => {
                             </FormItem>
                           )}
                         />
+
+                        <FormField
+                          control={form.control}
+                          name="idDocument"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Attach Omang/ID (PDF, JPG, PNG)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="file"
+                                  accept="application/pdf,image/*"
+                                  onChange={(e) => field.onChange(e.target.files?.[0])}
+                                />
+                              </FormControl>
+                              {field.value && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Selected: {field.value?.name}
+                                </p>
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
                     )}
 
@@ -488,6 +518,30 @@ const Membership = () => {
                               <FormControl>
                                 <Textarea placeholder="Enter your areas of specialization" {...field} />
                               </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="certificates"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Upload Certificates (PDF, JPG, PNG)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="file"
+                                  multiple
+                                  accept="application/pdf,image/*"
+                                  onChange={(e) => field.onChange(Array.from(e.target.files || []))}
+                                />
+                              </FormControl>
+                              {Array.isArray(field.value) && field.value.length > 0 && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {field.value.length} file(s) selected
+                                </p>
+                              )}
                               <FormMessage />
                             </FormItem>
                           )}
@@ -716,7 +770,7 @@ const Membership = () => {
                             <li>• Copy of ID/Passport</li>
                           </ul>
                           <p className="text-xs text-muted-foreground mt-2">
-                            Please prepare these documents. You will be contacted with upload instructions after submitting this form.
+                            Please attach your documents in the relevant fields above before submitting this form.
                           </p>
                         </div>
                       </div>
