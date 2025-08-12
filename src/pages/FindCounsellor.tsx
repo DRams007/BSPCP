@@ -9,135 +9,118 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Heart, Users, Home, Sprout, Shield, Monitor, Search, MapPin, Star, Calendar, Filter } from 'lucide-react';
-
 const FindCounsellor = () => {
-  const serviceCategories = [
-    {
-      icon: Heart,
-      title: 'Individual Therapy',
-      description: 'Depression, anxiety, stress management, and personal growth',
-      color: 'bg-primary/10 text-primary',
-      subcategories: ['Depression & Anxiety', 'Stress Management', 'Self-esteem Issues', 'Life Transitions']
-    },
-    {
-      icon: Users,
-      title: 'Couples Counselling',
-      description: 'Relationship issues, communication, and pre-marital counselling',
-      color: 'bg-terracotta/10 text-terracotta',
-      subcategories: ['Relationship Issues', 'Communication Problems', 'Pre-marital Counselling', 'Separation Support']
-    },
-    {
-      icon: Home,
-      title: 'Family Therapy',
-      description: 'Family conflicts, parenting support, and generational issues',
-      color: 'bg-dusty/10 text-dusty',
-      subcategories: ['Family Conflicts', 'Parenting Support', 'Blended Family Issues', 'Generational Conflicts']
-    },
-    {
-      icon: Sprout,
-      title: 'Child & Adolescent',
-      description: 'Behavioral issues, school problems, and teen mental health',
-      color: 'bg-accent/10 text-accent',
-      subcategories: ['Behavioral Issues', 'School Problems', 'Developmental Concerns', 'Teen Mental Health']
-    },
-    {
-      icon: Shield,
-      title: 'Specialized Services',
-      description: 'Trauma, PTSD, addiction, grief, and career counselling',
-      color: 'bg-primary/10 text-primary',
-      subcategories: ['Trauma & PTSD', 'Addiction Support', 'Grief & Loss', 'Career Counselling']
-    }
-  ];
-
-  const featuredCounsellors = [
-    {
-      name: 'Dr. Thabo Moeti',
-      title: 'Clinical Psychologist',
-      specialization: ['Anxiety & Depression', 'Trauma Therapy', 'Family Counselling'],
-      location: 'Gaborone',
-      experience: '12 years',
-      rating: 4.9,
-      reviews: 156,
-      image: '/api/placeholder/150/150',
-      availability: 'Available this week',
-      sessionTypes: ['In-person', 'Online'],
-      languages: ['English', 'Setswana'],
-      feeRange: 'P500 - P800'
-    },
-    {
-      name: 'Ms. Kefilwe Setlhare',
-      title: 'Licensed Counsellor',
-      specialization: ['Couples Therapy', 'Communication Skills', 'Relationship Issues'],
-      location: 'Francistown',
-      experience: '8 years',
-      rating: 4.8,
-      reviews: 92,
-      image: '/api/placeholder/150/150',
-      availability: 'Available next week',
-      sessionTypes: ['In-person', 'Online'],
-      languages: ['English', 'Setswana'],
-      feeRange: 'P400 - P600'
-    },
-    {
-      name: 'Dr. Mmoloki Segwai',
-      title: 'Child Psychologist',
-      specialization: ['Child Development', 'Behavioral Issues', 'Family Dynamics'],
-      location: 'Maun',
-      experience: '10 years',
-      rating: 4.9,
-      reviews: 134,
-      image: '/api/placeholder/150/150',
-      availability: 'Available this week',
-      sessionTypes: ['In-person', 'Online'],
-      languages: ['English', 'Setswana'],
-      feeRange: 'P600 - P900'
-    },
-    {
-      name: 'Ms. Boitumelo Kgathi',
-      title: 'Mental Health Counsellor',
-      specialization: ['Stress Management', 'Life Transitions', 'Career Counselling'],
-      location: 'Kasane',
-      experience: '6 years',
-      rating: 4.7,
-      reviews: 78,
-      image: '/api/placeholder/150/150',
-      availability: 'Available tomorrow',
-      sessionTypes: ['In-person', 'Online'],
-      languages: ['English', 'Setswana'],
-      feeRange: 'P350 - P550'
-    },
-    {
-      name: 'Dr. Kelebogile Motlhabani',
-      title: 'Family Therapist',
-      specialization: ['Family Therapy', 'Parenting Support', 'Adolescent Issues'],
-      location: 'Gaborone',
-      experience: '14 years',
-      rating: 4.9,
-      reviews: 203,
-      image: '/api/placeholder/150/150',
-      availability: 'Available this week',
-      sessionTypes: ['In-person', 'Online'],
-      languages: ['English', 'Setswana'],
-      feeRange: 'P550 - P750'
-    },
-    {
-      name: 'Mr. Tebogo Phiri',
-      title: 'Addiction Counsellor',
-      specialization: ['Addiction Recovery', 'Substance Abuse', 'Behavioral Addiction'],
-      location: 'Francistown',
-      experience: '9 years',
-      rating: 4.8,
-      reviews: 87,
-      image: '/api/placeholder/150/150',
-      availability: 'Available next week',
-      sessionTypes: ['In-person', 'Online'],
-      languages: ['English', 'Setswana'],
-      feeRange: 'P450 - P650'
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const serviceCategories = [{
+    icon: Heart,
+    title: 'Individual Therapy',
+    description: 'Depression, anxiety, stress management, and personal growth',
+    color: 'bg-primary/10 text-primary',
+    subcategories: ['Depression & Anxiety', 'Stress Management', 'Self-esteem Issues', 'Life Transitions']
+  }, {
+    icon: Users,
+    title: 'Couples Counselling',
+    description: 'Relationship issues, communication, and pre-marital counselling',
+    color: 'bg-terracotta/10 text-terracotta',
+    subcategories: ['Relationship Issues', 'Communication Problems', 'Pre-marital Counselling', 'Separation Support']
+  }, {
+    icon: Home,
+    title: 'Family Therapy',
+    description: 'Family conflicts, parenting support, and generational issues',
+    color: 'bg-dusty/10 text-dusty',
+    subcategories: ['Family Conflicts', 'Parenting Support', 'Blended Family Issues', 'Generational Conflicts']
+  }, {
+    icon: Sprout,
+    title: 'Child & Adolescent',
+    description: 'Behavioral issues, school problems, and teen mental health',
+    color: 'bg-accent/10 text-accent',
+    subcategories: ['Behavioral Issues', 'School Problems', 'Developmental Concerns', 'Teen Mental Health']
+  }, {
+    icon: Shield,
+    title: 'Specialized Services',
+    description: 'Trauma, PTSD, addiction, grief, and career counselling',
+    color: 'bg-primary/10 text-primary',
+    subcategories: ['Trauma & PTSD', 'Addiction Support', 'Grief & Loss', 'Career Counselling']
+  }];
+  const featuredCounsellors = [{
+    name: 'Dr. Thabo Moeti',
+    title: 'Clinical Psychologist',
+    specialization: ['Anxiety & Depression', 'Trauma Therapy', 'Family Counselling'],
+    location: 'Gaborone',
+    experience: '12 years',
+    rating: 4.9,
+    reviews: 156,
+    image: '/api/placeholder/150/150',
+    availability: 'Available this week',
+    sessionTypes: ['In-person', 'Online'],
+    languages: ['English', 'Setswana'],
+    feeRange: 'P500 - P800'
+  }, {
+    name: 'Ms. Kefilwe Setlhare',
+    title: 'Licensed Counsellor',
+    specialization: ['Couples Therapy', 'Communication Skills', 'Relationship Issues'],
+    location: 'Francistown',
+    experience: '8 years',
+    rating: 4.8,
+    reviews: 92,
+    image: '/api/placeholder/150/150',
+    availability: 'Available next week',
+    sessionTypes: ['In-person', 'Online'],
+    languages: ['English', 'Setswana'],
+    feeRange: 'P400 - P600'
+  }, {
+    name: 'Dr. Mmoloki Segwai',
+    title: 'Child Psychologist',
+    specialization: ['Child Development', 'Behavioral Issues', 'Family Dynamics'],
+    location: 'Maun',
+    experience: '10 years',
+    rating: 4.9,
+    reviews: 134,
+    image: '/api/placeholder/150/150',
+    availability: 'Available this week',
+    sessionTypes: ['In-person', 'Online'],
+    languages: ['English', 'Setswana'],
+    feeRange: 'P600 - P900'
+  }, {
+    name: 'Ms. Boitumelo Kgathi',
+    title: 'Mental Health Counsellor',
+    specialization: ['Stress Management', 'Life Transitions', 'Career Counselling'],
+    location: 'Kasane',
+    experience: '6 years',
+    rating: 4.7,
+    reviews: 78,
+    image: '/api/placeholder/150/150',
+    availability: 'Available tomorrow',
+    sessionTypes: ['In-person', 'Online'],
+    languages: ['English', 'Setswana'],
+    feeRange: 'P350 - P550'
+  }, {
+    name: 'Dr. Kelebogile Motlhabani',
+    title: 'Family Therapist',
+    specialization: ['Family Therapy', 'Parenting Support', 'Adolescent Issues'],
+    location: 'Gaborone',
+    experience: '14 years',
+    rating: 4.9,
+    reviews: 203,
+    image: '/api/placeholder/150/150',
+    availability: 'Available this week',
+    sessionTypes: ['In-person', 'Online'],
+    languages: ['English', 'Setswana'],
+    feeRange: 'P550 - P750'
+  }, {
+    name: 'Mr. Tebogo Phiri',
+    title: 'Addiction Counsellor',
+    specialization: ['Addiction Recovery', 'Substance Abuse', 'Behavioral Addiction'],
+    location: 'Francistown',
+    experience: '9 years',
+    rating: 4.8,
+    reviews: 87,
+    image: '/api/placeholder/150/150',
+    availability: 'Available next week',
+    sessionTypes: ['In-person', 'Online'],
+    languages: ['English', 'Setswana'],
+    feeRange: 'P450 - P650'
+  }];
+  return <div className="min-h-screen bg-background">
       <Navigation />
       
       {/* Hero Section */}
@@ -154,18 +137,11 @@ const FindCounsellor = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
-            <Button 
-              size="lg" 
-              className="bg-cream text-primary hover:bg-cream/90 font-source font-semibold text-lg px-8 py-6 rounded-2xl shadow-warm"
-            >
+            <Button size="lg" className="bg-cream text-primary hover:bg-cream/90 font-source font-semibold text-lg px-8 py-6 rounded-2xl shadow-warm">
               Tell Us What You Need
             </Button>
             
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-cream text-cream hover:bg-cream/10 font-source font-semibold text-lg px-8 py-6 rounded-2xl"
-            >
+            <Button size="lg" variant="outline" className="border-cream text-cream font-source font-semibold text-lg px-8 py-6 rounded-2xl bg-[#86995c]">
               Browse All Counsellors
             </Button>
           </div>
@@ -185,11 +161,7 @@ const FindCounsellor = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {serviceCategories.map((category, index) => (
-              <Card 
-                key={index} 
-                className="group hover:shadow-soft transition-all duration-300 hover:-translate-y-2 border-border/50 bg-card cursor-pointer"
-              >
+            {serviceCategories.map((category, index) => <Card key={index} className="group hover:shadow-soft transition-all duration-300 hover:-translate-y-2 border-border/50 bg-card cursor-pointer">
                 <CardContent className="p-8">
                   <div className={`w-16 h-16 ${category.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
                     <category.icon className="w-8 h-8" />
@@ -204,25 +176,19 @@ const FindCounsellor = () => {
                   </p>
                   
                   <div className="space-y-2 mb-6">
-                    {category.subcategories.map((sub, idx) => (
-                      <div key={idx} className="flex items-center space-x-2">
+                    {category.subcategories.map((sub, idx) => <div key={idx} className="flex items-center space-x-2">
                         <Checkbox id={`${index}-${idx}`} />
                         <Label htmlFor={`${index}-${idx}`} className="text-sm font-source text-muted-foreground">
                           {sub}
                         </Label>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300"
-                  >
+                  <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                     Select This Category
                   </Button>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -309,27 +275,14 @@ const FindCounsellor = () => {
 
                 <div>
                   <Label htmlFor="concerns" className="font-source font-medium">What brings you to counselling? (Optional)</Label>
-                  <Textarea 
-                    id="concerns" 
-                    placeholder="Share a brief description of what you'd like support with..." 
-                    className="mt-2 h-24"
-                  />
+                  <Textarea id="concerns" placeholder="Share a brief description of what you'd like support with..." className="mt-2 h-24" />
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button 
-                    type="submit" 
-                    size="lg" 
-                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-source font-semibold"
-                  >
+                  <Button type="submit" size="lg" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-source font-semibold">
                     Find My Counsellor
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="lg" 
-                    className="flex-1"
-                  >
+                  <Button type="button" variant="outline" size="lg" className="flex-1">
                     Browse All Counsellors
                   </Button>
                 </div>
@@ -356,10 +309,7 @@ const FindCounsellor = () => {
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                  <Input 
-                    placeholder="Search by name, specialization, or location..." 
-                    className="pl-10 h-12 text-lg"
-                  />
+                  <Input placeholder="Search by name, specialization, or location..." className="pl-10 h-12 text-lg" />
                 </div>
               </div>
               <Button variant="outline" size="lg" className="lg:w-auto">
@@ -370,18 +320,10 @@ const FindCounsellor = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCounsellors.map((counsellor, index) => (
-              <Card 
-                key={index} 
-                className="group hover:shadow-warm transition-all duration-300 hover:-translate-y-2 border-border/50 bg-card overflow-hidden"
-              >
+            {featuredCounsellors.map((counsellor, index) => <Card key={index} className="group hover:shadow-warm transition-all duration-300 hover:-translate-y-2 border-border/50 bg-card overflow-hidden">
                 <CardContent className="p-0">
                   <div className="relative">
-                    <img 
-                      src={counsellor.image} 
-                      alt={counsellor.name}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    <img src={counsellor.image} alt={counsellor.name} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" />
                     <div className="absolute top-4 right-4 bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
                       {counsellor.experience}
                     </div>
@@ -410,20 +352,12 @@ const FindCounsellor = () => {
                     
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-1">
-                        {counsellor.specialization.slice(0, 2).map((spec, idx) => (
-                          <Badge 
-                            key={idx} 
-                            variant="secondary" 
-                            className="text-xs bg-primary/10 text-primary hover:bg-primary/20"
-                          >
+                        {counsellor.specialization.slice(0, 2).map((spec, idx) => <Badge key={idx} variant="secondary" className="text-xs bg-primary/10 text-primary hover:bg-primary/20">
                             {spec}
-                          </Badge>
-                        ))}
-                        {counsellor.specialization.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
+                          </Badge>)}
+                        {counsellor.specialization.length > 2 && <Badge variant="outline" className="text-xs">
                             +{counsellor.specialization.length - 2} more
-                          </Badge>
-                        )}
+                          </Badge>}
                       </div>
                     </div>
                     
@@ -445,32 +379,20 @@ const FindCounsellor = () => {
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                      >
+                      <Button variant="outline" size="sm" className="flex-1">
                         View Profile
                       </Button>
-                      <Button 
-                        size="sm" 
-                        className="flex-1 bg-primary hover:bg-primary/90"
-                      >
+                      <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90">
                         Book Now
                       </Button>
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
           
           <div className="text-center mt-12">
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="px-8"
-            >
+            <Button variant="outline" size="lg" className="px-8">
               Load More Counsellors
             </Button>
           </div>
@@ -478,8 +400,6 @@ const FindCounsellor = () => {
       </section>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default FindCounsellor;
