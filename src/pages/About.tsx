@@ -191,7 +191,7 @@ const About = () => {
 
       {/* Sub Navigation */}
       <section className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
           <nav className="flex gap-8 py-4 overflow-x-auto">
             {subNavigation.map(item => <a key={item.id} href={`#${item.id}`} className="font-source font-medium text-muted-foreground hover:text-primary transition-colors duration-200 whitespace-nowrap">
                 {item.label}
