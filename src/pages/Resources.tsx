@@ -133,7 +133,7 @@ const Resources = () => {
                 <Search className="w-4 h-4 mr-2" />
                 Search Resources
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+              <Button size="lg" variant="outline" className="border-white text-white bg-[#87995d]">
                 <Download className="w-4 h-4 mr-2" />
                 Download Guide
               </Button>
