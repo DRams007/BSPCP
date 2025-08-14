@@ -1,6 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 const testimonials = [
   {
@@ -50,34 +52,56 @@ const Testimonials = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
-          {testimonials.map((testimonial) => (
-            <Card key={testimonial.id} className="h-full hover:shadow-lg transition-shadow duration-300">
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-6 italic">
-                  "{testimonial.content}"
-                </p>
-                <div className="flex items-center">
-                  <Avatar className="w-12 h-12 mr-4">
-                    <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {testimonial.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h4 className="font-semibold text-foreground">{testimonial.name}</h4>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Carousel
+          className="w-full max-w-6xl mx-auto"
+          plugins={[
+            Autoplay({
+              delay: 5000,
+            }),
+          ]}
+        >
+          <CarouselContent>
+            {testimonials.reduce((slides, testimonial, index) => {
+              if (index % 2 === 0) {
+                slides.push(
+                  <CarouselItem key={`slide-${index / 2}`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {testimonials.slice(index, index + 2).map((t) => (
+                        <Card key={t.id} className="h-full hover:shadow-lg transition-shadow duration-300">
+                          <CardContent className="p-6">
+                            <div className="flex items-center mb-4">
+                              {[...Array(t.rating)].map((_, i) => (
+                                <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                              ))}
+                            </div>
+                            <p className="text-muted-foreground mb-6 italic">
+                              "{t.content}"
+                            </p>
+                            <div className="flex items-center">
+                              <Avatar className="w-12 h-12 mr-4">
+                                <AvatarImage src={t.avatar} alt={t.name} />
+                                <AvatarFallback className="bg-primary text-primary-foreground">
+                                  {t.name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <h4 className="font-semibold text-foreground">{t.name}</h4>
+                                <p className="text-sm text-muted-foreground">{t.role}</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </CarouselItem>
+                );
+              }
+              return slides;
+            }, [] as JSX.Element[])}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
       </div>
     </section>
   );
