@@ -52,7 +52,7 @@ const Navigation = () => {
           <div className="hidden lg:flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <Phone className="w-4 h-4" />
-              <span className="px-0 mx-0">Emergency: 16222</span>
+              
             </div>
             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-source font-medium mx-0">
               Get Help Now
