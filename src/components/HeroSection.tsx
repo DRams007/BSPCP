@@ -24,9 +24,14 @@ const HeroSection = () => {
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               
-              <Button size="lg" variant="outline" className="border-cream font-source font-semibold text-lg px-8 py-6 rounded-lg text-gray-50 bg-[#86995c]">
-                Browse Counsellors
-              </Button>
+             <Button 
+                    size="lg" 
+                      variant="outline" 
+  className="border-cream font-source font-semibold text-lg px-8 py-6 rounded-lg text-gray-50 bg-[#86995c]"
+  onClick={() => navigator('/find-counsellor')}
+>
+  Browse Counsellors
+</Button>
             </div>
             
             {/* Trust Indicators */}
