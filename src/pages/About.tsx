@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Users, Award, Heart, TrendingUp, Target, Eye, Shield, BookOpen, Calendar, FileText, Building, MapPin, Phone, Mail, Globe, CheckCircle, Star, Briefcase, GraduationCap, Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart, Building2, Scale, Lightbulb, Zap, TreePine } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import leaderKeabetswe from '@/assets/leader-keabetswe.jpg';
 import leaderTshepo from '@/assets/leader-tshepo.jpg';
 import leaderGoitseone from '@/assets/leader-goitseone.jpg';
 import leaderJohn from '@/assets/leader-john.jpg';
 const About = () => {
+  const navigate = useNavigate();
   const stats = [{
     icon: Users,
     value: '150+',
@@ -797,11 +799,11 @@ const About = () => {
                   or want to partner with us, we're here to help.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="group">
+                  <Button size="lg" className="group" onClick={() => navigate('/find-counsellor')}>
                     <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-0.5 transition-transform" />
                     Find a Counsellor
                   </Button>
-                  <Button size="lg" variant="outline" className="group">
+                  <Button size="lg" variant="outline" className="group" onClick={() => navigate('/membership')}>
                     <Users className="w-4 h-4 mr-2 group-hover:scale-105 transition-transform" />
                     Apply for Membership
                   </Button>

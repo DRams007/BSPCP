@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Heart, CheckCircle, Clock, FileText, Calendar, Phone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const IndividualTherapy = () => {
+  const navigate = useNavigate();
   const approaches = [
     'Cognitive Behavioral Therapy (CBT)',
     'Dialectical Behavior Therapy (DBT)',
@@ -53,6 +55,7 @@ const IndividualTherapy = () => {
                 <Button 
                   size="lg" 
                   className="bg-white text-primary hover:bg-cream"
+                  onClick={() => navigate('/find-counsellor')}
                 >
                   Find a Counsellor
                 </Button>

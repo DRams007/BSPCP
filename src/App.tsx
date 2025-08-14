@@ -13,6 +13,7 @@ import Resources from "./pages/Resources";
 import Contact from "./pages/Contact";
 import Membership from "./pages/Membership";
 import NewsEvents from "./pages/NewsEvents";
+import CodeOfEthics from "./pages/CodeOfEthics";
 import NotFound from "./pages/NotFound";
 // Service pages
 import IndividualTherapy from "./pages/services/IndividualTherapy";
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/membership" element={<Membership />} />
           <Route path="/news-events" element={<NewsEvents />} />
+          <Route path="/code-of-ethics" element={<CodeOfEthics />} />
           {/* Service routes */}
           <Route path="/services/individual-therapy" element={<IndividualTherapy />} />
           <Route path="/services/couples-counselling" element={<CouplesCounselling />} />

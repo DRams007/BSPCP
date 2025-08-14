@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Users, Home, Sprout, Shield, Monitor, CheckCircle, Clock, FileText, HelpCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Services = () => {
+  const navigate = useNavigate();
   const services = [
     {
       icon: Heart,
@@ -250,7 +252,7 @@ const Services = () => {
                         </div>
                       </div>
                       
-                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => navigate('/find-counsellor')}>
                         Find a Counsellor
                       </Button>
                     </div>
@@ -439,6 +441,7 @@ const Services = () => {
             <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+              onClick={() => navigate('/find-counsellor')}
             >
               Find a Counsellor
             </Button>
