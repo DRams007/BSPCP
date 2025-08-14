@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Users, Award, Heart, TrendingUp, Target, Eye, Shield, BookOpen, Calendar, FileText, Building, MapPin, Phone, Mail, Globe, CheckCircle, Star, Briefcase, GraduationCap, Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart, Building2, Scale, Lightbulb, Zap, TreePine } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import leaderKeabetswe from '@/assets/leader-keabetswe.jpg';
 import leaderTshepo from '@/assets/leader-tshepo.jpg';
 import leaderGoitseone from '@/assets/leader-goitseone.jpg';
@@ -674,9 +674,11 @@ const About = () => {
                   Comprehensive ethical guidelines covering professional conduct, client relationships, 
                   and social responsibility.
                 </p>
-                <Button variant="outline" className="group">
-                  <Download className="w-4 h-4 mr-2 group-hover:translate-y-0.5 transition-transform" />
-                  Download PDF
+                <Button variant="outline" className="group" asChild>
+                  <Link to="/code-of-ethics">
+                    <FileText className="w-4 h-4 mr-2 group-hover:scale-105 transition-transform" />
+                    View Code of Ethics
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
