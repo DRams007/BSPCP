@@ -1,6 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, Users, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 const HeroSection = () => {
+  const navigate = useNavigate();
+
   return <section className="relative bg-gradient-warm text-white py-20 lg:py-32 overflow-hidden">
       <div className="absolute inset-0 bg-black/20"></div>
       
@@ -28,7 +32,7 @@ const HeroSection = () => {
                     size="lg" 
                       variant="outline" 
   className="border-cream font-source font-semibold text-lg px-8 py-6 rounded-lg text-gray-50 bg-[#86995c]"
-  onClick={() => navigator('/find-counsellor')}
+  onClick={() => navigate('/find-counsellor')}
 >
   Browse Counsellors
 </Button>
@@ -66,4 +70,5 @@ const HeroSection = () => {
       <div className="absolute bottom-10 left-10 w-32 h-32 bg-terracotta/20 rounded-full blur-3xl"></div>
     </section>;
 };
+
 export default HeroSection;
