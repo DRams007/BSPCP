@@ -42,8 +42,8 @@ const Navigation = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-2">
-            {navigationItems.map(item => <Link key={item.name} to={item.href} className={`font-source text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 ${isActive(item.href) ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:text-primary hover:bg-primary/10'}`}>
+          <div className="hidden lg:flex items-center space-x-8">
+            {navigationItems.map(item => <Link key={item.name} to={item.href} className={`font-source text-sm font-medium transition-colors duration-200 ${isActive(item.href) ? 'text-primary border-b-2 border-primary' : 'text-foreground hover:text-primary'}`}>
                 {item.name}
               </Link>)}
           </div>
@@ -51,7 +51,7 @@ const Navigation = () => {
           {/* Emergency Contact & CTA */}
           <div className="hidden lg:flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <Phone className="w-4 h-4" />
+              
               
             </div>
             <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-source font-medium mx-0">
