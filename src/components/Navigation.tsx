@@ -42,8 +42,8 @@ const Navigation = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
-            {navigationItems.map(item => <Link key={item.name} to={item.href} className={`font-source text-sm font-medium transition-colors duration-200 px-4 py-2 ${isActive(item.href) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:text-primary hover:bg-primary/10'}`}>
+          <div className="hidden lg:flex items-center h-full">
+            {navigationItems.map(item => <Link key={item.name} to={item.href} className={`font-source text-sm font-medium transition-colors duration-200 px-6 py-4 h-full flex items-center justify-center ${isActive(item.href) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:text-primary hover:bg-primary/10'}`}>
                 {item.name}
               </Link>)}
           </div>
