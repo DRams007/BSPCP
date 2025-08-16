@@ -31,6 +31,9 @@ const Navigation = () => {
   }, {
     name: 'Contact',
     href: '/contact'
+  }, {
+    name: 'Member Login',
+    href: '/member-login'
   }];
   
   const isActive = (path: string) => location.pathname === path;

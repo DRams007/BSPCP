@@ -15,6 +15,8 @@ import Membership from "./pages/Membership";
 import NewsEvents from "./pages/NewsEvents";
 import CodeOfEthics from "./pages/CodeOfEthics";
 import NotFound from "./pages/NotFound";
+import MemberLogin from "./pages/MemberLogin";
+import MemberDashboard from "./pages/MemberDashboard";
 // Service pages
 import IndividualTherapy from "./pages/services/IndividualTherapy";
 import CouplesCounselling from "./pages/services/CouplesCounselling";
@@ -49,6 +51,9 @@ const App = () => (
           <Route path="/membership" element={<Membership />} />
           <Route path="/news-events" element={<NewsEvents />} />
           <Route path="/code-of-ethics" element={<CodeOfEthics />} />
+          {/* Member routes */}
+          <Route path="/member-login" element={<MemberLogin />} />
+          <Route path="/member-dashboard" element={<MemberDashboard />} />
           {/* Service routes */}
           <Route path="/services/individual-therapy" element={<IndividualTherapy />} />
           <Route path="/services/couples-counselling" element={<CouplesCounselling />} />

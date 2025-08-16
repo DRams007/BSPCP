@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Upload, Users, Award, BookOpen, Network } from 'lucide-react';
+import { CheckCircle, Upload, Users, Award, BookOpen, Network, LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const membershipSchema = z.object({
   // Personal Information
@@ -181,6 +182,55 @@ const Membership = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Existing Members Section */}
+      <section className="py-16 bg-primary/5">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl font-bold mb-6">Already a Member?</h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Access your member dashboard to manage your profile, track CPD hours, and update your information.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LogIn className="h-5 w-5" />
+                    Member Portal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-6">
+                    Log in to access your dashboard, manage your profile, and track your continuing professional development.
+                  </p>
+                  <Link to="/member-login">
+                    <Button className="w-full">
+                      Access Member Portal
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Member Benefits
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-left space-y-2 text-muted-foreground">
+                    <li>• Update your public profile</li>
+                    <li>• Upload CPD evidence</li>
+                    <li>• Manage contact information</li>
+                    <li>• Access member resources</li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
