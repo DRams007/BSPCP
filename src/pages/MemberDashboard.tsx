@@ -1,38 +1,115 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import { User, FileText, Upload, Settings, Eye } from 'lucide-react';
+import { User, FileText, Upload, Settings, Eye, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import ProfileEditForm from '@/components/member/ProfileEditForm';
 import ContactEditForm from '@/components/member/ContactEditForm';
 import CPDUploadForm from '@/components/member/CPDUploadForm';
 
-const MemberDashboard = () => {
-  const [member] = useState({
-    name: "Dr. Sarah Johnson",
-    email: "sarah.johnson@email.com",
+// Demo member data with realistic stats
+const getMemberData = (loggedInMember: any) => {
+  const baseData = {
     membershipStatus: "Active",
     profileStatus: "Approved",
-    cpdHours: 25,
     requiredCpdHours: 40,
-    profileViews: 147
-  });
+  };
+
+  switch (loggedInMember.email) {
+    case 'dr.thabo@bspcp.org':
+      return {
+        ...baseData,
+        ...loggedInMember,
+        cpdHours: 32,
+        profileViews: 189,
+      };
+    case 'kefilwe.m@bspcp.org':
+      return {
+        ...baseData,
+        ...loggedInMember,
+        cpdHours: 28,
+        profileViews: 156,
+      };
+    case 'boitumelo@bspcp.org':
+      return {
+        ...baseData,
+        ...loggedInMember,
+        cpdHours: 35,
+        profileViews: 203,
+      };
+    default:
+      return {
+        ...baseData,
+        ...loggedInMember,
+        cpdHours: 25,
+        profileViews: 147,
+      };
+  }
+};
+
+const MemberDashboard = () => {
+  const [member, setMember] = useState<any>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('memberAuthenticated');
+    const currentMemberData = localStorage.getItem('currentMember');
+    
+    if (!isAuthenticated || !currentMemberData) {
+      toast({
+        title: "Access Denied",
+        description: "Please log in to access the member dashboard.",
+        variant: "destructive",
+      });
+      navigate('/member-login');
+      return;
+    }
+
+    const loggedInMember = JSON.parse(currentMemberData);
+    setMember(getMemberData(loggedInMember));
+  }, [navigate, toast]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('memberAuthenticated');
+    localStorage.removeItem('currentMember');
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    navigate('/member-login');
+  };
+
+  if (!member) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       <Navigation />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {member.name}
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your profile, track your CPD progress, and update your information
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Welcome back, {member.name}
+            </h1>
+            <p className="text-muted-foreground">
+              Manage your profile, track your CPD progress, and update your information
+            </p>
+            <Badge variant="outline" className="mt-2">
+              {member.specialization}
+            </Badge>
+          </div>
+          <Button variant="outline" onClick={handleLogout} className="mt-1">
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
 
         {/* Quick Stats */}
