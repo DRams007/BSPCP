@@ -1,3 +1,4 @@
+import { useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { 
   Plus, 
   Search, 
@@ -29,9 +35,12 @@ import {
   Globe,
   Image
 } from "lucide-react";
+import CreateContentForm from "@/components/admin/CreateContentForm";
+import { toast } from "@/hooks/use-toast";
 
 const Content = () => {
-  const contentItems = [
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [contentItems, setContentItems] = useState([
     {
       id: 1,
       title: "Mental Health Awareness Week",
@@ -68,7 +77,27 @@ const Content = () => {
       dateCreated: "2024-01-08",
       views: 2340
     }
-  ];
+  ]);
+
+  const handleCreateContent = (data: any) => {
+    const newContent = {
+      id: contentItems.length + 1,
+      title: data.title,
+      type: data.type,
+      status: data.status,
+      author: data.author,
+      dateCreated: new Date().toISOString().split('T')[0],
+      views: 0
+    };
+    
+    setContentItems([newContent, ...contentItems]);
+    setIsCreateDialogOpen(false);
+    
+    toast({
+      title: "Content Created",
+      description: `${data.title} has been created successfully.`,
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -108,10 +137,20 @@ const Content = () => {
               Manage website content, news, events, and pages
             </p>
           </div>
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Content
-          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Content
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <CreateContentForm
+                onSubmit={handleCreateContent}
+                onCancel={() => setIsCreateDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats Cards */}
