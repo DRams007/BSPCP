@@ -8,8 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Upload, FileText, Calendar, Globe, Image } from 'lucide-react';
+import { Upload, FileText, Calendar, Globe, Image, MapPin, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+
+// You'll need to install and import a date picker component
+// For example, if using shadcn/ui date picker:
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const contentFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be under 100 characters'),
@@ -17,6 +23,9 @@ const contentFormSchema = z.object({
   status: z.enum(['Draft', 'Published']),
   content: z.string().min(1, 'Content is required'),
   author: z.string().min(1, 'Author is required'),
+  location: z.string().optional(),
+  eventDate: z.date().optional(),
+  eventTime: z.string().optional(),
   metaDescription: z.string().max(160, 'Meta description must be under 160 characters').optional(),
   tags: z.string().optional(),
 });
@@ -40,6 +49,9 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
       status: 'Draft',
       content: '',
       author: 'Admin',
+      location: '',
+      eventDate: undefined,
+      eventTime: '',
       metaDescription: '',
       tags: '',
     }
@@ -51,6 +63,8 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
     { value: 'Page', label: 'Static Page', icon: Globe },
     { value: 'Resource', label: 'Resource', icon: Image },
   ];
+
+  const selectedType = form.watch('type');
 
   const handleSubmit = async (data: ContentFormData) => {
     setIsLoading(true);
@@ -173,6 +187,121 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
               </FormItem>
             )}
           />
+
+          {/* Location field - full width */}
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Location
+                  {selectedType !== 'Event' && (
+                    <span className="text-xs text-muted-foreground">(optional)</span>
+                  )}
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder={
+                      selectedType === 'Event' 
+                        ? "Event venue or address" 
+                        : "Location (if applicable)"
+                    } 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Date and Time fields - side by side */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="eventDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {selectedType === 'Event' ? 'Event Date' : 'Date'}
+                    {selectedType !== 'Event' && (
+                      <span className="text-xs text-muted-foreground">(optional)</span>
+                    )}
+                  </FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>
+                              {selectedType === 'Event' 
+                                ? "Select event date" 
+                                : "Pick a date (optional)"}
+                            </span>
+                          )}
+                          <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      {/* Replace this with your actual date picker component */}
+                      {/* For shadcn/ui, you would use the Calendar component here */}
+                      <div className="p-3">
+                        <input
+                          type="date"
+                          onChange={(e) => {
+                            const date = e.target.value ? new Date(e.target.value) : undefined;
+                            field.onChange(date);
+                          }}
+                          value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                          className="w-full"
+                        />
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="eventTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {selectedType === 'Event' ? 'Event Time' : 'Time'}
+                    {selectedType !== 'Event' && (
+                      <span className="text-xs text-muted-foreground">(optional)</span>
+                    )}
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="time"
+                      placeholder={
+                        selectedType === 'Event' 
+                          ? "Select event time" 
+                          : "Select time (optional)"
+                      } 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}
