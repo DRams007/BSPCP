@@ -293,7 +293,7 @@ const FindCounsellor = () => {
       </section>
 
       {/* Search & Filter Interface */}
-      <section className="py-20 bg-background">
+      <section id="browse-all-counsellors" className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">

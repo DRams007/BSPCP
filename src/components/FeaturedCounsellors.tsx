@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Star, Calendar } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import counselorThabo from '@/assets/counselor-thabo.jpg';
 import counselorKefilwe from '@/assets/counselor-kefilwe.jpg';
 import counselorMmoloki from '@/assets/counselor-mmoloki.jpg';
@@ -158,8 +159,11 @@ const FeaturedCounsellors = () => {
             variant="outline" 
             size="lg" 
             className="px-8"
+            asChild
           >
-            View All Counsellors
+            <Link to="/find-counsellor#browse-all-counsellors">
+              View All Counsellors
+            </Link>
           </Button>
         </div>
       </div>
