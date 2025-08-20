@@ -50,40 +50,16 @@ const NewsEvents = () => {
 
   const upcomingEvents = [
     {
-      id: 1,
-      title: 'Annual Conference on Trauma-Informed Care',
-      description: 'Join us for our annual conference focusing on trauma-informed approaches to mental health care in African contexts.',
-      date: '2024-03-15',
-      time: '09:00 - 17:00',
-      location: 'Gaborone International Convention Centre',
+      id: 4,
+      title: 'First Annual BSPCP Conference',
+      description: 'Join us for the First Annual BSPCP Conference focusing on transforming lives and enhancing mental wellbeing, resilience, and hope through counselling and psychotherapy.',
+      date: '2025-09-05',
+      time: '08:30 AM onwards',
+      location: 'Shasha Convention Center, Tlokweng',
       category: 'Conference',
-      attendees: 150,
-      price: 'P300',
-      image: 'https://images.unsplash.com/photo-1466442929976-97f336a657be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 2,
-      title: 'Mental Health First Aid Workshop',
-      description: 'Learn essential skills to provide initial support to someone experiencing a mental health crisis.',
-      date: '2024-02-28',
-      time: '14:00 - 16:00',
-      location: 'BSPCP Training Centre, Gaborone',
-      category: 'Workshop',
-      attendees: 30,
-      price: 'P100',
-      image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-    },
-    {
-      id: 3,
-      title: 'Community Mental Health Outreach',
-      description: 'Free mental health screening and counseling services for underserved communities.',
-      date: '2024-02-10',
-      time: '08:00 - 16:00',
-      location: 'Molepolole Community Centre',
-      category: 'Outreach',
-      attendees: 100,
-      price: 'Free',
-      image: 'https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+      attendees: 'Professional Counsellors, Psychotherapists, Mental health advocates, and other related parties',
+      price: 'Members: P400, Nonmembers: P500, Students: P150, Stall & Exhibition Space: P1000 per stall (Breakfast & Lunch Inclusive)',
+      image: '/lovable-uploads/First_Annual_BSPCP.jpg'
     }
   ];
 
