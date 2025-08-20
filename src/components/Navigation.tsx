@@ -11,14 +11,14 @@ const Navigation = () => {
     name: 'Home',
     href: '/'
   }, {
-    name: 'Find a Counsellor',
-    href: '/find-counsellor'
-  }, {
     name: 'About BSPCP',
     href: '/about'
   }, {
     name: 'Services & Information',
     href: '/services'
+  }, {
+    name: 'Find a Counsellor',
+    href: '/find-counsellor'
   }, {
     name: 'Membership',
     href: '/membership'
