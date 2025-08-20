@@ -131,10 +131,10 @@ const NewsEvents = () => {
       {/* Main Content */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Tabs defaultValue="news" className="w-full">
+          <Tabs defaultValue="events" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-12">
-              <TabsTrigger value="news">Latest News</TabsTrigger>
               <TabsTrigger value="events">Upcoming Events</TabsTrigger>
+              <TabsTrigger value="news">Latest News</TabsTrigger>
             </TabsList>
 
             {/* News Tab */}
@@ -205,72 +205,57 @@ const NewsEvents = () => {
 
             {/* Events Tab */}
             <TabsContent value="events">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredEvents.map((event) => (
-                  <Card 
-                    key={event.id} 
-                    className="group hover:shadow-soft transition-all duration-300 hover:-translate-y-2 border-border/50 bg-card overflow-hidden"
-                  >
-                    <CardContent className="p-0">
-                      <div className="relative">
-                        <img 
-                          src={event.image} 
-                          alt={event.title}
-                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute top-4 left-4">
-                          <Badge className="bg-accent/90 text-accent-foreground">
-                            {event.category}
-                          </Badge>
-                        </div>
-                        <div className="absolute top-4 right-4">
-                          <Badge variant="secondary" className="bg-background/90 text-foreground">
-                            {event.price}
-                          </Badge>
-                        </div>
+              {filteredEvents.length > 0 ? (
+                <div className="flex flex-col md:flex-row gap-8 items-center bg-card border border-border/50 rounded-lg overflow-hidden shadow-soft">
+                  <div className="md:w-1/2">
+                    <img 
+                      src={filteredEvents[0].image} 
+                      alt={filteredEvents[0].title}
+                      className="w-full h-full object-cover max-h-96 md:max-h-full"
+                    />
+                  </div>
+                  <div className="md:w-1/2 p-6">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>{formatDate(filteredEvents[0].date)}</span>
                       </div>
-                      
-                      <div className="p-6">
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{formatDate(event.date)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            <span>{event.time}</span>
-                          </div>
-                        </div>
-                        
-                        <h3 className="font-poppins font-semibold text-lg text-foreground mb-3 group-hover:text-primary transition-colors duration-300">
-                          {event.title}
-                        </h3>
-                        
-                        <p className="font-source text-muted-foreground mb-4 leading-relaxed">
-                          {event.description}
-                        </p>
-                        
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="w-4 h-4" />
-                            <span>{event.location}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Users className="w-4 h-4" />
-                            <span>{event.attendees} expected attendees</span>
-                          </div>
-                        </div>
-                        
-                        <Button className="w-full">
-                          Register Now
-                        </Button>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        <span>{filteredEvents[0].time}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              {filteredEvents.length === 0 && (
+                    </div>
+                    
+                    <h3 className="font-poppins font-bold text-2xl text-foreground mb-3">
+                      {filteredEvents[0].title}
+                    </h3>
+                    
+                    <p className="font-source text-muted-foreground mb-4 leading-relaxed">
+                      {filteredEvents[0].description}
+                    </p>
+                    
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4" />
+                        <span>{filteredEvents[0].location}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Users className="w-4 h-4" />
+                        <span>{filteredEvents[0].attendees} expected attendees</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Badge variant="secondary" className="bg-background/90 text-foreground">
+                          {filteredEvents[0].price}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full">
+                      Register Now
+                    </Button>
+                  </div>
+                </div>
+              ) : (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground text-lg">No upcoming events found matching your criteria.</p>
                 </div>
