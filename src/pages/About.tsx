@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Users, Award, Heart, TrendingUp, Target, Eye, Shield, BookOpen, Calendar, FileText, Building, MapPin, Phone, Mail, Globe, CheckCircle, Star, Briefcase, GraduationCap, Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart, Building2, Scale, Lightbulb, Zap, TreePine } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import marumoagaeBonang from '@/assets/marumoagae-bonang.jpg';
+
 const About = () => {
   const navigate = useNavigate();
   const stats = [{
@@ -84,7 +86,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: marumoagaeBonang
   }, {
     name: 'Ms Michelle Tsondai',
     position: 'Vice Secretary',
