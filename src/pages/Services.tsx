@@ -137,7 +137,7 @@ const Services = () => {
   const faqs = [
     {
       question: 'How much does counselling cost?',
-      answer: 'Session fees vary by counsellor and type of service, typically ranging from P350-P900 per session. Many counsellors offer sliding scale fees based on income.'
+      answer: 'The sessions are free to the public, funded by the BSPCP. Donations are welcome to support our services.'
     },
     {
       question: 'How long does counselling take?',
