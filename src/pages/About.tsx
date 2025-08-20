@@ -6,10 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Users, Award, Heart, TrendingUp, Target, Eye, Shield, BookOpen, Calendar, FileText, Building, MapPin, Phone, Mail, Globe, CheckCircle, Star, Briefcase, GraduationCap, Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart, Building2, Scale, Lightbulb, Zap, TreePine } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import leaderKeabetswe from '@/assets/leader-keabetswe.jpg';
-import leaderTshepo from '@/assets/leader-tshepo.jpg';
-import leaderGoitseone from '@/assets/leader-goitseone.jpg';
-import leaderJohn from '@/assets/leader-john.jpg';
 const About = () => {
   const navigate = useNavigate();
   const stats = [{
@@ -69,33 +65,75 @@ const About = () => {
     description: 'We work collaboratively with government, healthcare providers, educational institutions, and other stakeholders to improve mental health outcomes in Botswana.'
   }];
   const leadership = [{
-    name: 'Dr. Keabetswe Moeti',
+    name: 'Mr Manners Mhlabano',
     position: 'President',
-    credentials: 'PhD Psychology (University of Cape Town)',
-    experience: '15+ years',
-    description: 'Clinical psychologist specializing in trauma therapy with extensive experience in developing mental health policies in Botswana.',
-    image: leaderKeabetswe
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
   }, {
-    name: 'Tshepo Kgathi',
-    position: 'Vice President',
-    credentials: 'MA Counselling Psychology (University of Botswana)',
-    experience: '12+ years',
-    description: 'Dedicated to family therapy and community mental health, leading numerous community outreach programs.',
-    image: leaderTshepo
+    name: 'Ms Monde Lordick-Mokobi',
+    position: 'Vice-President',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
   }, {
-    name: 'Mrs. Goitseone Sebina',
-    position: 'Secretary General',
-    credentials: 'MSW (University of Witwatersrand)',
-    experience: '10+ years',
-    description: 'Licensed Clinical Social Worker with extensive experience in organizational development and professional standards.',
-    image: leaderGoitseone
+    name: 'Mr Marumoage Bonang',
+    position: 'General Secretary',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
   }, {
-    name: 'John Mogomotsi',
+    name: 'Ms Michelle Tsondai',
+    position: 'Vice Secretary',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
+  }, {
+    name: 'Ms Kgomotso Pono',
     position: 'Treasurer',
-    credentials: 'MA Psychology (University of Botswana)',
-    experience: '8+ years',
-    description: 'Licensed Professional Counsellor with background in both clinical practice and business management.',
-    image: leaderJohn
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
+  }, {
+    name: 'Mr Kealeboga Ramotuana',
+    position: 'Public Relations Officer',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
+  }, {
+    name: 'Dr. Albertina Phiri',
+    position: 'Ethics Chairperson',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
+  }, {
+    name: 'Ms Kaone Monthe',
+    position: 'Research and Professional Development Chairperson',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
+  }, {
+    name: 'Ms. Motshwari Mabote',
+    position: 'Additional Member',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
+  }, {
+    name: 'Ms. Precious Monyatsi',
+    position: 'Additional Member',
+    credentials: '',
+    experience: '',
+    description: '',
+    image: ''
   }];
   const milestones = [{
     year: '2009',
