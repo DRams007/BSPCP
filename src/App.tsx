@@ -17,6 +17,7 @@ import CodeOfEthics from "./pages/CodeOfEthics";
 import NotFound from "./pages/NotFound";
 import MemberLogin from "./pages/MemberLogin";
 import MemberDashboard from "./pages/MemberDashboard";
+import ScrollToTop from "./components/ScrollToTop";
 // Service pages
 import IndividualTherapy from "./pages/services/IndividualTherapy";
 import CouplesCounselling from "./pages/services/CouplesCounselling";
@@ -41,6 +42,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/about" element={<About />} />
