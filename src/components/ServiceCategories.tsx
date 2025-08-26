@@ -40,7 +40,7 @@ const ServiceCategories = () => {
       title: 'Trauma & Crisis',
       description: 'Professional support for trauma recovery and crisis situations',
       color: 'bg-primary/10 text-primary',
-      href: '/services/trauma'
+      href: '/services/trauma-crisis'
     },
     {
       icon: Monitor,
