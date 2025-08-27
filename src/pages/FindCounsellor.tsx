@@ -9,6 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Heart, Users, Home, Sprout, Shield, Monitor, Search, MapPin, Star, Calendar, Filter } from 'lucide-react';
+
+import counselorThaboImg from '@/assets/counselor-thabo.jpg';
+import counselorKefilweImg from '@/assets/counselor-kefilwe.jpg';
+import counselorMmolokiImg from '@/assets/counselor-mmoloki.jpg';
+import counselorBoitumeloImg from '@/assets/counselor-boitumelo.jpg';
 const FindCounsellor = () => {
   const serviceCategories = [{
     icon: Heart,
@@ -49,7 +54,7 @@ const FindCounsellor = () => {
     experience: '12 years',
     rating: 4.9,
     reviews: 156,
-    image: '/src/assets/counselor-thabo.jpg',
+    image: counselorThaboImg,
     availability: 'Available this week',
     sessionTypes: ['In-person', 'Online'],
     languages: ['English', 'Setswana']
@@ -61,7 +66,7 @@ const FindCounsellor = () => {
     experience: '8 years',
     rating: 4.8,
     reviews: 92,
-    image: '/src/assets/counselor-kefilwe.jpg',
+    image: counselorKefilweImg,
     availability: 'Available next week',
     sessionTypes: ['In-person', 'Online'],
     languages: ['English', 'Setswana']
@@ -73,7 +78,7 @@ const FindCounsellor = () => {
     experience: '10 years',
     rating: 4.9,
     reviews: 134,
-    image: '/src/assets/counselor-mmoloki.jpg',
+    image: counselorMmolokiImg,
     availability: 'Available this week',
     sessionTypes: ['In-person', 'Online'],
     languages: ['English', 'Setswana']
@@ -85,7 +90,7 @@ const FindCounsellor = () => {
     experience: '6 years',
     rating: 4.7,
     reviews: 78,
-    image: '/src/assets/counselor-boitumelo.jpg',
+    image: counselorBoitumeloImg,
     availability: 'Available tomorrow',
     sessionTypes: ['In-person', 'Online'],
     languages: ['English', 'Setswana']
@@ -97,7 +102,7 @@ const FindCounsellor = () => {
     experience: '14 years',
     rating: 4.9,
     reviews: 203,
-    image: '/src/assets/counselor-boitumelo.jpg',
+    image: counselorBoitumeloImg,
     availability: 'Available this week',
     sessionTypes: ['In-person', 'Online'],
     languages: ['English', 'Setswana']
@@ -109,7 +114,7 @@ const FindCounsellor = () => {
     experience: '9 years',
     rating: 4.8,
     reviews: 87,
-    image: '/src/assets/counselor-boitumelo.jpg',
+    image: counselorBoitumeloImg,
     availability: 'Available next week',
     sessionTypes: ['In-person', 'Online'],
     languages: ['English', 'Setswana']
