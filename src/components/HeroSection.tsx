@@ -5,7 +5,11 @@ import { useNavigate } from 'react-router-dom';
 const HeroSection = () => {
   const navigate = useNavigate();
 
-  return <section className="relative bg-gradient-warm text-white py-20 lg:py-32 overflow-hidden">
+  return <section className="relative bg-gradient-warm text-white py-10 lg:py-16 overflow-hidden">
+           <h3 className="font-poppins font-semibold text-3xl md:text-4xl lg:text-5xl mb-6 leading-tight text-center tracking-tight capitalize">
+              <span className="block text-cream">Botswana Society of Professional Counsellors and Psychotherapists</span>
+            </h3>
+    
       <div className="absolute inset-0 bg-black/20"></div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
