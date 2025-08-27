@@ -4,9 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 import { Users, Award, Heart, TrendingUp, Target, Eye, Shield, BookOpen, Calendar, FileText, Building, MapPin, Phone, Mail, Globe, CheckCircle, Star, Briefcase, GraduationCap, Clock, ArrowRight, Home, ChevronRight, Download, ExternalLink, Search, HandHeart, Building2, Scale, Lightbulb, Zap, TreePine } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import marumoagaeBonang from '@/assets/marumoagae-bonang.jpg';
+import preciousMonyatsi from '@/assets/precious-monyatsi.jpg';
+import kaoneMonthe from '@/assets/kaone-monthe.jpg';
+import mannersMhlabano from '@/assets/manners-mhlabano.jpg';
+import kgomotsoPono from '@/assets/kgomotso-pono.jpg';
 
 const About = () => {
   const navigate = useNavigate();
@@ -72,7 +77,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: mannersMhlabano
   }, {
     name: 'Ms Monde Lordick-Mokobi',
     position: 'Vice-President',
@@ -100,7 +105,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: kgomotsoPono
   }, {
     name: 'Mr Kealeboga Ramotuana',
     position: 'Public Relations Officer',
@@ -121,7 +126,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: kaoneMonthe
   }, {
     name: 'Ms. Motshwari Mabote',
     position: 'Additional Member',
@@ -135,7 +140,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: preciousMonyatsi
   }];
   const milestones = [{
     year: '2009',
@@ -252,14 +257,10 @@ const About = () => {
               </h2>
               <div className="space-y-4 font-source text-lg text-muted-foreground leading-relaxed">
                 <p>
-                  The Botswana Society of Professional Counsellors and Psychotherapists (BSPCP) is a registered 
-                  professional association under the Botswana Societies Act, dedicated to advancing the field of 
-                  mental health counselling and psychotherapy in Botswana.
+                  The Botswana Society of Professional Counsellors and Psychotherapists (BSPCP) was founded in 2019 as a non-profit making entity dedicated to the advancement of professional counselling and psychotherapy in Botswana. In 2020, the Society was formally registered with the Registrar of Societies in accordance with the Botswana Societies Act, under registration number CR13650, thereby attaining legal recognition as a professional non-governmental organisation (NGO).
                 </p>
                 <p>
-                  Since our establishment in 2009, we have been the voice of professional counsellors and 
-                  psychotherapists, working tirelessly to ensure that every Motswana has access to quality 
-                  mental health services.
+                  BSPCP operates as a membership-based organisation, bringing together professional counsellors and psychotherapists under one structured body to ensure regulation, professional development, and advocacy for the counselling profession.
                 </p>
               </div>
             </div>
@@ -340,6 +341,55 @@ const About = () => {
         </div>
       </section>
 
+      {/* Functions and Activities & Collaboration */}
+      <section className="py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Zap className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
+                  Functions and Activities
+                </h2>
+                <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto mb-8">
+                  In furtherance of its objectives, BSPCP undertakes the following:
+                </p>
+                <div className="max-w-3xl mx-auto space-y-4 font-source text-lg text-muted-foreground leading-relaxed text-left">
+                  <ul className="list-disc list-inside space-y-2">
+                    <li>Advocating for the rights of consumers of counselling and psychotherapy services to ensure safe, ethical, and high-quality practice.</li>
+                    <li>Upholding high professional standards through the development of ethical guidelines, regulation, and support to practitioners.</li>
+                    <li>Hosting conferences, workshops, and seminars to provide platforms for continuous learning, networking, and professional growth.</li>
+                    <li>Collaborating with stakeholders in the health, education, and social development sectors to strengthen mental health services in Botswana.</li>
+                    <li>Promoting research and encouraging publication of peer-reviewed evidence in counselling and&nbsp;psychotherapy.</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-terracotta/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Building className="w-8 h-8 text-terracotta" />
+                </div>
+                <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
+                  Collaboration and Affiliation
+                </h2>
+                <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                  The Botswana Society of Professional Counsellors and Psychotherapists (BSPCP) plans to
+                  become a member of the International Association for Counselling (IAC) as part of its efforts
+                  to strengthen global linkages and align with international best practices in counselling.
+                  Through this planned membership, BSPCP aims to enhance professional collaboration and
+                  create opportunities for capacity building that will benefit both its members and the broader
+                  counselling profession in Botswana.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Statistics - Our Impact */}
       <section id="impact" className="py-20 bg-gradient-gentle">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -348,7 +398,7 @@ const About = () => {
               Our Impact by the Numbers
             </h2>
             <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto">
-              Over 15 years, we've built a comprehensive network of mental health professionals 
+              Over 15 years, we've built a comprehensive network of mental health professionals
               dedicated to serving every district in Botswana with excellence and compassion.
             </p>
           </div>
@@ -385,13 +435,13 @@ const About = () => {
                   </div>
                   <h4 className="font-poppins font-semibold text-lg mb-2">Rural Mental Health Access</h4>
                   <p className="font-source text-muted-foreground text-sm mb-4">
-                    Trained 25 community counsellors in remote districts, resulting in 60% increase 
+                    Trained 25 community counsellors in remote districts, resulting in 60% increase
                     in mental health service utilization in rural areas.
                   </p>
                   <Badge variant="secondary">Community Impact</Badge>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-6">
                   <div className="w-12 h-12 bg-terracotta/10 rounded-full flex items-center justify-center mb-4">
@@ -399,7 +449,7 @@ const About = () => {
                   </div>
                   <h4 className="font-poppins font-semibold text-lg mb-2">Youth Mental Health Initiative</h4>
                   <p className="font-source text-muted-foreground text-sm mb-4">
-                    School-based counselling programs and peer support training led to 40% reduction 
+                    School-based counselling programs and peer support training led to 40% reduction
                     in school dropout rates in participating schools.
                   </p>
                   <Badge variant="secondary">Education Impact</Badge>
@@ -413,7 +463,7 @@ const About = () => {
                   </div>
                   <h4 className="font-poppins font-semibold text-lg mb-2">COVID-19 Response</h4>
                   <p className="font-source text-muted-foreground text-sm mb-4">
-                    Rapid deployment of online counselling services maintained service continuity 
+                    Rapid deployment of online counselling services maintained service continuity
                     for 85% of clients during lockdowns.
                   </p>
                   <Badge variant="secondary">Crisis Response</Badge>
@@ -472,36 +522,38 @@ const About = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            {leadership.map((leader, index) => <Card key={index} className="group hover:shadow-soft transition-all duration-300 overflow-hidden">
-                <CardContent className="p-8">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="relative flex-shrink-0">
-                      <img src={leader.image} alt={leader.name} className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300" />
-                      <div className="absolute -top-2 -right-2">
-                        <Badge className="bg-primary/90 text-primary-foreground">
-                          {leader.experience}
-                        </Badge>
+          <Carousel
+            opts={{
+              align: "start",
+            }}
+            className="w-full max-w-4xl mx-auto mb-12"
+          >
+            <CarouselContent className="-ml-4">
+              {leadership.map((leader, index) => (
+                <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                  <Card className="group hover:shadow-soft transition-all duration-300 overflow-hidden h-full">
+                    <CardContent className="p-8 flex flex-col items-center text-center gap-4 h-full justify-between">
+                      <div className="flex flex-col items-center text-center gap-4">
+                        <div className="relative flex-shrink-0">
+                          <img src={leader.image} alt={leader.name} className="w-48 h-48 object-cover rounded-full group-hover:scale-105 transition-transform duration-300" />
+                        </div>
+                        <div>
+                          <h3 className="font-poppins font-bold text-xl text-foreground mb-2">
+                            {leader.name}
+                          </h3>
+                          <p className="font-source text-primary font-semibold">
+                            {leader.position}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-poppins font-bold text-xl text-foreground mb-2">
-                        {leader.name}
-                      </h3>
-                      <p className="font-source text-primary font-semibold mb-2">
-                        {leader.position}
-                      </p>
-                      <p className="font-source text-sm text-muted-foreground mb-3">
-                        {leader.credentials}
-                      </p>
-                      <p className="font-source text-sm text-foreground leading-relaxed">
-                        {leader.description}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>)}
-          </div>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
 
           {/* Board & Advisory Members */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
