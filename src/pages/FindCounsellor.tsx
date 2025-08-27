@@ -49,11 +49,10 @@ const FindCounsellor = () => {
     experience: '12 years',
     rating: 4.9,
     reviews: 156,
-    image: '/api/placeholder/150/150',
+    image: '/src/assets/counselor-thabo.jpg',
     availability: 'Available this week',
     sessionTypes: ['In-person', 'Online'],
-    languages: ['English', 'Setswana'],
-    feeRange: 'P500 - P800'
+    languages: ['English', 'Setswana']
   }, {
     name: 'Ms. Kefilwe Setlhare',
     title: 'Licensed Counsellor',
@@ -62,11 +61,10 @@ const FindCounsellor = () => {
     experience: '8 years',
     rating: 4.8,
     reviews: 92,
-    image: '/api/placeholder/150/150',
+    image: '/src/assets/counselor-kefilwe.jpg',
     availability: 'Available next week',
     sessionTypes: ['In-person', 'Online'],
-    languages: ['English', 'Setswana'],
-    feeRange: 'P400 - P600'
+    languages: ['English', 'Setswana']
   }, {
     name: 'Dr. Mmoloki Segwai',
     title: 'Child Psychologist',
@@ -75,11 +73,10 @@ const FindCounsellor = () => {
     experience: '10 years',
     rating: 4.9,
     reviews: 134,
-    image: '/api/placeholder/150/150',
+    image: '/src/assets/counselor-mmoloki.jpg',
     availability: 'Available this week',
     sessionTypes: ['In-person', 'Online'],
-    languages: ['English', 'Setswana'],
-    feeRange: 'P600 - P900'
+    languages: ['English', 'Setswana']
   }, {
     name: 'Ms. Boitumelo Kgathi',
     title: 'Mental Health Counsellor',
@@ -88,11 +85,10 @@ const FindCounsellor = () => {
     experience: '6 years',
     rating: 4.7,
     reviews: 78,
-    image: '/api/placeholder/150/150',
+    image: '/src/assets/counselor-boitumelo.jpg',
     availability: 'Available tomorrow',
     sessionTypes: ['In-person', 'Online'],
-    languages: ['English', 'Setswana'],
-    feeRange: 'P350 - P550'
+    languages: ['English', 'Setswana']
   }, {
     name: 'Dr. Kelebogile Motlhabani',
     title: 'Family Therapist',
@@ -101,11 +97,10 @@ const FindCounsellor = () => {
     experience: '14 years',
     rating: 4.9,
     reviews: 203,
-    image: '/api/placeholder/150/150',
+    image: '/src/assets/counselor-boitumelo.jpg',
     availability: 'Available this week',
     sessionTypes: ['In-person', 'Online'],
-    languages: ['English', 'Setswana'],
-    feeRange: 'P550 - P750'
+    languages: ['English', 'Setswana']
   }, {
     name: 'Mr. Tebogo Phiri',
     title: 'Addiction Counsellor',
@@ -114,11 +109,10 @@ const FindCounsellor = () => {
     experience: '9 years',
     rating: 4.8,
     reviews: 87,
-    image: '/api/placeholder/150/150',
+    image: '/src/assets/counselor-boitumelo.jpg',
     availability: 'Available next week',
     sessionTypes: ['In-person', 'Online'],
-    languages: ['English', 'Setswana'],
-    feeRange: 'P450 - P650'
+    languages: ['English', 'Setswana']
   }];
   return <div className="min-h-screen bg-background">
       <Navigation />
@@ -372,9 +366,6 @@ const FindCounsellor = () => {
                       </div>
                       <div className="text-sm text-muted-foreground">
                         <strong>Languages:</strong> {counsellor.languages.join(', ')}
-                      </div>
-                      <div className="text-sm font-semibold text-foreground">
-                        {counsellor.feeRange} per session
                       </div>
                     </div>
                     
