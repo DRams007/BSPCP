@@ -12,6 +12,10 @@ import preciousMonyatsi from '@/assets/precious-monyatsi.jpg';
 import kaoneMonthe from '@/assets/kaone-monthe.jpg';
 import mannersMhlabano from '@/assets/manners-mhlabano.jpg';
 import kgomotsoPono from '@/assets/kgomotso-pono.jpg';
+import albertinahPhiri from '@/assets/albertinah-phiri.jpg';
+import motshwariMabote from '@/assets/motshwari-mabote.jpg';
+import realebogaRamotuana from '@/assets/realeboga-ramotuana.png';
+import mondeLordick from '@/assets/monde-lordick.jpg';
 
 const About = () => {
   const navigate = useNavigate();
@@ -84,7 +88,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: mondeLordick
   }, {
     name: 'Mr Marumoage Bonang',
     position: 'General Secretary',
@@ -112,14 +116,14 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: realebogaRamotuana
   }, {
     name: 'Dr. Albertina Phiri',
     position: 'Ethics Chairperson',
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: albertinahPhiri
   }, {
     name: 'Ms Kaone Monthe',
     position: 'Research and Professional Development Chairperson',
@@ -133,7 +137,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: motshwariMabote
   }, {
     name: 'Ms. Precious Monyatsi',
     position: 'Additional Member',
