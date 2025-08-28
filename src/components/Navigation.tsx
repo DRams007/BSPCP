@@ -23,9 +23,9 @@ const Navigation = () => {
     name: 'Membership',
     href: '/membership'
   }, {
-    name: 'Resources',
-    href: '/resources'
-  }, {
+    // name: 'Resources',
+    // href: '/resources'
+  /*}, {*/ // Commented out Resources link as per user request
     name: 'News & Events',
     href: '/news-events'
   }, {
