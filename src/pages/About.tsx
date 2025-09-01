@@ -16,6 +16,7 @@ import albertinahPhiri from '@/assets/albertinah-phiri.jpg';
 import motshwariMabote from '@/assets/motshwari-mabote.jpg';
 import realebogaRamotuana from '@/assets/realeboga-ramotuana.png';
 import mondeLordick from '@/assets/monde-lordick.jpg';
+import michelleTsondai from '@/assets/michelle-tsondai.jpg';
 
 const About = () => {
   const navigate = useNavigate();
@@ -102,7 +103,7 @@ const About = () => {
     credentials: '',
     experience: '',
     description: '',
-    image: ''
+    image: michelleTsondai
   }, {
     name: 'Ms Kgomotso Pono',
     position: 'Treasurer',
