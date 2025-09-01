@@ -11,6 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 import ProfileEditForm from '@/components/member/ProfileEditForm';
 import ContactEditForm from '@/components/member/ContactEditForm';
 import CPDUploadForm from '@/components/member/CPDUploadForm';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
 
 // Demo member data with realistic stats
 const getMemberData = (loggedInMember: any) => {
@@ -51,6 +59,41 @@ const getMemberData = (loggedInMember: any) => {
       };
   }
 };
+
+const sampleBookings = [
+  {
+    id: 'bkg001',
+    clientName: 'Alice Smith',
+    date: '2025-09-10',
+    time: '10:00 AM',
+    service: 'Individual Therapy',
+    status: 'Confirmed',
+  },
+  {
+    id: 'bkg002',
+    clientName: 'Bob Johnson',
+    date: '2025-09-10',
+    time: '02:00 PM',
+    service: 'Couples Counselling',
+    status: 'Pending',
+  },
+  {
+    id: 'bkg003',
+    clientName: 'Charlie Brown',
+    date: '2025-09-11',
+    time: '11:30 AM',
+    service: 'Child & Teen Support',
+    status: 'Confirmed',
+  },
+  {
+    id: 'bkg004',
+    clientName: 'Diana Prince',
+    date: '2025-09-12',
+    time: '09:00 AM',
+    service: 'Trauma & Crisis Intervention',
+    status: 'Cancelled',
+  },
+];
 
 const MemberDashboard = () => {
   const [member, setMember] = useState<any>(null);
@@ -171,10 +214,11 @@ const MemberDashboard = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="contact">Contact Info</TabsTrigger>
             <TabsTrigger value="cpd">CPD Evidence</TabsTrigger>
+            <TabsTrigger value="bookings">Clients Bookings</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -216,6 +260,57 @@ const MemberDashboard = () => {
               </CardHeader>
               <CardContent>
                 <CPDUploadForm />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="bookings">
+            <Card>
+              <CardHeader>
+                <CardTitle>Client Bookings</CardTitle>
+                <CardDescription>
+                  View and manage your client appointments and booking history.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {sampleBookings.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client Name</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sampleBookings.map((booking) => (
+                        <TableRow key={booking.id}>
+                          <TableCell>{booking.clientName}</TableCell>
+                          <TableCell>{booking.date}</TableCell>
+                          <TableCell>{booking.time}</TableCell>
+                          <TableCell>{booking.service}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                booking.status === 'Confirmed'
+                                  ? 'default'
+                                  : booking.status === 'Pending'
+                                  ? 'secondary'
+                                  : 'destructive'
+                              }
+                            >
+                              {booking.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-muted-foreground">No bookings available yet.</p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
