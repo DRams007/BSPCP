@@ -24,6 +24,7 @@ const membershipSchema = z.object({
   nationality: z.string().min(2, 'Nationality is required'),
   // Document Uploads
   idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
+  proofOfPayment: z.any().refine((f) => f instanceof File, 'Proof of payment is required'),
   
   // Contact Details
   phone: z.string().min(10, 'Valid phone number is required'),
@@ -73,6 +74,7 @@ const Membership = () => {
       practiceType: 'private-practice',
       // File uploads
       idDocument: undefined,
+      proofOfPayment: undefined,
       certificates: [],
     },
   });
@@ -467,6 +469,7 @@ const Membership = () => {
                             </FormItem>
                           )}
                         />
+
                       </div>
                     )}
 
@@ -802,10 +805,33 @@ const Membership = () => {
                                   <Input placeholder="Describe your professional relationship" {...field} />
                                 </FormControl>
                                 <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                            </FormItem>
+                          )}
+                        />
                         </div>
+
+                        <FormField
+                          control={form.control}
+                          name="proofOfPayment"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Attach Proof of Payment (PDF, JPG, PNG)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="file"
+                                  accept="application/pdf,image/*"
+                                  onChange={(e) => field.onChange(e.target.files?.[0])}
+                                />
+                              </FormControl>
+                              {field.value && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Selected: {field.value?.name}
+                                </p>
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
                         <div className="bg-muted p-4 rounded-lg">
                           <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -818,6 +844,7 @@ const Membership = () => {
                             <li>• CV/Resume</li>
                             <li>• Passport Photo</li>
                             <li>• Copy of ID/Passport</li>
+                            <li>• Proof of Payment</li>
                           </ul>
                           <p className="text-xs text-muted-foreground mt-2">
                             Please attach your documents in the relevant fields above before submitting this form.
