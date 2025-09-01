@@ -206,9 +206,6 @@ const About = () => {
     id: 'standards',
     label: 'Standards'
   }, {
-    id: 'impact',
-    label: 'Impact'
-  }, {
     id: 'reports',
     label: 'Reports'
   }];
@@ -395,89 +392,6 @@ const About = () => {
         </div>
       </section>
 
-      {/* Statistics - Our Impact */}
-      <section id="impact" className="py-20 bg-gradient-gentle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
-              Our Impact by the Numbers
-            </h2>
-            <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto">
-              Over 15 years, we've built a comprehensive network of mental health professionals
-              dedicated to serving every district in Botswana with excellence and compassion.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {stats.map((stat, index) => <Card key={index} className="text-center group hover:shadow-soft transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-primary/20 transition-colors duration-300">
-                    <stat.icon className="w-8 h-8 text-primary" />
-                  </div>
-                  <div className="font-poppins font-bold text-3xl text-foreground mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="font-source font-semibold text-foreground mb-2">
-                    {stat.label}
-                  </div>
-                  <p className="font-source text-sm text-muted-foreground">
-                    {stat.description}
-                  </p>
-                </CardContent>
-              </Card>)}
-          </div>
-
-          {/* Success Stories */}
-          <div className="mt-20">
-            <h3 className="font-poppins font-bold text-2xl text-center text-foreground mb-12">
-              Success Stories & Impact
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                    <MapPin className="w-6 h-6 text-primary" />
-                  </div>
-                  <h4 className="font-poppins font-semibold text-lg mb-2">Rural Mental Health Access</h4>
-                  <p className="font-source text-muted-foreground text-sm mb-4">
-                    Trained 25 community counsellors in remote districts, resulting in 60% increase
-                    in mental health service utilization in rural areas.
-                  </p>
-                  <Badge variant="secondary">Community Impact</Badge>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-terracotta/10 rounded-full flex items-center justify-center mb-4">
-                    <GraduationCap className="w-6 h-6 text-terracotta" />
-                  </div>
-                  <h4 className="font-poppins font-semibold text-lg mb-2">Youth Mental Health Initiative</h4>
-                  <p className="font-source text-muted-foreground text-sm mb-4">
-                    School-based counselling programs and peer support training led to 40% reduction
-                    in school dropout rates in participating schools.
-                  </p>
-                  <Badge variant="secondary">Education Impact</Badge>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-dusty/10 rounded-full flex items-center justify-center mb-4">
-                    <Globe className="w-6 h-6 text-dusty" />
-                  </div>
-                  <h4 className="font-poppins font-semibold text-lg mb-2">COVID-19 Response</h4>
-                  <p className="font-source text-muted-foreground text-sm mb-4">
-                    Rapid deployment of online counselling services maintained service continuity
-                    for 85% of clients during lockdowns.
-                  </p>
-                  <Badge variant="secondary">Crisis Response</Badge>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Core Values */}
       <section className="py-20 bg-background">
