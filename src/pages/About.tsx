@@ -147,58 +147,9 @@ const About = () => {
     description: '',
     image: preciousMonyatsi
   }];
-  const milestones = [{
-    year: '2009',
-    title: 'BSPCP Founded',
-    description: 'Established by dedicated mental health professionals to elevate counselling standards in Botswana',
-    period: 'Foundation & Early Years'
-  }, {
-    year: '2013',
-    title: 'First Annual Conference',
-    description: 'Hosted our inaugural conference with 120 attendees, establishing professional development traditions',
-    period: 'Growth & Recognition'
-  }, {
-    year: '2014',
-    title: 'University Partnership',
-    description: 'Established partnership with University of Botswana for student placements and training',
-    period: 'Growth & Recognition'
-  }, {
-    year: '2015',
-    title: 'Ministry Recognition',
-    description: 'Officially recognized by Ministry of Health as professional association',
-    period: 'Growth & Recognition'
-  }, {
-    year: '2016',
-    title: 'CPD Program Launch',
-    description: 'Launched Continuing Professional Development program for ongoing member training',
-    period: 'Growth & Recognition'
-  }, {
-    year: '2020',
-    title: 'Online Services Launch',
-    description: 'Developed telehealth guidelines and online counselling standards during COVID-19',
-    period: 'Digital Transformation'
-  }, {
-    year: '2022',
-    title: 'Youth Mental Health Initiative',
-    description: 'Established specialized programs addressing mental health needs of young people',
-    period: 'Digital Transformation'
-  }, {
-    year: '2024',
-    title: 'International Partnerships',
-    description: 'Formed partnerships with international professional associations for knowledge exchange',
-    period: 'Digital Transformation'
-  }, {
-    year: '2025',
-    title: 'Comprehensive Digital Platform',
-    description: 'Launch of our modern online platform connecting Batswana with qualified mental health professionals',
-    period: 'Digital Transformation'
-  }];
   const subNavigation = [{
     id: 'overview',
     label: 'Overview'
-  }, {
-    id: 'story',
-    label: 'Our Story'
   }, {
     id: 'leadership',
     label: 'Leadership'
@@ -515,88 +466,6 @@ const About = () => {
         </div>
       </section>
 
-      {/* Our Story - History Timeline */}
-      <section id="story" className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
-              Our Story
-            </h2>
-            <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto">
-              From humble beginnings with 15 founding members to becoming Botswana's leading mental health 
-              professional body with over 150 qualified professionals serving every district.
-            </p>
-          </div>
-
-          {/* Timeline by periods */}
-          <div className="space-y-16">
-            {['Foundation & Early Years', 'Growth & Recognition', 'Digital Transformation'].map((period, periodIndex) => <div key={period} className="space-y-8">
-                <div className="text-center">
-                  <h3 className="font-poppins font-bold text-2xl text-foreground mb-2">{period}</h3>
-                  <Separator className="w-24 mx-auto" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {milestones.filter(m => m.period === period).map((milestone, index) => <Card key={index} className="hover:shadow-soft transition-all duration-300 group">
-                      <CardContent className="p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
-                            <Calendar className="w-6 h-6 text-primary" />
-                          </div>
-                          <div className="font-poppins font-bold text-xl text-primary">
-                            {milestone.year}
-                          </div>
-                        </div>
-                        <h4 className="font-poppins font-semibold text-lg text-foreground mb-3">
-                          {milestone.title}
-                        </h4>
-                        <p className="font-source text-muted-foreground leading-relaxed">
-                          {milestone.description}
-                        </p>
-                      </CardContent>
-                    </Card>)}
-                </div>
-              </div>)}
-          </div>
-
-          {/* Future Vision */}
-          <div className="mt-20 text-center">
-            <Card className="bg-gradient-gentle">
-              <CardContent className="p-12">
-                <Lightbulb className="w-16 h-16 text-primary mx-auto mb-6" />
-                <h3 className="font-poppins font-bold text-2xl text-foreground mb-6">
-                  Looking Forward: Strategic Vision 2025-2030
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-                  {[{
-                  icon: Users,
-                  title: 'Expand Network',
-                  desc: '300+ professionals nationwide'
-                }, {
-                  icon: Globe,
-                  title: 'Enhance Access',
-                  desc: 'Comprehensive online platform'
-                }, {
-                  icon: Award,
-                  title: 'Strengthen Standards',
-                  desc: 'Advanced certification programs'
-                }, {
-                  icon: Briefcase,
-                  title: 'Policy & Advocacy',
-                  desc: 'Mental health legislation advancement'
-                }].map((goal, index) => <div key={index} className="text-center">
-                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <goal.icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <h4 className="font-source font-semibold text-foreground mb-2">{goal.title}</h4>
-                      <p className="font-source text-sm text-muted-foreground">{goal.desc}</p>
-                    </div>)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
       {/* Professional Standards */}
       <section id="standards" className="py-20 bg-gradient-gentle">
