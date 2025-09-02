@@ -36,6 +36,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const Members = lazy(() => import("./pages/admin/Members"));
 const Applications = lazy(() => import("./pages/admin/Applications"));
 const Content = lazy(() => import("./pages/admin/Content"));
+const Testimonials = lazy(() => import("./pages/admin/Testimonials"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/admin/members" element={<Members />} />
             <Route path="/admin/applications" element={<Applications />} />
             <Route path="/admin/content" element={<Content />} />
+            <Route path="/admin/testimonials" element={<Testimonials />} />
             <Route path="/admin/reports" element={<Reports />} />
             <Route path="/admin/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -2,15 +2,16 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { 
-  Users, 
-  FileText, 
-  Calendar, 
-  Settings, 
+import {
+  Users,
+  FileText,
+  Calendar,
+  Settings,
   BarChart3,
   Home,
   Menu,
-  Search
+  Search,
+  MessageSquare
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -26,6 +27,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: "Members", href: "/admin/members", icon: Users },
     { name: "Applications", href: "/admin/applications", icon: FileText },
     { name: "Content", href: "/admin/content", icon: Calendar },
+    { name: "Testimonials", href: "/admin/testimonials", icon: MessageSquare },
     { name: "Reports", href: "/admin/reports", icon: BarChart3 },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
