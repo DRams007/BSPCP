@@ -19,7 +19,7 @@ const Footer = () => {
               who provide compassionate, evidence-based care throughout Botswana.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
+              <a href="https://www.facebook.com/profile.php?id=100084447950377" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
                 <Facebook className="w-5 h-5" />
               </a>
               <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
@@ -41,11 +41,6 @@ const Footer = () => {
               <li>
                 <Link to="/find-counsellor" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
                   Find a Counsellor
-                </Link>
-              </li>
-              <li>
-                <Link to="/services" className="font-source text-cream/80 hover:text-cream transition-colors duration-300">
-                  Our Services
                 </Link>
               </li>
               <li>

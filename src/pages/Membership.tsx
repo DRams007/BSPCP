@@ -20,7 +20,7 @@ const membershipSchema = z.object({
   fullName: z.string().min(2, 'Full name is required'),
   idNumber: z.string().min(5, 'ID/Passport number is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  gender: z.enum(['male', 'female', 'other', 'prefer-not-to-say']),
+  gender: z.enum(['male', 'female']),
   nationality: z.string().min(2, 'Nationality is required'),
   // Document Uploads
   idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
@@ -69,7 +69,7 @@ const Membership = () => {
   const form = useForm<MembershipFormData>({
     resolver: zodResolver(membershipSchema),
     defaultValues: {
-      gender: 'prefer-not-to-say',
+      gender: 'male',
       employmentStatus: 'employed',
       practiceType: 'private-practice',
       // File uploads
@@ -358,14 +358,6 @@ const Membership = () => {
                                     <div className="flex items-center space-x-2">
                                       <RadioGroupItem value="female" id="female" />
                                       <label htmlFor="female">Female</label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="other" id="other" />
-                                      <label htmlFor="other">Other</label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <RadioGroupItem value="prefer-not-to-say" id="prefer-not-to-say" />
-                                      <label htmlFor="prefer-not-to-say">Prefer not to say</label>
                                     </div>
                                   </RadioGroup>
                                 </FormControl>

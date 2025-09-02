@@ -14,9 +14,6 @@ const Navigation = () => {
     name: 'About BSPCP',
     href: '/about'
   }, {
-    name: 'Services & Information',
-    href: '/services'
-  }, {
     name: 'Find a Counsellor',
     href: '/find-counsellor'
   }, {

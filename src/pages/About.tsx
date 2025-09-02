@@ -251,45 +251,45 @@ const About = () => {
 
           {/* Mission, Vision & Values */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            <Card className="text-center">
+            {/* <Card className="text-center">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Target className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="font-poppins font-bold text-xl mb-4">Our Mission</h3>
                 <p className="font-source text-muted-foreground leading-relaxed">
-                  To promote excellence in mental health counselling and psychotherapy services in Botswana by 
-                  setting professional standards, supporting qualified practitioners, and ensuring public access 
+                  To promote excellence in mental health counselling and psychotherapy services in Botswana by
+                  setting professional standards, supporting qualified practitioners, and ensuring public access
                   to quality mental health care.
                 </p>
               </CardContent>
-            </Card>
+            </Card> */}
 
-            <Card className="text-center">
+            {/* <Card className="text-center">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-terracotta/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Eye className="w-8 h-8 text-terracotta" />
                 </div>
                 <h3 className="font-poppins font-bold text-xl mb-4">Our Vision</h3>
                 <p className="font-source text-muted-foreground leading-relaxed">
-                  A Botswana where every person has access to professional, ethical, and effective mental health 
+                  A Botswana where every person has access to professional, ethical, and effective mental health
                   support, contributing to the overall well-being and development of our nation.
                 </p>
               </CardContent>
-            </Card>
+            </Card> */}
 
-            <Card className="text-center">
+            {/* <Card className="text-center">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-dusty/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Heart className="w-8 h-8 text-dusty" />
                 </div>
                 <h3 className="font-poppins font-bold text-xl mb-4">Our Values</h3>
                 <p className="font-source text-muted-foreground leading-relaxed">
-                  Professional excellence, integrity & ethics, cultural sensitivity, accessibility & inclusion, 
+                  Professional excellence, integrity & ethics, cultural sensitivity, accessibility & inclusion,
                   continuous learning, and collaboration guide everything we do.
                 </p>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </section>
@@ -331,7 +331,7 @@ const About = () => {
                 </h2>
                 <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   The Botswana Society of Professional Counsellors and Psychotherapists (BSPCP) plans to
-                  become a member of the International Association for Counselling (IAC) as part of its efforts
+                  become a member of the International Association for Counselling (IAC) and Bocongo as part of its efforts
                   to strengthen global linkages and align with international best practices in counselling.
                   Through this planned membership, BSPCP aims to enhance professional collaboration and
                   create opportunities for capacity building that will benefit both its members and the broader
@@ -600,105 +600,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Reports & Transparency */}
-      <section id="reports" className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
-              Transparency & Accountability
-            </h2>
-            <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto">
-              We believe in transparency and accountability. Access our annual reports, financial statements, 
-              and impact assessments to understand how we serve the mental health community in Botswana.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="group hover:shadow-soft transition-all duration-300">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors duration-300">
-                  <FileText className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="font-poppins font-semibold text-xl mb-4">Annual Reports</h3>
-                <p className="font-source text-muted-foreground mb-6">
-                  Comprehensive annual reports covering activities, achievements, financial performance, 
-                  and strategic progress.
-                </p>
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full">2024 Annual Report</Button>
-                  <Button variant="ghost" size="sm" className="w-full">Previous Years</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="group hover:shadow-soft transition-all duration-300">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-terracotta/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-terracotta/20 transition-colors duration-300">
-                  <Search className="w-8 h-8 text-terracotta" />
-                </div>
-                <h3 className="font-poppins font-semibold text-xl mb-4">Impact Reports</h3>
-                <p className="font-source text-muted-foreground mb-6">
-                  Detailed analysis of our impact on mental health outcomes, community reach, 
-                  and professional development achievements.
-                </p>
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full">View Impact Data</Button>
-                  <Button variant="ghost" size="sm" className="w-full">Research Publications</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="group hover:shadow-soft transition-all duration-300">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-dusty/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-dusty/20 transition-colors duration-300">
-                  <Building className="w-8 h-8 text-dusty" />
-                </div>
-                <h3 className="font-poppins font-semibold text-xl mb-4">Legal Status</h3>
-                <p className="font-source text-muted-foreground mb-6">
-                  Registration details, legal compliance documentation, and regulatory information 
-                  under the Botswana Societies Act.
-                </p>
-                <div className="space-y-2">
-                  <Badge variant="secondary" className="w-full justify-center py-2">
-                    Registration: BW00001234
-                  </Badge>
-                  <Button variant="ghost" size="sm" className="w-full">View Legal Documents</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Contact & Engagement */}
-          <div className="mt-20">
-            <Card className="bg-gradient-gentle">
-              <CardContent className="p-12 text-center">
-                <HandHeart className="w-16 h-16 text-primary mx-auto mb-6" />
-                <h3 className="font-poppins font-bold text-2xl text-foreground mb-6">
-                  Get Involved with BSPCP
-                </h3>
-                <p className="font-source text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-                  Whether you're seeking mental health support, interested in joining our professional community, 
-                  or want to partner with us, we're here to help.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button size="lg" className="group" onClick={() => navigate('/find-counsellor')}>
-                    <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-0.5 transition-transform" />
-                    Find a Counsellor
-                  </Button>
-                  <Button size="lg" variant="outline" className="group" onClick={() => navigate('/membership')}>
-                    <Users className="w-4 h-4 mr-2 group-hover:scale-105 transition-transform" />
-                    Apply for Membership
-                  </Button>
-                  <Button size="lg" variant="ghost" className="group">
-                    <Phone className="w-4 h-4 mr-2 group-hover:ring-2 group-hover:ring-primary/20 rounded transition-all" />
-                    Contact Us
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
       <Footer />
     </div>;
