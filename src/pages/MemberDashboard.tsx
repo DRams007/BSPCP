@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import ProfileEditForm from '@/components/member/ProfileEditForm';
 import ContactEditForm from '@/components/member/ContactEditForm';
 import CPDUploadForm from '@/components/member/CPDUploadForm';
+import BookingManagement from '@/components/member/BookingManagement';
 import {
   Table,
   TableHeader,
@@ -265,54 +266,7 @@ const MemberDashboard = () => {
           </TabsContent>
 
           <TabsContent value="bookings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Client Bookings</CardTitle>
-                <CardDescription>
-                  View and manage your client appointments and booking history.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {sampleBookings.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Client Name</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Time</TableHead>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sampleBookings.map((booking) => (
-                        <TableRow key={booking.id}>
-                          <TableCell>{booking.clientName}</TableCell>
-                          <TableCell>{booking.date}</TableCell>
-                          <TableCell>{booking.time}</TableCell>
-                          <TableCell>{booking.service}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                booking.status === 'Confirmed'
-                                  ? 'default'
-                                  : booking.status === 'Pending'
-                                  ? 'secondary'
-                                  : 'destructive'
-                              }
-                            >
-                              {booking.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-muted-foreground">No bookings available yet.</p>
-                )}
-              </CardContent>
-            </Card>
+            <BookingManagement />
           </TabsContent>
 
           <TabsContent value="settings">
