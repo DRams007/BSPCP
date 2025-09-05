@@ -18,6 +18,7 @@ import { Link } from 'react-router-dom';
 const membershipSchema = z.object({
   // Personal Information
   fullName: z.string().min(2, 'Full name is required'),
+  bspcpMembershipNumber: z.string().optional(),
   idNumber: z.string().min(5, 'ID/Passport number is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['male', 'female']),
@@ -36,9 +37,8 @@ const membershipSchema = z.object({
   occupation: z.string().min(2, 'Occupation is required'),
   organizationName: z.string().min(2, 'Organization name is required'),
   highestQualification: z.string().min(2, 'Highest qualification is required'),
-  institutionName: z.string().min(2, 'Institution name is required'),
-  graduationYear: z.string().min(4, 'Graduation year is required'),
-  professionalLicense: z.string().optional(),
+  otherQualifications: z.string().optional(),
+  scholarlyPublications: z.string().optional(),
   specializations: z.string().min(5, 'Areas of specialization are required'),
   // Document Uploads
   certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
@@ -46,18 +46,6 @@ const membershipSchema = z.object({
   // Professional Experience
   employmentStatus: z.enum(['employed', 'self-employed', 'unemployed', 'retired']),
   yearsExperience: z.string().min(1, 'Years of experience is required'),
-  practiceType: z.enum(['private-practice', 'hospital', 'ngo', 'government', 'academic', 'other']),
-  clientPopulation: z.string().min(5, 'Client population served is required'),
-  therapeuticApproaches: z.string().min(5, 'Therapeutic approaches are required'),
-  practiceLanguages: z.string().min(2, 'Languages of practice are required'),
-  
-  // References
-  reference1Name: z.string().min(2, 'First reference name is required'),
-  reference1Contact: z.string().min(10, 'First reference contact is required'),
-  reference1Relationship: z.string().min(5, 'First reference relationship is required'),
-  reference2Name: z.string().min(2, 'Second reference name is required'),
-  reference2Contact: z.string().min(10, 'Second reference contact is required'),
-  reference2Relationship: z.string().min(5, 'Second reference relationship is required'),
 });
 
 type MembershipFormData = z.infer<typeof membershipSchema>;
@@ -71,7 +59,6 @@ const Membership = () => {
     defaultValues: {
       gender: 'male',
       employmentStatus: 'employed',
-      practiceType: 'private-practice',
       // File uploads
       idDocument: undefined,
       proofOfPayment: undefined,
@@ -308,6 +295,20 @@ const Membership = () => {
                           )}
                         />
 
+                        <FormField
+                          control={form.control}
+                          name="bspcpMembershipNumber"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>What is your BSPCP Membership Number (please skip if you don't remember or never had it)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your BSPCP membership number (optional)" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
@@ -468,86 +469,16 @@ const Membership = () => {
                     {/* Step 2: Professional Qualifications */}
                     {currentStep === 2 && (
                       <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="occupation"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>What is your occupation?</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter your current occupation" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
-                        <FormField
-                          control={form.control}
-                          name="organizationName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Name of Organisation where you work</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter the name of your organization" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
                         <FormField
                           control={form.control}
                           name="highestQualification"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Highest Educational Qualification</FormLabel>
+                              <FormLabel>Highest Educational Qualification (Write in full)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your highest qualification" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="institutionName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Institution Name</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Enter institution name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="graduationYear"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Year of Graduation</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Enter graduation year" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <FormField
-                          control={form.control}
-                          name="professionalLicense"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Professional License Numbers (if applicable)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter license numbers" {...field} />
+                                <Input placeholder="Enter your highest qualification (write in full)" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -556,17 +487,37 @@ const Membership = () => {
 
                         <FormField
                           control={form.control}
-                          name="specializations"
+                          name="otherQualifications"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Areas of Specialization</FormLabel>
+                              <FormLabel>Other Qualifications Completed (Please write full names)</FormLabel>
                               <FormControl>
-                                <Textarea placeholder="Enter your areas of specialization" {...field} />
+                                <Textarea placeholder="Enter your other qualifications (optional)" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
+
+                        <FormField
+                          control={form.control}
+                          name="scholarlyPublications"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>How many scholarly Counselling or Psychotherapy articles, papers, book chapters or books have you published in the past 5 years?</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter number of publications (optional)" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+
+
+
+
+
 
                         <FormField
                           control={form.control}
@@ -623,6 +574,48 @@ const Membership = () => {
 
                         <FormField
                           control={form.control}
+                          name="occupation"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>What is your occupation?</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter your current occupation" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="organizationName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Name of Organisation where you work</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter the name of your organization" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="specializations"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Areas of Specialization</FormLabel>
+                              <FormControl>
+                                <Textarea placeholder="Enter your areas of specialization" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
                           name="yearsExperience"
                           render={({ field }) => (
                             <FormItem>
@@ -635,173 +628,15 @@ const Membership = () => {
                           )}
                         />
 
-                        <FormField
-                          control={form.control}
-                          name="practiceType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Type of Practice</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select practice type" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="private-practice">Private Practice</SelectItem>
-                                  <SelectItem value="hospital">Hospital</SelectItem>
-                                  <SelectItem value="ngo">NGO</SelectItem>
-                                  <SelectItem value="government">Government</SelectItem>
-                                  <SelectItem value="academic">Academic Institution</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
-                        <FormField
-                          control={form.control}
-                          name="clientPopulation"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Client Population Served</FormLabel>
-                              <FormControl>
-                                <Textarea placeholder="Describe the client population you serve" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
-                        <FormField
-                          control={form.control}
-                          name="therapeuticApproaches"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Therapeutic Approaches Used</FormLabel>
-                              <FormControl>
-                                <Textarea placeholder="List the therapeutic approaches you use" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
 
-                        <FormField
-                          control={form.control}
-                          name="practiceLanguages"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Languages of Practice</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter languages you practice in" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
                       </div>
                     )}
 
-                    {/* Step 4: Professional References */}
+                    {/* Step 4: Documents and Payment */}
                     {currentStep === 4 && (
                       <div className="space-y-6">
-                        <div className="space-y-4">
-                          <h4 className="font-semibold text-lg">First Professional Reference</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name="reference1Name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Full Name</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Enter reference name" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="reference1Contact"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Contact Information</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Phone or email" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-
-                          <FormField
-                            control={form.control}
-                            name="reference1Relationship"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Professional Relationship</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Describe your professional relationship" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="space-y-4">
-                          <h4 className="font-semibold text-lg">Second Professional Reference</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name="reference2Name"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Full Name</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Enter reference name" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="reference2Contact"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Contact Information</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Phone or email" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-
-                          <FormField
-                            control={form.control}
-                            name="reference2Relationship"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Professional Relationship</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Describe your professional relationship" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        </div>
-
                         <FormField
                           control={form.control}
                           name="proofOfPayment"

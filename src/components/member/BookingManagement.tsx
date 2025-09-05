@@ -285,9 +285,8 @@ const BookingManagement = () => {
   return (
     <Tabs defaultValue="dashboard" className="space-y-6">
       {/* Main Navigation Tabs */}
-      <TabsList className="grid w-full grid-cols-6">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        <TabsTrigger value="calendar">Calendar</TabsTrigger>
         <TabsTrigger value="bookings">All Bookings</TabsTrigger>
         <TabsTrigger value="clients">Clients</TabsTrigger>
         <TabsTrigger value="availability">Availability</TabsTrigger>
@@ -474,32 +473,7 @@ const BookingManagement = () => {
         </Card>
       </TabsContent>
 
-      {/* Calendar Tab */}
-      <TabsContent value="calendar" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Calendar Management
-            </CardTitle>
-            <CardDescription>
-              View and manage your appointments in calendar format
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-4">
-                Calendar view would be integrated here with full drag-and-drop functionality
-              </p>
-              <p className="text-sm text-muted-foreground">
-                This would include weekly/monthly views, color coding for different statuses,
-                and drag-and-drop rescheduling capabilities.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
+      
 
       {/* All Bookings Tab */}
       <TabsContent value="bookings" className="space-y-6">
