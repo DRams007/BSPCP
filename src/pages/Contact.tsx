@@ -36,15 +36,6 @@ const Contact = () => {
         'membership@bspcp.org.bw',
         'support@bspcp.org.bw'
       ]
-    },
-    {
-      icon: Clock,
-      title: 'Office Hours',
-      details: [
-        'Monday - Friday: 8:00 AM - 5:00 PM',
-        'Saturday: 9:00 AM - 1:00 PM',
-        'Sunday: Closed'
-      ]
     }
   ];
 
@@ -114,7 +105,7 @@ const Contact = () => {
       {/* Contact Information */}
       <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-3xl mx-auto">
             {contactInfo.map((info, index) => (
               <Card key={index} className="text-center hover:shadow-soft transition-all duration-300">
                 <CardContent className="p-6">
