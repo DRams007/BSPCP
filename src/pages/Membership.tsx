@@ -48,7 +48,7 @@ const membershipSchema = z.object({
   phone: z.string().min(8, 'Phone number must be at least 8 characters'),
   email: z.string().email('Valid email is required'),
   website: z.string().optional(),
-  physicalAddress: z.string().min(10, 'Physical address is required'),
+  physicalAddress: z.string().min(1, 'Physical address is required'),
   city: z.string().min(2, 'City is required'),
   emergencyContact: z.string().optional(),
   emergencyPhone: z.string().optional(),
@@ -905,18 +905,18 @@ const Membership = () => {
                         <div className="bg-muted p-4 rounded-lg">
                           <h4 className="font-semibold mb-2 flex items-center gap-2">
                             <Upload className="h-4 w-4" />
-                            Supporting Documents Required
+                            Documents Collected
                           </h4>
                           <ul className="text-sm text-muted-foreground space-y-1">
-                            <li>• Degree Certificate(s)</li>
-                            <li>• Professional Certificates</li>
-                            <li>• CV/Resume</li>
-                            <li>• Passport Photo</li>
-                            <li>• Copy of ID/Passport</li>
-                            <li>• Proof of Payment</li>
+                            <li>• <strong>ID Document</strong> - Copy of Omang/ID or Passport (uploaded in Step 1)</li>
+                            <li>• <strong>Professional Certificates</strong> - Certification documents (uploaded in Step 2)</li>
+                            <li>• <strong>Proof of Payment</strong> - Payment confirmation for membership fees</li>
                           </ul>
                           <p className="text-xs text-muted-foreground mt-2">
-                            Please attach your documents in the relevant fields above before submitting this form.
+                            Your documents have been collected in previous steps. Please upload proof of payment before submitting your application.
+                          </p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            <strong>Note:</strong> Ensure all documents are clear, legible PDFs or images under 5MB each.
                           </p>
                         </div>
                       </div>

@@ -303,8 +303,14 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
               <FormItem>
                 <FormLabel>BSPCP Membership Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter membership number" {...field} />
+                  <Input
+                    placeholder="Enter your BSPCP membership number"
+                    {...field}
+                  />
                 </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  This is your official BSPCP member identification number
+                </p>
                 <FormMessage />
               </FormItem>
             )}
@@ -317,8 +323,15 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
               <FormItem>
                 <FormLabel>ID Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter ID number" {...field} />
+                  <Input
+                    placeholder="Enter your national ID number"
+                    {...field}
+                    className="font-mono"
+                  />
                 </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  This should match your national identification document
+                </p>
                 <FormMessage />
               </FormItem>
             )}

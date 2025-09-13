@@ -299,6 +299,7 @@ app.get('/api/applications', async (req, res) => {
           idNumber: row.idNumber,
           physicalAddress: row.physicalAddress,
           postalAddress: row.postalAddress,
+          membershipNumber: row.bspcp_membership_number,
         },
         documents: documents,
         // Include structured documents for frontend modal
@@ -363,6 +364,24 @@ app.put('/api/applications/:id/status', async (req, res) => {
 
     // If approved, create authentication record and send setup email
     if (status === 'approved') {
+      // Generate membership number if not already present
+      let membershipNumber = member.bspcp_membership_number;
+      if (!membershipNumber) {
+        // Generate membership number: BSPCP + current year + sequential number
+        const currentYear = new Date().getFullYear() % 100; // Get last 2 digits of year
+        const memberIdForNumber = String(id).padStart(4, '0'); // Pad member ID to 4 digits
+
+        membershipNumber = `BSPCP${currentYear}${memberIdForNumber}`;
+
+        // Update the membership number in the database
+        await client.query(
+          'UPDATE members SET bspcp_membership_number = $1 WHERE id = $2',
+          [membershipNumber, id]
+        );
+
+        console.log(`Generated membership number: ${membershipNumber} for member ${id}`);
+      }
+
       // Check if authentication already exists (for re-approvals)
       const existingAuth = await client.query(
         'SELECT * FROM member_authentication WHERE member_id = $1',
@@ -444,6 +463,93 @@ app.put('/api/applications/:id/status', async (req, res) => {
     }
     console.error('Error updating application status:', err);
     res.status(500).json({ error: 'Failed to update application status', details: err.message });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+// New API endpoint to delete member application
+app.delete('/api/applications/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN'); // Start transaction
+
+    // Get member details before deletion for logging and file cleanup
+    const memberResult = await client.query(
+      `SELECT m.first_name, m.last_name, mcd.email,
+               mpd_doc.id_document_path, mpd_doc.profile_image_path,
+               mph.proof_of_payment_path,
+               array_agg(mc.file_path) as certificates
+       FROM members m
+       LEFT JOIN member_contact_details mcd ON m.id = mcd.member_id
+       LEFT JOIN member_personal_documents mpd_doc ON m.id = mpd_doc.member_id
+       LEFT JOIN member_payments mph ON m.id = mph.member_id
+       LEFT JOIN member_certificates mc ON m.id = mc.member_id
+       WHERE m.id = $1
+       GROUP BY m.first_name, m.last_name, mcd.email, mpd_doc.id_document_path, mpd_doc.profile_image_path, mph.proof_of_payment_path`,
+      [id]
+    );
+
+    if (memberResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    const member = memberResult.rows[0];
+    const memberName = `${member.first_name || ''} ${member.last_name || ''}`.trim();
+
+    // Delete uploaded files from server
+    const filesToDelete = [];
+
+    if (member.id_document_path) filesToDelete.push(member.id_document_path);
+    if (member.profile_image_path) filesToDelete.push(member.profile_image_path);
+    if (member.proof_of_payment_path) filesToDelete.push(member.proof_of_payment_path);
+    if (member.certificates && member.certificates.length > 0) {
+      filesToDelete.push(...member.certificates.filter(cert => cert));
+    }
+
+    // Delete physical files
+    for (const filePath of filesToDelete) {
+      if (filePath) {
+        const fullPath = path.join(__dirname, filePath);
+        try {
+          await fs.unlink(fullPath);
+          console.log(`Deleted file: ${fullPath}`);
+        } catch (fileErr) {
+          console.warn(`Failed to delete file ${fullPath}: ${fileErr.message}`);
+        }
+      }
+    }
+
+    // Delete member record and related data (cascade delete)
+    const deleteResult = await client.query(
+      'DELETE FROM members WHERE id = $1',
+      [id]
+    );
+
+    await client.query('COMMIT');
+
+    console.log(`=== APPLICATION DELETED ===`);
+    console.log(`Member: ${memberName}`);
+    console.log(`Email: ${member.email}`);
+    console.log(`ID: ${id}`);
+    console.log(`Files deleted: ${filesToDelete.length}`);
+    console.log('========================');
+
+    res.json({
+      message: `Application for ${memberName} has been permanently deleted.`,
+      deletedMember: memberName,
+      filesCleaned: filesToDelete.length
+    });
+
+  } catch (err) {
+    if (client) {
+      await client.query('ROLLBACK'); // Rollback transaction on error
+    }
+    console.error('Error deleting application:', err);
+    res.status(500).json({ error: 'Failed to delete application', details: err.message });
   } finally {
     if (client) client.release();
   }
@@ -962,51 +1068,52 @@ app.get('/api/member/profile', authenticateToken, async (req, res) => {
     const client = await pool.connect();
     const memberId = req.user.memberId; // Extracted from JWT
 
-    const query = `
-      SELECT
-        m.id,
-        m.first_name,
-        m.last_name,
-        CONCAT(m.first_name, ' ', m.last_name) AS full_name,
-        m.bspcp_membership_number,
-        m.application_status,
-        m.member_status,
-        m.created_at,
-        m.date_of_birth,
-        m.gender,
-        m.nationality,
-        mcd.email,
-        mcd.phone,
-        mcd.website,
-        mcd.physical_address,
-        mcd.city,
-        mcd.postal_address,
-        mcd.emergency_contact,
-        mcd.emergency_phone,
-        mcd.show_email,
-        mcd.show_phone,
-        mcd.show_address,
-        mpd.occupation,
-        mpd.organization_name,
-        mpd.highest_qualification,
-        mpd.other_qualifications,
-        mpd.scholarly_publications,
-        mpd.specializations,
-        mpd.employment_status,
-        mpd.years_experience,
-        mpd.bio,
-        mpd.title,
-        mpd.languages,
-        mpd.session_types,
-        mpd.fee_range,
-        mpd.availability,
-        mpd_doc.profile_image_path
-      FROM members m
-      JOIN member_contact_details mcd ON m.id = mcd.member_id
-      JOIN member_professional_details mpd ON m.id = mpd.member_id
-      LEFT JOIN member_personal_documents mpd_doc ON m.id = mpd_doc.member_id
-      WHERE m.id = $1
-    `;
+const query = `
+  SELECT
+    m.id,
+    m.first_name,
+    m.last_name,
+    CONCAT(m.first_name, ' ', m.last_name) AS full_name,
+    m.bspcp_membership_number,
+    m.id_number,
+    m.application_status,
+    m.member_status,
+    m.created_at,
+    m.date_of_birth,
+    m.gender,
+    m.nationality,
+    mcd.email,
+    mcd.phone,
+    mcd.website,
+    mcd.physical_address,
+    mcd.city,
+    mcd.postal_address,
+    mcd.emergency_contact,
+    mcd.emergency_phone,
+    mcd.show_email,
+    mcd.show_phone,
+    mcd.show_address,
+    mpd.occupation,
+    mpd.organization_name,
+    mpd.highest_qualification,
+    mpd.other_qualifications,
+    mpd.scholarly_publications,
+    mpd.specializations,
+    mpd.employment_status,
+    mpd.years_experience,
+    mpd.bio,
+    mpd.title,
+    mpd.languages,
+    mpd.session_types,
+    mpd.fee_range,
+    mpd.availability,
+    mpd_doc.profile_image_path
+  FROM members m
+  JOIN member_contact_details mcd ON m.id = mcd.member_id
+  JOIN member_professional_details mpd ON m.id = mpd.member_id
+  LEFT JOIN member_personal_documents mpd_doc ON m.id = mpd_doc.member_id
+  WHERE m.id = $1
+`;
 
     const result = await client.query(query, [memberId]);
     client.release();
@@ -1045,23 +1152,47 @@ app.put('/api/member/profile/:id', authenticateToken, async (req, res) => {
       bio, title, languages, session_types, fee_range, availability
     } = req.body;
 
+    // Debug logging
+    console.log('=== PROFILE UPDATE REQUEST ===');
+    console.log('Member ID:', memberId);
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('ID Number:', `'${id_number}'`, 'Length:', id_number?.length);
+    console.log('Date of Birth:', `'${date_of_birth}'`);
+    console.log('First Name:', `'${first_name}'`);
+    console.log('Last Name:', `'${last_name}'`);
+    console.log('Raw request body:', JSON.stringify(req.body, null, 2));
+    console.log('========================');
+
     await client.query('BEGIN');
 
-    // 1. Update members table
+    // Debug: Log each parameter to identify the problematic one
+    console.log('=== PARAMETER DEBUGGING ===');
+    console.log('1. first_name:', `'${first_name}'`, typeof first_name);
+    console.log('2. last_name:', `'${last_name}'`, typeof last_name);
+    console.log('3. bspcp_membership_number:', `'${bspcp_membership_number}'`, typeof bspcp_membership_number);
+    console.log('4. id_number:', `'${id_number}'`, typeof id_number);
+    console.log('5. date_of_birth:', `'${date_of_birth}'`, typeof date_of_birth);
+    console.log('6. gender:', `'${gender}'`, typeof gender);
+    console.log('7. nationality:', `'${nationality}'`, typeof nationality);
+    console.log('8. memberId:', `'${memberId}'`, typeof memberId);
+    console.log('===========================');
+
+    // 1. Update members table - Explicit cast ALL parameters to avoid type inference issues
     await client.query(
       `UPDATE members SET
-        first_name = $1, last_name = $2, bspcp_membership_number = $3, id_number = $4, date_of_birth = $5, gender = $6, nationality = $7
-      WHERE id = $8`,
+        first_name = $1::text, last_name = $2::text, bspcp_membership_number = $3::text, id_number = $4::text, date_of_birth = $5::date, gender = $6::text, nationality = $7::text,
+        full_name = CONCAT($1::text, ' ', $2::text)
+      WHERE id = $8::uuid`,
       [first_name, last_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality, memberId]
     );
 
-    // 2. Update member_professional_details table
+    // 2. Update member_professional_details table - Explicit cast ALL parameters
     await client.query(
       `UPDATE member_professional_details SET
-        occupation = $1, organization_name = $2, highest_qualification = $3, other_qualifications = $4,
-        scholarly_publications = $5, specializations = $6, employment_status = $7, years_experience = $8,
-        bio = $9, title = $10, languages = $11, session_types = $12, fee_range = $13, availability = $14
-      WHERE member_id = $15`,
+        occupation = $1::text, organization_name = $2::text, highest_qualification = $3::text, other_qualifications = $4::text,
+        scholarly_publications = $5::text, specializations = $6::text[], employment_status = $7::text, years_experience = $8::text,
+        bio = $9::text, title = $10::text, languages = $11::text[], session_types = $12::text[], fee_range = $13::text, availability = $14::text
+      WHERE member_id = $15::uuid`,
       [
         occupation, organization_name, highest_qualification, other_qualifications,
         scholarly_publications, specializations, employment_status, years_experience,
@@ -1070,6 +1201,12 @@ app.put('/api/member/profile/:id', authenticateToken, async (req, res) => {
     );
 
     await client.query('COMMIT');
+
+    // Debug logging after commit
+    console.log('=== PROFILE UPDATE SUCCESS ===');
+    console.log('Transaction committed successfully');
+    console.log('========================');
+
     res.status(200).json({ message: 'Profile updated successfully!' });
 
   } catch (error) {

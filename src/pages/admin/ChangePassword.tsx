@@ -184,16 +184,7 @@ const ChangePassword = () => {
   return (
     <AdminLayout>
       <div className="p-6 max-w-md mx-auto">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="mb-2 p-0 h-auto text-sm"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </div>
+
 
         <Card>
           <CardHeader className="text-center">

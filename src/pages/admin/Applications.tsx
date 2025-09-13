@@ -24,18 +24,19 @@ import { Label } from "@/components/ui/label";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { 
-  Eye, 
-  Check, 
-  X, 
-  Clock, 
-  FileText, 
+import {
+  Eye,
+  Check,
+  X,
+  Clock,
+  FileText,
   Download,
   AlertCircle,
   User,
   Building,
   GraduationCap,
-  Mail
+  Mail,
+  Trash2
 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/loading-spinner"; // Assuming you have a loading spinner component
 
@@ -56,6 +57,7 @@ interface Application {
     idNumber: string;
     physicalAddress: string;
     postalAddress: string;
+    membershipNumber?: string;
   };
   phone: string;
 }
@@ -70,6 +72,9 @@ const Applications = () => {
   const [emailBody, setEmailBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [applicationToDelete, setApplicationToDelete] = useState<Application | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -174,6 +179,49 @@ const Applications = () => {
     setEmailSubject("");
     setEmailBody("");
     // Here you would integrate with an email sending service
+  };
+
+  const handleDeleteApplication = async (application: Application) => {
+    setApplicationToDelete(application);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteApplication = async () => {
+    if (!applicationToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`http://localhost:3001/api/applications/${applicationToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: "Application Deleted",
+        description: result.message,
+        variant: "destructive",
+      });
+
+      setShowDeleteDialog(false);
+      setApplicationToDelete(null);
+      setSelectedApplication(null);
+      fetchApplications(); // Re-fetch applications to update the list
+
+    } catch (err) {
+      const error = err as Error;
+      toast({
+        title: "Error",
+        description: `Failed to delete application: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -319,6 +367,9 @@ const Applications = () => {
                                     <div><strong>Nationality:</strong> {selectedApplication.nationality}</div>
                                     <div><strong>Date of Birth:</strong> {selectedApplication.personalInfo.dateOfBirth}</div>
                                     <div><strong>ID Number:</strong> {selectedApplication.personalInfo.idNumber}</div>
+                                    {selectedApplication.personalInfo.membershipNumber && (
+                                      <div><strong>Membership Number:</strong> {selectedApplication.personalInfo.membershipNumber}</div>
+                                    )}
                                     <div><strong>Physical Address:</strong> {selectedApplication.personalInfo.physicalAddress}</div>
                                     <div><strong>Postal Address:</strong> {selectedApplication.personalInfo.postalAddress}</div>
                                   </CardContent>
@@ -432,6 +483,14 @@ const Applications = () => {
                                             <X className="w-4 h-4 mr-2" />
                                             Reject Application
                                           </Button>
+                                          <Button
+                                            variant="outline"
+                                            onClick={() => handleDeleteApplication(selectedApplication)}
+                                            className="bg-red-600 hover:bg-red-700 text-white"
+                                          >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete Application
+                                          </Button>
                                           <Button variant="outline" onClick={handleRequestMoreInfo}>
                                             <Mail className="w-4 h-4 mr-2" />
                                             Request More Info
@@ -445,6 +504,14 @@ const Applications = () => {
                                           >
                                             <Check className="w-4 h-4 mr-2" />
                                             Re-Approve Application
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            onClick={() => handleDeleteApplication(selectedApplication)}
+                                            className="bg-red-600 hover:bg-red-700 text-white"
+                                          >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete Application
                                           </Button>
                                           <Button
                                             variant="outline"
@@ -560,6 +627,51 @@ const Applications = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+                Delete Application
+              </DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this membership application? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {applicationToDelete && (
+              <div className="py-4">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center">
+                    <AlertCircle className="w-5 h-5 text-red-600 mr-2 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium">Application Details:</p>
+                      <p><strong>Name:</strong> {applicationToDelete.name}</p>
+                      <p><strong>Email:</strong> {applicationToDelete.email}</p>
+                      <p><strong>Status:</strong> {applicationToDelete.application_status.replace('_', ' ').toUpperCase()}</p>
+                      <p className="mt-2 text-red-700 font-medium">
+                        Warning: This will permanently remove all application data and uploaded documents.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isDeleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDeleteApplication}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Application"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

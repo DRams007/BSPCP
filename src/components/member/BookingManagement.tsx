@@ -418,11 +418,10 @@ const BookingManagement = () => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
       {/* Main Navigation Tabs */}
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         <TabsTrigger value="bookings">All Bookings</TabsTrigger>
         <TabsTrigger value="clients">Clients</TabsTrigger>
-        <TabsTrigger value="availability">Availability</TabsTrigger>
         <TabsTrigger value="reports">Reports</TabsTrigger>
       </TabsList>
 
@@ -831,8 +830,11 @@ const BookingManagement = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleBookingAction(booking.id, 'completed')}
-                                title="Mark as completed"
+                                onClick={() => handleBookingAction(
+                                  booking.id,
+                                  booking.status === 'rescheduled' ? 'confirmed' : 'completed'
+                                )}
+                                title={booking.status === 'rescheduled' ? 'Confirm booking' : 'Mark as completed'}
                               >
                                 <CheckCircle className="h-3 w-3" />
                               </Button>

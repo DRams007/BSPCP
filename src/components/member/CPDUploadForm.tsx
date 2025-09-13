@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Upload, Download, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +24,6 @@ const CPDUploadForm = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [cpdRecords, setCpdRecords] = useState<CPDRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -69,10 +68,6 @@ const CPDUploadForm = () => {
   useEffect(() => {
     fetchCpdRecords();
   }, [fetchCpdRecords]);
-
-  const totalPoints = cpdRecords.reduce((sum, record) => sum + record.points, 0);
-  const requiredPoints = 40;
-  const progressPercentage = Math.min((totalPoints / requiredPoints) * 100, 100);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -163,7 +158,6 @@ const CPDUploadForm = () => {
 
       // Refresh CPD records
       fetchCpdRecords();
-      setDeleteDialogOpen(false);
 
       toast({
         title: "Success",
@@ -202,27 +196,7 @@ const CPDUploadForm = () => {
 
   return (
     <div className="space-y-6">
-      {/* CPD Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle>CPD Progress</CardTitle>
-          <CardDescription>
-            Your Continuing Professional Development progress this year
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span>CPD Points Earned</span>
-              <span>{totalPoints}/{requiredPoints}</span>
-            </div>
-            <Progress value={progressPercentage} />
-            <div className="text-xs text-muted-foreground">
-              {progressPercentage.toFixed(1)}% of required CPD completed
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Upload Form */}
       <Card>

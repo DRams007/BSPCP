@@ -5,7 +5,7 @@ import ServiceCategories from '@/components/ServiceCategories';
 import AboutSection from '@/components/AboutSection';
 import Testimonials from '@/components/Testimonials';
 import TestimonialForm from '@/components/TestimonialForm';
-import DonationAlert from '@/components/DonationAlert';
+// import DonationAlert from '@/components/DonationAlert';
 import Footer from '@/components/Footer';
 
 const Index = () => {
@@ -18,7 +18,7 @@ const Index = () => {
       {/* <HowItWorks /> */}
       <Testimonials />
       <TestimonialForm />
-      <DonationAlert />
+      {/* <DonationAlert /> */}
       <Footer />
     </div>
   );

@@ -5,22 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import { User, FileText, Upload, Settings, Eye, LogOut } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import ProfileEditForm from '@/components/member/ProfileEditForm';
 import ContactEditForm from '@/components/member/ContactEditForm';
 import CPDUploadForm from '@/components/member/CPDUploadForm';
 import BookingManagement from '@/components/member/BookingManagement';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from '@/components/ui/table';
 import { Loader2 } from 'lucide-react'; // Import Loader2 for loading state
 import { IMemberProfile, IMemberContact } from '@/types/member';
 
@@ -121,10 +112,7 @@ const MemberDashboard = () => {
     );
   }
 
-  // Placeholder for CPD hours and profile views (these would come from other API calls or calculated data)
-  const cpdHours = 25; // Example value
-  const requiredCpdHours = 40; // Example value
-  const profileViews = 147; // Example value
+  // These variables can be removed as the statistics cards have been taken out
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
@@ -142,6 +130,11 @@ const MemberDashboard = () => {
                 <Badge variant="outline" className="mt-2">
                 {member.specializations && member.specializations.length > 0 ? member.specializations.join(', ') : 'No Specialization'}
                 </Badge>
+                {member.bspcp_membership_number && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Membership Number: {member.bspcp_membership_number}
+                  </p>
+                )}
             </div>
           <Button variant="outline" onClick={handleLogout} className="mt-1">
             <LogOut className="mr-2 h-4 w-4" />
@@ -149,62 +142,7 @@ const MemberDashboard = () => {
           </Button>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Status</p>
-                  <Badge variant="default" className="mt-1">
-                    {member.member_status}
-                  </Badge>
-                </div>
-                <User className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Application Status</p>
-                  <Badge variant="secondary" className="mt-1">
-                    {member.application_status}
-                  </Badge>
-                </div>
-                <FileText className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">CPD Hours</p>
-                  <p className="text-2xl font-bold">
-                    {cpdHours}/{requiredCpdHours}
-                  </p>
-                </div>
-                <Upload className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Profile Views</p>
-                  <p className="text-2xl font-bold">{profileViews}</p>
-                </div>
-                <Eye className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -255,7 +193,10 @@ const MemberDashboard = () => {
                     availability: member.availability,
                     profile_photo_url: member.profile_photo_url,
                   }}
-                  onProfileUpdate={fetchMemberProfile}
+                  onProfileUpdate={() => {
+                    // Small delay to ensure server update is complete
+                    setTimeout(fetchMemberProfile, 100);
+                  }}
                 />
               </CardContent>
             </Card>

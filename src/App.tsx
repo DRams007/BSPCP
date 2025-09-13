@@ -11,7 +11,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import FloatingDonationWidget from "@/components/FloatingDonationWidget";
+// import FloatingDonationWidget from "@/components/FloatingDonationWidget";
 import ScrollToTop from "./components/ScrollToTop";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 
@@ -123,7 +123,7 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-      {!isAdminPage && !isMemberDashboardPage && <FloatingDonationWidget />}
+      {/* {!isAdminPage && !isMemberDashboardPage && <FloatingDonationWidget />} */}
     </>
   );
 };

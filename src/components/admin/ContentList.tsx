@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Trash2, Check, X, Edit, FileEdit, ArrowUp, ArrowDown } from 'lucide-react'; // Import Edit and FileEdit icons
 import { toast } from '@/hooks/use-toast';
 import { useMemo } from 'react'; // Import useMemo
@@ -58,6 +59,8 @@ const ContentList = ({ searchQuery, contentTypeFilter, statusFilter, refreshTrig
   const sortedContent = useMemo(() => {
     if (!content) return [];
 
+    const dateColumns = ['created_at', 'eventDate'];
+
     return [...content].sort((a, b) => {
       const aValue = a[sortColumn];
       const bValue = b[sortColumn];
@@ -65,14 +68,18 @@ const ContentList = ({ searchQuery, contentTypeFilter, statusFilter, refreshTrig
       if (aValue === null || aValue === undefined) return sortDirection === 'asc' ? 1 : -1;
       if (bValue === null || bValue === undefined) return sortDirection === 'asc' ? -1 : 1;
 
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
+      if (dateColumns.includes(sortColumn as string) && typeof aValue === 'string' && typeof bValue === 'string') {
+        const dateA = new Date(aValue);
+        const dateB = new Date(bValue);
+        const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+        const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+        return sortDirection === 'asc' ? timeA - timeB : timeB - timeA;
+      } else if (typeof aValue === 'string' && typeof bValue === 'string') {
         return sortDirection === 'asc'
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       } else if (typeof aValue === 'number' && typeof bValue === 'number') {
         return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortDirection === 'asc' ? aValue.getTime() - bValue.getTime() : bValue.getTime() - aValue.getTime();
       } else {
         // Fallback for other types or mixed types
         const strA = String(aValue);
@@ -280,41 +287,49 @@ const ContentList = ({ searchQuery, contentTypeFilter, statusFilter, refreshTrig
                   <TableCell>{item.author}</TableCell>
                   <TableCell>{new Date(item.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`mr-2 ${item.status === 'Published' ? 'text-red-500 hover:text-red-600' : 'text-green-500 hover:text-green-600'}`}
-                      onClick={() => handleTogglePublishStatus(item.id, item.status)}
-                      disabled={isLoading}
-                    >
-                      {item.status === 'Published' ? (
-                        <FileEdit className="h-4 w-4" /> // Changed from X to FileEdit
-                      ) : (
-                        <Check className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your
-                            content item and remove its data from our servers.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteContent(item.id)}>
-                            Continue
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="flex items-center justify-end gap-2">
+                      <Badge
+                        variant={item.status === 'Published' ? 'default' : 'secondary'}
+                        className={item.status === 'Published' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-orange-100 text-orange-800 border-orange-300'}
+                      >
+                        {item.status}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={item.status === 'Published' ? 'text-red-500 hover:text-red-600' : 'text-green-500 hover:text-green-600'}
+                        onClick={() => handleTogglePublishStatus(item.id, item.status)}
+                        disabled={isLoading}
+                      >
+                        {item.status === 'Published' ? (
+                          <FileEdit className="h-4 w-4" /> // Changed from X to FileEdit
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete your
+                              content item and remove its data from our servers.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteContent(item.id)}>
+                              Continue
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
