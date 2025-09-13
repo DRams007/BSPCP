@@ -27,6 +27,7 @@ async function setupDatabase() {
     await pool.query(`
       CREATE TABLE members (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          full_name VARCHAR(255),
           first_name VARCHAR(100) NOT NULL,
           last_name VARCHAR(100) NOT NULL,
           bspcp_membership_number VARCHAR(50),

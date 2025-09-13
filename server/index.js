@@ -100,13 +100,16 @@ app.post('/api/membership', upload.fields([
     emergencyContact, emergencyPhone, showEmail, showPhone, showAddress
     } = req.body;
 
+    // Calculate full_name for storage
+    const calculatedFullName = `${firstName} ${lastName}`.trim();
+
     // 1. Insert into members table
     const memberResult = await client.query(
       `INSERT INTO members (
         first_name, last_name, full_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality, cpd_document, cpd_points
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING id`,
-      [firstName, lastName, `${firstName} ${lastName}`, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality, req.body.cpdDocument || null, parseInt(req.body.cpdPoints, 10) || 0]
+      [firstName, lastName, calculatedFullName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality, req.body.cpdDocument || null, parseInt(req.body.cpdPoints, 10) || 0]
     );
     const memberId = memberResult.rows[0].id;
 
@@ -340,8 +343,8 @@ app.put('/api/applications/:id/status', async (req, res) => {
     let queryParams;
 
     if (status === 'approved') {
-      // Update member status to approved but not active yet (waiting for password setup)
-      query = `UPDATE members SET application_status = $1, member_status = 'pending_password_setup', review_comment = $2 WHERE id = $3 RETURNING *`;
+      // Update member status to approved and set member as active immediately
+      query = `UPDATE members SET application_status = $1, member_status = 'active', review_comment = $2 WHERE id = $3 RETURNING *`;
       queryParams = [status, reviewComment, id];
     } else {
       query = `UPDATE members SET application_status = $1, review_comment = $2 WHERE id = $3 RETURNING *`;
@@ -367,7 +370,10 @@ app.put('/api/applications/:id/status', async (req, res) => {
       );
 
       // Generate username (first initial + last name, lowercase)
-      const username = `${member.full_name.split(' ')[0][0].toLowerCase()}${member.full_name.split(' ').slice(-1)[0].toLowerCase()}`;
+      const firstName = member.first_name || '';
+      const lastName = member.last_name || '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      const username = `${firstName[0].toLowerCase() || ''}${lastName.toLowerCase()}`;
 
       if (existingAuth.rows.length === 0) {
         // Create new authentication record for new approvals
@@ -376,7 +382,7 @@ app.put('/api/applications/:id/status', async (req, res) => {
            VALUES ($1, $2, NULL, NULL)`,
           [id, username]
         );
-        console.log(`Created new authentication record for member ${member.full_name}`);
+        console.log(`Created new authentication record for member ${fullName}`);
       } else {
         // For re-approvals, just update username if it changed and clear any old password
         await client.query(
@@ -384,7 +390,7 @@ app.put('/api/applications/:id/status', async (req, res) => {
            WHERE member_id = $2`,
           [username, id]
         );
-        console.log(`Updated authentication record for re-approved member ${member.full_name}`);
+        console.log(`Updated authentication record for re-approved member ${fullName}`);
       }
 
       // Get member's email
@@ -405,7 +411,7 @@ app.put('/api/applications/:id/status', async (req, res) => {
         console.log('To:', memberEmail);
         console.log('Subject: Welcome to BSPCP - Complete Your Account Setup!');
         console.log('Body:');
-        console.log(`Dear ${member.full_name},`);
+        console.log(`Dear ${fullName},`);
         console.log('\nCongratulations! Your BSPCP membership application has been approved.');
         console.log('\nYour auto-generated username:', username);
         console.log('\n🔑 Next Steps:');
@@ -603,7 +609,7 @@ app.post('/api/member/forgot-password', async (req, res) => {
 
     // Find member by email
     const memberResult = await client.query(
-      `SELECT m.id, m.full_name, mcd.email
+      `SELECT m.id, CONCAT(m.first_name, ' ', m.last_name) AS full_name, mcd.email
        FROM members m
        JOIN member_contact_details mcd ON m.id = mcd.member_id
        WHERE mcd.email = $1`,
@@ -643,7 +649,7 @@ app.post('/api/member/forgot-password', async (req, res) => {
 // New API endpoint for reset password
 app.post('/api/member/reset-password', async (req, res) => {
   const { token, newPassword } = req.body;
-  console.log('Reset password request received with token:', token);
+  console.log('🔐 Reset password request received with token:', token ? token.substring(0, 20) + '...' : 'NO_TOKEN');
 
   if (!token || !newPassword) {
     return res.status(400).json({ error: 'Token and new password are required.' });
@@ -651,47 +657,119 @@ app.post('/api/member/reset-password', async (req, res) => {
 
   const client = await pool.connect();
   try {
+    console.log('🔐 Starting password reset transaction...');
+    await client.query('BEGIN');
+
     const decoded = jwt.verify(token, JWT_SECRET);
     const memberId = decoded.memberId;
-    console.log('Token decoded for memberId:', memberId);
+    console.log('🔐 Token decoded for memberId:', memberId);
 
     // Check if member exists
-    const memberExists = await client.query('SELECT id FROM members WHERE id = $1', [memberId]);
+    const memberExists = await client.query('SELECT id, first_name, last_name FROM members WHERE id = $1', [memberId]);
     if (memberExists.rows.length === 0) {
+      console.log('❌ Member not found for ID:', memberId);
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(404).json({ error: 'Member not found.' });
     }
 
+    const member = memberExists.rows[0];
+    console.log('✅ Member found:', `${member.first_name} ${member.last_name} (ID: ${member.id})`);
+
+    // Check if authentication record exists
+    const authCheck = await client.query(
+      'SELECT id, username, password_hash IS NOT NULL as has_password FROM member_authentication WHERE member_id = $1',
+      [memberId]
+    );
+
+    if (authCheck.rows.length === 0) {
+      console.log('❌ No authentication record found for member');
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(404).json({ error: 'Member authentication record not found. Please contact admin.' });
+    }
+
+    const authRecord = authCheck.rows[0];
+    console.log('🔑 Authentication record found - ID:', authRecord.id, 'Has password:', authRecord.has_password);
+
     // Hash the new password
+    console.log('🔐 Generating new password hash...');
     const saltRounds = 10;
     const salt = await bcrypt.genSalt(saltRounds);
     const passwordHash = await bcrypt.hash(newPassword, salt);
 
-    // Update the member's password
-    await client.query(
+    console.log('🔐 Password hashing completed - Salt length:', salt.length, 'Hash length:', passwordHash.length);
+
+    // Update the member's password with detailed logging
+    console.log('📝 Updating member_authentication table...');
+    const updateResult = await client.query(
       `UPDATE member_authentication SET password_hash = $1, salt = $2 WHERE member_id = $3`,
       [passwordHash, salt, memberId]
     );
 
-    res.status(200).json({ message: 'Password has been reset successfully.' });
+    console.log('📝 Update result - row count:', updateResult.rowCount);
+
+    if (updateResult.rowCount === 0) {
+      console.log('❌ No rows updated - this should not happen if authentication record exists');
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(500).json({ error: 'Failed to update password - no rows affected.' });
+    }
+
+    // Verify the update worked
+    const verification = await client.query(
+      'SELECT password_hash IS NOT NULL as password_updated FROM member_authentication WHERE member_id = $1',
+      [memberId]
+    );
+
+    if (verification.rows[0].password_updated) {
+      console.log('✅ Password update verified successfully');
+      await client.query('COMMIT');
+      client.release();
+      res.status(200).json({ message: 'Password has been reset successfully.' });
+    } else {
+      console.log('❌ Password update verification failed');
+      await client.query('ROLLBACK');
+      client.release();
+      res.status(500).json({ error: 'Failed to update password - verification failed.' });
+    }
 
   } catch (error) {
-    console.error('Error during reset password request:', error);
+    console.error('❌ Error during reset password request:', error);
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+        console.log('🔄 Transaction rolled back due to error');
+      } catch (rollbackError) {
+        console.error('❌ Error rolling back transaction:', rollbackError);
+      }
+      client.release();
+    }
+
     if (error.name === 'TokenExpiredError') {
       return res.status(400).json({ error: 'Password reset link has expired.' });
     }
     if (error.name === 'JsonWebTokenError') {
       return res.status(400).json({ error: 'Invalid password reset link.' });
     }
-    res.status(500).json({ error: 'Failed to reset password', details: error.message });
-  } finally {
-    client.release();
+
+    // Log the full error for debugging
+    console.error('🔥 Detailed error in password reset:', error.message);
+    if (error.code) console.error('Error code:', error.code);
+    if (error.constraint) console.error('Constraint violated:', error.constraint);
+
+    res.status(500).json({
+      error: 'Failed to reset password',
+      details: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
+    });
   }
 });
 
 // New API endpoint for initial password setup after approval
 app.post('/api/member/setup-password', async (req, res) => {
   const { token, password } = req.body;
-  console.log('Password setup request received with token:', token);
+  console.log('🔐 Password setup request received with token:', token ? token.substring(0, 20) + '...' : 'NO_TOKEN');
 
   if (!token || !password) {
     return res.status(400).json({ error: 'Token and password are required.' });
@@ -704,75 +782,163 @@ app.post('/api/member/setup-password', async (req, res) => {
 
   const client = await pool.connect();
   try {
+    console.log('🔐 Starting password setup transaction...');
+    await client.query('BEGIN');
+
     // Verify the setup token
     const decoded = jwt.verify(token, JWT_SECRET);
-
     if (decoded.purpose !== 'password_setup') {
+      console.log('❌ Invalid setup token purpose');
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(400).json({ error: 'Invalid setup token.' });
     }
 
     const memberId = decoded.memberId;
-    console.log('Setting up password for memberId:', memberId);
+    console.log('🔐 Setting up password for memberId:', memberId);
 
     // Check if member exists and is in pending_password_setup status
     const memberResult = await client.query(
-      'SELECT id, member_status, full_name FROM members WHERE id = $1',
+      'SELECT id, first_name, last_name, member_status FROM members WHERE id = $1',
       [memberId]
     );
 
     if (memberResult.rows.length === 0) {
+      console.log('❌ Member not found for ID:', memberId);
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(404).json({ error: 'Member not found.' });
     }
 
     const member = memberResult.rows[0];
+    const memberFullName = `${member.first_name} ${member.last_name}`.trim();
+    console.log('✅ Member found:', memberFullName, 'Status:', member.member_status);
 
     // Check if already active (password already set)
     if (member.member_status === 'active') {
+      console.log('⚠️ Account is already active - should not be in setup mode');
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(400).json({ error: 'Account is already set up. Please login instead.' });
     }
 
     // Check if still in pending setup
     if (member.member_status !== 'pending_password_setup') {
+      console.log('❌ Account is not in pending setup state - current status:', member.member_status);
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(400).json({ error: 'Account is not in password setup state.' });
     }
 
+    // Check if authentication record exists
+    const authCheck = await client.query(
+      'SELECT id, username FROM member_authentication WHERE member_id = $1',
+      [memberId]
+    );
+
+    if (authCheck.rows.length === 0) {
+      console.log('❌ No authentication record found for member - creating one');
+      // This shouldn't happen unless the application status update failed
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(404).json({ error: 'Member authentication record not found. Please contact admin.' });
+    }
+
+    console.log('🔑 Authentication record found - ID:', authCheck.rows[0].id, 'Username:', authCheck.rows[0].username);
+
     // Hash the password
+    console.log('🔐 Generating new password hash...');
     const saltRounds = 10;
     const salt = await bcrypt.genSalt(saltRounds);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    console.log('🔐 Password hashing completed - Salt length:', salt.length, 'Hash length:', passwordHash.length);
+
     // Update the authentication record with the password
-    await client.query(
+    console.log('📝 Updating member_authentication table...');
+    const updateResult = await client.query(
       `UPDATE member_authentication
        SET password_hash = $1, salt = $2, created_at = CURRENT_TIMESTAMP
        WHERE member_id = $3`,
       [passwordHash, salt, memberId]
     );
 
+    console.log('📝 Password setup update result - row count:', updateResult.rowCount);
+
+    if (updateResult.rowCount === 0) {
+      console.log('❌ No rows updated - this should not happen');
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(500).json({ error: 'Failed to update authentication record.' });
+    }
+
     // Update member status to active
-    await client.query(
+    console.log('📝 Updating member status to active...');
+    const statusUpdateResult = await client.query(
       `UPDATE members SET member_status = $1 WHERE id = $2`,
       ['active', memberId]
     );
 
-    console.log('Password setup completed for member:', member.full_name);
+    console.log('📝 Member status update result - row count:', statusUpdateResult.rowCount);
 
-    res.status(200).json({
-      message: 'Password has been set successfully! You can now login.',
-      memberName: member.full_name
-    });
+    // Verify both updates worked
+    const verification = await client.query(
+      `SELECT
+        m.member_status,
+        ma.password_hash IS NOT NULL as has_password
+       FROM members m
+       JOIN member_authentication ma ON ma.member_id = m.id
+       WHERE m.id = $1`,
+      [memberId]
+    );
+
+    if (verification.rows[0].member_status === 'active' && verification.rows[0].has_password) {
+      console.log('✅ Password setup verified successfully');
+      await client.query('COMMIT');
+      client.release();
+      console.log('🎉 Password setup completed successfully for member:', memberFullName);
+      res.status(200).json({
+        message: 'Password has been set successfully! You can now login.',
+        memberName: memberFullName
+      });
+    } else {
+      console.log('❌ Password setup verification failed');
+      console.log('   Member status:', verification.rows[0].member_status);
+      console.log('   Has password:', verification.rows[0].has_password);
+      await client.query('ROLLBACK');
+      client.release();
+      res.status(500).json({ error: 'Failed to complete password setup - verification failed.' });
+    }
 
   } catch (error) {
-    console.error('Error during password setup:', error);
+    console.error('❌ Error during password setup:', error);
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+        console.log('🔄 Transaction rolled back due to error');
+      } catch (rollbackError) {
+        console.error('❌ Error rolling back transaction:', rollbackError);
+      }
+      client.release();
+    }
+
     if (error.name === 'TokenExpiredError') {
       return res.status(400).json({ error: 'Password setup link has expired. Please contact admin for a new setup link.' });
     }
     if (error.name === 'JsonWebTokenError') {
       return res.status(400).json({ error: 'Invalid password setup link.' });
     }
-    res.status(500).json({ error: 'Failed to set up password', details: error.message });
-  } finally {
-    client.release();
+
+    // Log the full error for debugging
+    console.error('🔥 Detailed error in password setup:', error.message);
+    if (error.code) console.error('Error code:', error.code);
+    if (error.constraint) console.error('Constraint violated:', error.constraint);
+
+    res.status(500).json({
+      error: 'Failed to set up password',
+      details: error.message,
+      code: error.code || 'UNKNOWN_ERROR'
+    });
   }
 });
 
