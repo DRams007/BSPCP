@@ -6,48 +6,93 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect } from 'react'; // Import useEffect
+import { IMemberContact } from '@/types/member';
+import { useToast } from '@/hooks/use-toast';
 
-interface ContactFormData {
-  email: string;
-  phone: string;
-  website: string;
-  practiceAddress: string;
-  city: string;
-  postalCode: string;
-  emergencyContact: string;
-  emergencyPhone: string;
-  showEmail: boolean;
-  showPhone: boolean;
-  showAddress: boolean;
+interface ContactEditFormProps {
+  member: IMemberContact;
+  onContactUpdate: () => void;
 }
 
-const ContactEditForm = () => {
+const ContactEditForm = ({ member, onContactUpdate }: ContactEditFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  
-  const form = useForm<ContactFormData>({
+  const { toast } = useToast();
+
+  const form = useForm<IMemberContact>({
     defaultValues: {
-      email: 'sarah.johnson@email.com',
-      phone: '+267 71 234 567',
-      website: 'www.sarahjohnsonpsychology.com',
-      practiceAddress: '123 Main Street, Plot 12345',
-      city: 'Gaborone',
-      postalCode: 'Private Bag 001',
-      emergencyContact: 'Dr. John Smith',
-      emergencyPhone: '+267 71 987 654',
-      showEmail: true,
-      showPhone: true,
-      showAddress: false
+      id: member.id,
+      email: member.email || '',
+      phone: member.phone || '',
+      website: member.website || '',
+      physical_address: member.physical_address || '',
+      city: member.city || '',
+      postal_address: member.postal_address || '',
+      emergency_contact: member.emergency_contact || '',
+      emergency_phone: member.emergency_phone || '',
+      show_email: member.show_email || false,
+      show_phone: member.show_phone || false,
+      show_address: member.show_address || false,
     }
   });
 
-  const onSubmit = async (data: ContactFormData) => {
+  useEffect(() => {
+    if (member) {
+      form.reset({
+        id: member.id,
+        email: member.email || '',
+        phone: member.phone || '',
+        website: member.website || '',
+        physical_address: member.physical_address || '',
+        city: member.city || '',
+        postal_address: member.postal_address || '',
+        emergency_contact: member.emergency_contact || '',
+        emergency_phone: member.emergency_phone || '',
+        show_email: member.show_email || false,
+        show_phone: member.show_phone || false,
+        show_address: member.show_address || false,
+      });
+    }
+  }, [member, form]);
+
+  const onSubmit = async (data: IMemberContact) => {
     setIsLoading(true);
-    // TODO: Implement Supabase update
-    console.log('Contact update:', data);
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found.');
+      }
+
+      const response = await fetch(`http://localhost:3001/api/member/contact/${member.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Success",
+        description: "Contact information updated successfully!",
+        variant: "default",
+      });
+      onContactUpdate(); // Call the callback to refresh dashboard data
+    } catch (error) {
+      const err = error as Error;
+      console.error('Error updating contact information:', err);
+      toast({
+        title: "Error",
+        description: `Failed to update contact information: ${err.message}`,
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-      alert('Contact information updated successfully!');
-    }, 1000);
+    }
   };
 
   return (
@@ -84,7 +129,7 @@ const ContactEditForm = () => {
             <div className="flex flex-col items-center space-y-2 pt-6">
               <FormField
                 control={form.control}
-                name="showEmail"
+                name="show_email"
                 render={({ field }) => (
                   <FormItem className="flex items-center space-x-2">
                     <FormControl>
@@ -120,7 +165,7 @@ const ContactEditForm = () => {
             <div className="flex flex-col items-center space-y-2 pt-6">
               <FormField
                 control={form.control}
-                name="showPhone"
+                name="show_phone"
                 render={({ field }) => (
                   <FormItem className="flex items-center space-x-2">
                     <FormControl>
@@ -152,12 +197,12 @@ const ContactEditForm = () => {
 
           {/* Practice Address */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between space-x-4">
-              <div className="flex-1">
-                <FormField
-                  control={form.control}
-                  name="practiceAddress"
-                  render={({ field }) => (
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex-1">
+              <FormField
+                control={form.control}
+                name="physical_address"
+                render={({ field }) => (
                     <FormItem>
                       <FormLabel>Practice Address</FormLabel>
                       <FormControl>
@@ -175,7 +220,7 @@ const ContactEditForm = () => {
               <div className="flex flex-col items-center space-y-2 pt-6">
                 <FormField
                   control={form.control}
-                  name="showAddress"
+                  name="show_address"
                   render={({ field }) => (
                     <FormItem className="flex items-center space-x-2">
                       <FormControl>
@@ -207,7 +252,7 @@ const ContactEditForm = () => {
               />
               <FormField
                 control={form.control}
-                name="postalCode"
+                name="postal_address"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Postal Address</FormLabel>
@@ -232,7 +277,7 @@ const ContactEditForm = () => {
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
-                name="emergencyContact"
+                name="emergency_contact"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Emergency Contact Name</FormLabel>
@@ -245,7 +290,7 @@ const ContactEditForm = () => {
               />
               <FormField
                 control={form.control}
-                name="emergencyPhone"
+                name="emergency_phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Emergency Contact Phone</FormLabel>

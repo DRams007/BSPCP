@@ -12,40 +12,59 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CheckCircle, Upload, Users, Award, BookOpen, Network, LogIn } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const membershipSchema = z.object({
-  // Personal Information
-  fullName: z.string().min(2, 'Full name is required'),
+  // Members Table Fields
+  firstName: z.string().min(2, 'First name is required'),
+  lastName: z.string().min(2, 'Last name is required'),
   bspcpMembershipNumber: z.string().optional(),
   idNumber: z.string().min(5, 'ID/Passport number is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['male', 'female']),
   nationality: z.string().min(2, 'Nationality is required'),
-  // Document Uploads
-  idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
-  proofOfPayment: z.any().refine((f) => f instanceof File, 'Proof of payment is required'),
-  
-  // Contact Details
-  phone: z.string().min(10, 'Valid phone number is required'),
-  email: z.string().email('Valid email is required'),
-  physicalAddress: z.string().min(10, 'Physical address is required'),
-  postalAddress: z.string().min(5, 'Postal address is required'),
-  
-  // Professional Information
+
+  // Member Professional Details Table Fields
   occupation: z.string().min(2, 'Occupation is required'),
   organizationName: z.string().min(2, 'Organization name is required'),
   highestQualification: z.string().min(2, 'Highest qualification is required'),
   otherQualifications: z.string().optional(),
   scholarlyPublications: z.string().optional(),
-  specializations: z.string().min(5, 'Areas of specialization are required'),
-  // Document Uploads
-  certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
-  
-  // Professional Experience
+  specializations: z.array(z.string()).min(1, 'At least one specialization is required'),
+  otherSpecialization: z.string().optional(), // Added new field
   employmentStatus: z.enum(['employed', 'self-employed', 'unemployed', 'retired']),
   yearsExperience: z.string().min(1, 'Years of experience is required'),
+  bio: z.string().optional(),
+  title: z.string().optional(),
+  languages: z.array(z.string()).optional(),
+  sessionTypes: z.array(z.string()).optional(), // Ensure this is present
+  feeRange: z.string().optional(),
+  availability: z.string().optional(),
+
+  // Member Contact Details Table Fields
+  phone: z.string().min(8, 'Phone number must be at least 8 characters'),
+  email: z.string().email('Valid email is required'),
+  website: z.string().optional(),
+  physicalAddress: z.string().min(10, 'Physical address is required'),
+  city: z.string().min(2, 'City is required'),
+  emergencyContact: z.string().optional(),
+  emergencyPhone: z.string().optional(),
+  showEmail: z.boolean().default(true),
+  showPhone: z.boolean().default(true),
+  showAddress: z.boolean().default(false),
+
+  // Member Personal Documents Table Fields
+  idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
+  profileImage: z.any().optional(), // Optional for initial application
+
+  // Member Certificates Table Fields
+  certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
+
+  // Member Payments Table Fields
+  proofOfPayment: z.any().refine((f) => f instanceof File, 'Proof of payment is required'),
 });
 
 type MembershipFormData = z.infer<typeof membershipSchema>;
@@ -53,27 +72,128 @@ type MembershipFormData = z.infer<typeof membershipSchema>;
 const Membership = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
+  const navigate = useNavigate();
 
   const form = useForm<MembershipFormData>({
     resolver: zodResolver(membershipSchema),
     defaultValues: {
       gender: 'male',
       employmentStatus: 'employed',
+      specializations: [],
+      languages: [],
+      sessionTypes: [],
+      showEmail: true,
+      showPhone: true,
+      showAddress: false,
       // File uploads
       idDocument: undefined,
+      profileImage: undefined,
       proofOfPayment: undefined,
       certificates: [],
+      otherSpecialization: '', // Added new field
     },
   });
 
-  const onSubmit = (data: MembershipFormData) => {
-    console.log('Membership application submitted:', data);
-    // Handle form submission here
+  const onSubmit = async (data: MembershipFormData) => {
+    const formData = new FormData();
+
+    // Append all text fields
+    for (const key in data) {
+      if (key === 'idDocument' || key === 'proofOfPayment' || key === 'certificates' || key === 'profileImage') {
+        continue; // Skip file fields for now, handle separately
+      }
+      
+      const value = (data as MembershipFormData)[key as keyof MembershipFormData];
+      if (Array.isArray(value)) {
+        if (key === 'specializations') {
+          const combinedSpecializations = [...value];
+          if (data.otherSpecialization) {
+            combinedSpecializations.push(data.otherSpecialization);
+          }
+          formData.append(key, JSON.stringify(combinedSpecializations));
+        } else {
+          formData.append(key, JSON.stringify(value)); // Stringify arrays for backend
+        }
+      } else if (typeof value === 'boolean') {
+        formData.append(key, value ? 'true' : 'false'); // Convert booleans to string
+      } else if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
+    }
+
+    // Append files
+    if (data.idDocument) {
+      formData.append('idDocument', data.idDocument);
+    }
+    if (data.profileImage) {
+      formData.append('profileImage', data.profileImage);
+    }
+    if (data.proofOfPayment) {
+      formData.append('proofOfPayment', data.proofOfPayment);
+    }
+    if (data.certificates && data.certificates.length > 0) {
+      data.certificates.forEach((file) => {
+        formData.append('certificates', file);
+      });
+    }
+
+    try {
+      const response = await fetch('http://localhost:3001/api/membership', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: 'Application Submitted!',
+          description: 'Your membership application has been successfully submitted.',
+          variant: 'default',
+        });
+        navigate('/member-login'); // Redirect to login page or a success page
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: 'Submission Failed',
+          description: errorData.error || 'There was an error submitting your application.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      toast({
+        title: 'Network Error',
+        description: 'Could not connect to the server. Please try again later.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
+  const nextStep = async () => {
+    let isValid = false;
+    if (currentStep === 1) {
+      isValid = await form.trigger([
+        'firstName', 'lastName', 'idNumber', 'dateOfBirth', 'gender', 'nationality',
+        'phone', 'email', 'physicalAddress', 'city', 'idDocument'
+      ]);
+    } else if (currentStep === 2) {
+      isValid = await form.trigger([
+        'highestQualification', 'certificates'
+      ]);
+    } else if (currentStep === 3) {
+      isValid = await form.trigger([
+        'employmentStatus', 'occupation', 'organizationName', 'specializations', 'yearsExperience'
+      ]);
+    }
+
+    if (isValid) {
       setCurrentStep(currentStep + 1);
+    } else {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields for the current step.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -281,14 +401,44 @@ const Membership = () => {
                     {/* Step 1: Personal Information */}
                     {currentStep === 1 && (
                       <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="firstName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>First Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter your first name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Last Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter your last name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
                         <FormField
                           control={form.control}
-                          name="fullName"
+                          name="title"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Full Name (as on certificates)</FormLabel>
+                              <FormLabel>Professional Title (e.g., Dr., Prof., Mr., Ms.)</FormLabel>
                               <FormControl>
-                                <Input placeholder="Enter your full name" {...field} />
+                                <Input placeholder="Enter your professional title" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -331,7 +481,12 @@ const Membership = () => {
                               <FormItem>
                                 <FormLabel>Date of Birth</FormLabel>
                                 <FormControl>
-                                  <Input type="date" {...field} />
+                                  <Input
+                                    type="date"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    className="w-full px-3 py-2 border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-datetime-edit]:text-foreground [&::-webkit-date-and-time-value]:text-foreground"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -419,7 +574,7 @@ const Membership = () => {
                             <FormItem>
                               <FormLabel>Physical Address</FormLabel>
                               <FormControl>
-                                <Textarea placeholder="Enter your physical address" {...field} />
+                                <Textarea placeholder="Street address, plot number, building details" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -428,17 +583,18 @@ const Membership = () => {
 
                         <FormField
                           control={form.control}
-                          name="postalAddress"
+                          name="city"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Postal Address</FormLabel>
+                              <FormLabel>City</FormLabel>
                               <FormControl>
-                                <Textarea placeholder="Enter your postal address" {...field} />
+                                <Input placeholder="Gaborone" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
+
 
                         <FormField
                           control={form.control}
@@ -607,7 +763,56 @@ const Membership = () => {
                             <FormItem>
                               <FormLabel>Areas of Specialization</FormLabel>
                               <FormControl>
-                                <Textarea placeholder="Enter your areas of specialization" {...field} />
+                                <Select
+                                  onValueChange={(value) => {
+                                    const currentSpecializations = form.getValues('specializations') || [];
+                                    if (currentSpecializations.includes(value)) {
+                                      field.onChange(currentSpecializations.filter((s) => s !== value));
+                                    } else {
+                                      field.onChange([...currentSpecializations, value]);
+                                    }
+                                  }}
+                                  value={field.value?.[0] || ''} // Display first selected item or empty
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select specializations" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Depression & Anxiety">Depression & Anxiety</SelectItem>
+                                    <SelectItem value="Stress Management">Stress Management</SelectItem>
+                                    <SelectItem value="Self-esteem Issues">Self-esteem Issues</SelectItem>
+                                    <SelectItem value="Life Transitions">Life Transitions</SelectItem>
+                                    <SelectItem value="Relationship Issues">Relationship Issues</SelectItem>
+                                    <SelectItem value="Communication Problems">Communication Problems</SelectItem>
+                                    <SelectItem value="Pre-Marital Counselling">Pre-Marital Counselling</SelectItem>
+                                    <SelectItem value="Separation Support">Separation Support</SelectItem>
+                                    <SelectItem value="Family Conflicts">Family Conflicts</SelectItem>
+                                    <SelectItem value="Parenting Support">Parenting Support</SelectItem>
+                                    <SelectItem value="Blended Family Issues">Blended Family Issues</SelectItem>
+                                    <SelectItem value="Generational Conflicts">Generational Conflicts</SelectItem>
+                                    <SelectItem value="Behavioral Issues">Behavioral Issues</SelectItem>
+                                    <SelectItem value="School Problems">School Problems</SelectItem>
+                                    <SelectItem value="Developmental Concerns">Developmental Concerns</SelectItem>
+                                    <SelectItem value="Teen Mental Health">Teen Mental Health</SelectItem>
+                                    <SelectItem value="Trauma & PTSD">Trauma & PTSD</SelectItem>
+                                    <SelectItem value="Addiction Support">Addiction Support</SelectItem>
+                                    <SelectItem value="Grief & Loss">Grief & Loss</SelectItem>
+                                    <SelectItem value="Career Counselling">Career Counselling</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="otherSpecialization"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Other Specialization (if not listed above)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Type your specialization" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -628,9 +833,46 @@ const Membership = () => {
                           )}
                         />
 
-
-
-
+                        {/* Session Types */}
+                        <div>
+                          <FormLabel>Session Types Offered</FormLabel>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+                            {['In-Person', 'Online Video', 'Phone Sessions'].map((type) => (
+                              <FormField
+                                key={type}
+                                control={form.control}
+                                name="sessionTypes"
+                                render={({ field }) => {
+                                  return (
+                                    <FormItem
+                                      key={type}
+                                      className="flex flex-row items-start space-x-2 space-y-0"
+                                    >
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={field.value?.includes(type)}
+                                          onCheckedChange={(checked) => {
+                                            return checked
+                                              ? field.onChange([...field.value, type])
+                                              : field.onChange(
+                                                  field.value?.filter(
+                                                    (value) => value !== type
+                                                  )
+                                                );
+                                          }}
+                                        />
+                                      </FormControl>
+                                      <FormLabel className="font-normal text-sm cursor-pointer">
+                                        {type}
+                                      </FormLabel>
+                                    </FormItem>
+                                  );
+                                }}
+                              />
+                            ))}
+                          </div>
+                          <FormMessage>{form.formState.errors.sessionTypes?.message}</FormMessage>
+                        </div>
                       </div>
                     )}
 

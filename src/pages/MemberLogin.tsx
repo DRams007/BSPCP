@@ -8,71 +8,79 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface LoginForm {
-  email: string;
+  identifier: string; // Can be either username or email
   password: string;
 }
 
-// Demo member accounts
-const demoMembers = [
-  {
-    email: 'dr.thabo@bspcp.org',
-    password: 'member123',
-    name: 'Dr. Thabo Molefe',
-    specialization: 'Individual Therapy',
-    status: 'Active'
-  },
-  {
-    email: 'kefilwe.m@bspcp.org', 
-    password: 'member123',
-    name: 'Kefilwe Mabotja',
-    specialization: 'Family Therapy',
-    status: 'Active'
-  },
-  {
-    email: 'boitumelo@bspcp.org',
-    password: 'member123', 
-    name: 'Boitumelo Kgosi',
-    specialization: 'Trauma & Crisis',
-    status: 'Active'
-  }
-];
-
 const MemberLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const form = useForm<LoginForm>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
-    
-    // Check demo credentials
-    const member = demoMembers.find(
-      m => m.email === data.email && m.password === data.password
-    );
-    
-    if (member) {
-      // Store member session
-      localStorage.setItem('memberAuthenticated', 'true');
-      localStorage.setItem('currentMember', JSON.stringify(member));
-      
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${member.name}!`,
+    try {
+      const response = await fetch('http://localhost:3001/api/member/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
-      
-      navigate('/member-dashboard');
-    } else {
+
+      const result = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('memberAuthenticated', 'true');
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('currentMember', JSON.stringify({
+          memberId: result.memberId,
+          username: result.username,
+          fullName: result.fullName,
+        }));
+
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${result.fullName}!`,
+        });
+
+        navigate('/member-dashboard');
+      } else {
+        if (result.error === 'Member account is not active') {
+          toast({
+            title: "Account Setup Required",
+            description: "Your account has been approved but you need to set your password first.",
+            variant: "destructive",
+          });
+        } else if (result.error === 'Authentication record not found') {
+          toast({
+            title: "Account Not Set Up",
+            description: "Your account is approved but authentication is not configured. Please contact admin.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: result.error || "An unexpected error occurred.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
-        title: "Invalid Credentials",
-        description: "Please check your email and password. Use demo credentials below for testing.",
+        title: "Error",
+        description: "Could not connect to the server. Please try again later.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
@@ -92,15 +100,15 @@ const MemberLogin = () => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="identifier"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>Username or Email</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="your.email@example.com"
-                            {...field} 
+                          <Input
+                            type="text"
+                            placeholder="Enter your username or email"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -111,15 +119,21 @@ const MemberLogin = () => {
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="relative">
                         <FormLabel>Password</FormLabel>
                         <FormControl>
                           <Input 
-                            type="password" 
+                            type={showPassword ? "text" : "password"}
                             placeholder="Enter your password"
                             {...field} 
                           />
                         </FormControl>
+                        <span
+                          className="absolute inset-y-0 right-0 top-7 flex cursor-pointer items-center pr-3 text-gray-400"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </span>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -133,23 +147,6 @@ const MemberLogin = () => {
                   </Button>
                 </form>
               </Form>
-              
-              {/* Demo Credentials */}
-              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                <h4 className="text-sm font-medium mb-3 text-center">Demo Member Accounts</h4>
-                <div className="space-y-3 text-xs">
-                  {demoMembers.map((member, index) => (
-                    <div key={index} className="bg-background p-3 rounded border">
-                      <div className="font-medium text-primary mb-1">{member.name}</div>
-                      <div className="text-muted-foreground mb-1">{member.specialization}</div>
-                      <div className="font-mono">
-                        <div>Email: {member.email}</div>
-                        <div>Password: {member.password}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
               
               <div className="mt-6 text-center space-y-2">
                 <Link 

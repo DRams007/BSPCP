@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +9,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Search, Filter, Phone, Mail, Eye, CalendarX, Clock, CheckCircle, Bell, Users, TrendingUp,
-         CalendarPlus, MapPin, Settings, BarChart3, UserCheck, AlertTriangle } from 'lucide-react';
+         CalendarPlus, MapPin, Settings, BarChart3, UserCheck, AlertTriangle, Loader2, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import BookingModal from '@/components/BookingModal'; // Import BookingModal
+
+// Helper function to format date
+const formatDate = (dateString: string) => {
+  if (!dateString || dateString === 'N/A') return 'N/A';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString; // Return original string if date is invalid
+    }
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  } catch (error) {
+    console.error("Error formatting date:", dateString, error);
+    return dateString; // Return original string in case of error
+  }
+};
+
+// Helper function to format time
+const formatTime = (timeString: string) => {
+  if (!timeString) return '';
+  try {
+    const [hour, minute] = timeString.split(':');
+    const hourNum = parseInt(hour, 10);
+    const minuteNum = parseInt(minute, 10);
+    const ampm = hourNum >= 12 ? 'PM' : 'AM';
+    const formattedHour = hourNum % 12 || 12; // Convert 0 to 12 for 12 AM
+    return `${String(formattedHour).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')} ${ampm}`;
+  } catch (error) {
+    console.error("Error formatting time:", timeString, error);
+    return timeString;
+  }
+};
+
 
 interface Booking {
   id: string;
@@ -21,10 +57,11 @@ interface Booking {
   time: string;
   service: string;
   sessionType: 'online' | 'in-person';
-  status: 'Confirmed' | 'Pending' | 'Cancelled' | 'Completed';
-  notes?: string;
-  duration: number; // in minutes
-  recurring?: boolean;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'rescheduled'; // Updated to match backend
+  needs?: string; // Corresponds to notes in the frontend
+  supportUrgency?: string;
+  createdAt: string;
+  notes?: string; // added based on DB schema (needs is used for notes)
 }
 
 interface Client {
@@ -37,94 +74,17 @@ interface Client {
   notes: string;
 }
 
-const sampleBookings: Booking[] = [
-  {
-    id: 'bkg001',
-    clientName: 'Alice Smith',
-    clientEmail: 'alice.smith@email.com',
-    clientPhone: '+267 7234 5678',
-    date: '2025-09-11',
-    time: '10:00 AM',
-    service: 'Individual Therapy',
-    sessionType: 'in-person',
-    status: 'Confirmed',
-    notes: 'First session, anxiety and stress management',
-    duration: 60,
-  },
-  {
-    id: 'bkg002',
-    clientName: 'Bob Johnson',
-    clientEmail: 'bob.johnson@email.com',
-    clientPhone: '+267 7123 4567',
-    date: '2025-09-11',
-    time: '02:00 PM',
-    service: 'Couples Counselling',
-    sessionType: 'online',
-    status: 'Pending',
-    notes: 'Relationship issues, communication problems',
-    duration: 90,
-  },
-  {
-    id: 'bkg003',
-    clientName: 'Charlie Brown',
-    clientEmail: 'charlie.brown@email.com',
-    clientPhone: '+267 7345 6789',
-    date: '2025-09-12',
-    time: '11:30 AM',
-    service: 'Child & Teen Support',
-    sessionType: 'in-person',
-    status: 'Confirmed',
-    notes: 'Teen anxiety, school-related stress',
-    duration: 45,
-  },
-  {
-    id: 'bkg004',
-    clientName: 'Diana Prince',
-    clientEmail: 'diana.prince@email.com',
-    clientPhone: '+267 7456 7890',
-    date: '2025-09-13',
-    time: '09:00 AM',
-    service: 'Trauma & Crisis Intervention',
-    sessionType: 'online',
-    status: 'Confirmed',
-    notes: 'Client requested cancellation',
-    duration: 60,
-  },
-];
-
-const sampleClients: Client[] = [
-  {
-    id: 'cli001',
-    name: 'Alice Smith',
-    email: 'alice.smith@email.com',
-    phone: '+267 7234 5678',
-    totalSessions: 5,
-    lastSession: '2025-09-10',
-    notes: 'Making good progress with anxiety management. More confident.',
-  },
-  {
-    id: 'cli002',
-    name: 'Bob Johnson',
-    email: 'bob.johnson@email.com',
-    phone: '+267 7123 4567',
-    totalSessions: 3,
-    lastSession: '2025-09-05',
-    notes: 'Couples therapy shows promise but needs more work on communication.',
-  },
-  {
-    id: 'cli003',
-    name: 'Charlie Brown',
-    email: 'charlie.brown@email.com',
-    phone: '+267 7345 6789',
-    totalSessions: 2,
-    lastSession: '2025-09-08',
-    notes: 'Teen experiencing high anxiety related to academic pressure.',
-  },
-];
+interface Counsellor {
+  id: string;
+  full_name: string;
+  specializations: string[];
+  session_types: string[];
+}
 
 const BookingManagement = () => {
-  const [bookings, setBookings] = useState<Booking[]>(sampleBookings);
-  const [clients, setClients] = useState<Client[]>(sampleClients);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -135,55 +95,206 @@ const BookingManagement = () => {
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('');
   const [cancelReason, setCancelReason] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isNewBookingDialogOpen, setIsNewBookingDialogOpen] = useState(false); // New state for new booking dialog
+  const [currentCounsellor, setCurrentCounsellor] = useState<Counsellor | null>(null); // State to store current counsellor's profile
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [bookingStats, setBookingStats] = useState({ confirmed: 0, pending: 0, completed: 0, cancelled: 0, rescheduled: 0, totalSessions: 0 });
+  const [todayBookingsState, setTodayBookingsState] = useState<Booking[]>([]); // New state for today's bookings
   const { toast } = useToast();
 
-  // Calculate today's bookings
-  const todayBookings = bookings.filter(booking =>
-    booking.date === new Date().toISOString().split('T')[0] && booking.status === 'Confirmed'
-  );
+  const fetchCounsellorProfile = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found.');
+      }
+      const response = await fetch('http://localhost:3001/api/member/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: Counsellor = await response.json();
+      setCurrentCounsellor(data);
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error fetching counsellor profile:", error);
+      toast({
+        title: "Error",
+        description: `Failed to load counsellor profile: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const fetchBookings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found.');
+      }
+
+      const response = await fetch(`http://localhost:3001/api/member/bookings`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data: Booking[] = await response.json();
+      setAllBookings(data);
+
+      // Derive clients from bookings
+      const uniqueClients = Array.from(new Set(data.map(booking => booking.clientName)))
+        .map(clientName => {
+          const clientBookings = data.filter(b => b.clientName === clientName);
+          const totalSessions = clientBookings.filter(b => b.status === 'completed').length;
+          const lastSession = clientBookings
+            .filter(b => b.status === 'completed')
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.date || 'N/A';
+          const clientEmail = clientBookings[0]?.clientEmail || '';
+          const clientPhone = clientBookings[0]?.clientPhone || '';
+
+          return {
+            id: clientBookings[0]?.id || `client-${clientName.replace(/\s/g, '-')}`, // Use booking ID or generate a unique one
+            name: clientName,
+            email: clientEmail,
+            phone: clientPhone,
+            totalSessions,
+            lastSession,
+            notes: '', // Notes will be managed separately or fetched if available
+          };
+        });
+      setClients(uniqueClients);
+
+    } catch (err) {
+      const error = err as Error;
+      setError(`Failed to fetch bookings: ${error.message}`);
+      console.error("Error fetching bookings:", error);
+      toast({
+        title: "Error",
+        description: `Failed to load bookings: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const fetchTodayBookings = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found.');
+      }
+      const response = await fetch('http://localhost:3001/api/member/bookings/today', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: Booking[] = await response.json();
+      setTodayBookingsState(data);
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error fetching today's bookings:", error);
+      toast({
+        title: "Error",
+        description: `Failed to load today's bookings: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchCounsellorProfile();
+    fetchBookings();
+    fetchTodayBookings(); // Fetch today's bookings
+  }, [fetchCounsellorProfile, fetchBookings, fetchTodayBookings]);
+
+  useEffect(() => {
+    const getBookingStats = () => {
+      const confirmed = allBookings.filter(b => b.status === 'confirmed').length;
+      const pending = allBookings.filter(b => b.status === 'pending').length;
+      const completed = allBookings.filter(b => b.status === 'completed').length;
+      const cancelled = allBookings.filter(b => b.status === 'cancelled').length;
+      const rescheduled = allBookings.filter(b => b.status === 'rescheduled').length;
+      const totalSessions = allBookings.length;
+  
+      setBookingStats({ confirmed, pending, completed, cancelled, rescheduled, totalSessions });
+    };
+
+    getBookingStats();
+  }, [allBookings]);
+
+  useEffect(() => {
+    if (statusFilter === 'all') {
+      setBookings(allBookings);
+    } else {
+      setBookings(allBookings.filter(booking => booking.status === statusFilter));
+    }
+  }, [statusFilter, allBookings]);
 
   // Calculate upcoming sessions (next 7 days)
   const getUpcomingBookings = () => {
     const today = new Date();
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    return bookings.filter(booking => {
+    return allBookings.filter(booking => {
       const bookingDate = new Date(booking.date);
-      return bookingDate >= today && bookingDate <= nextWeek && booking.status === 'Confirmed';
+      return bookingDate >= today && bookingDate <= nextWeek && booking.status === 'confirmed';
     });
   };
 
   const upcomingBookings = getUpcomingBookings();
 
-  const handleBookingAction = (bookingId: string, action: 'confirm' | 'cancel' | 'complete') => {
-    setBookings(prev => prev.map(booking => {
-      if (booking.id === bookingId) {
-        let newStatus: Booking['status'];
-        switch (action) {
-          case 'confirm':
-            newStatus = 'Confirmed';
-            break;
-          case 'cancel':
-            newStatus = 'Cancelled';
-            break;
-          case 'complete':
-            newStatus = 'Completed';
-            break;
-          default:
-            return booking;
-        }
-        return { ...booking, status: newStatus };
-      }
-      return booking;
-    }));
+  const handleBookingAction = async (bookingId: string, action: 'confirmed' | 'cancelled' | 'completed') => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found.');
 
-    toast({
-      title: "Booking Updated",
-      description: `Booking has been ${action === 'cancel' ? 'cancelled' : action === 'confirm' ? 'confirmed' : 'marked as complete'}`,
-    });
+      const response = await fetch(`http://localhost:3001/api/bookings/${bookingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: action }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Booking Updated",
+        description: `Booking has been ${action}`,
+      });
+      fetchBookings(); // Re-fetch bookings to update the UI
+      setActiveTab('bookings');
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error updating booking status:', error);
+      toast({
+        title: "Error",
+        description: `Failed to update booking: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRescheduleBooking = (bookingId: string) => {
+  const handleRescheduleBooking = async (bookingId: string) => {
     if (!rescheduleDate || !rescheduleTime) {
       toast({
         title: "Missing Information",
@@ -193,45 +304,77 @@ const BookingManagement = () => {
       return;
     }
 
-    setBookings(prev => prev.map(booking => {
-      if (booking.id === bookingId) {
-        return {
-          ...booking,
-          date: rescheduleDate,
-          time: rescheduleTime
-        };
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found.');
+
+      const response = await fetch(`http://localhost:3001/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ bookingDate: rescheduleDate, bookingTime: rescheduleTime }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return booking;
-    }));
 
-    toast({
-      title: "Booking Rescheduled",
-      description: `Booking has been rescheduled to ${rescheduleDate} at ${rescheduleTime}`,
-    });
-
-    setIsRescheduleDialogOpen(false);
-    setRescheduleDate('');
-    setRescheduleTime('');
+      toast({
+        title: "Booking Rescheduled",
+        description: `Booking has been rescheduled to ${formatDate(rescheduleDate)} at ${formatTime(rescheduleTime)}`,
+      });
+      fetchBookings(); // Re-fetch bookings to update the UI
+      setIsRescheduleDialogOpen(false);
+      setRescheduleDate('');
+      setRescheduleTime('');
+      setActiveTab('bookings');
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error rescheduling booking:', error);
+      toast({
+        title: "Error",
+        description: `Failed to reschedule booking: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCancelBooking = (bookingId: string, reason?: string) => {
-    setBookings(prev => prev.map(booking => {
-      if (booking.id === bookingId) {
-        return {
-          ...booking,
-          status: 'Cancelled' as Booking['status'],
-          notes: reason ? `${booking.notes || ''}\nCancellation reason: ${reason}`.trim() : booking.notes
-        };
+  const handleCancelBooking = async (bookingId: string, reason?: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found.');
+
+      const response = await fetch(`http://localhost:3001/api/bookings/${bookingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: 'cancelled', notes: reason }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      return booking;
-    }));
 
-    toast({
-      title: "Booking Cancelled",
-      description: reason ? `Booking cancelled: ${reason}` : "Booking has been cancelled",
-    });
-
-    setCancelReason('');
+      toast({
+        title: "Booking Cancelled",
+        description: reason ? `Booking cancelled: ${reason}` : "Booking has been cancelled",
+      });
+      fetchBookings(); // Re-fetch bookings to update the UI
+      setCancelReason('');
+      setActiveTab('bookings');
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error cancelling booking:', error);
+      toast({
+        title: "Error",
+        description: `Failed to cancel booking: ${error.message}`,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSaveClientNotes = () => {
@@ -250,40 +393,30 @@ const BookingManagement = () => {
     }
   };
 
-  const getBookingStats = () => {
-    const confirmed = bookings.filter(b => b.status === 'Confirmed').length;
-    const pending = bookings.filter(b => b.status === 'Pending').length;
-    const completed = bookings.filter(b => b.status === 'Completed').length;
-    const cancelled = bookings.filter(b => b.status === 'Cancelled').length;
-    const totalSessions = bookings.length;
-
-    return { confirmed, pending, completed, cancelled, totalSessions };
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: Booking['status']) => {
     switch (status) {
-      case 'Confirmed': return 'default';
-      case 'Pending': return 'secondary';
-      case 'Cancelled': return 'destructive';
-      case 'Completed': return 'outline';
+      case 'confirmed': return 'default';
+      case 'pending': return 'secondary';
+      case 'cancelled': return 'destructive';
+      case 'completed': return 'outline';
+      case 'rescheduled': return 'secondary'; // Using secondary for rescheduled
       default: return 'secondary';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Confirmed': return <CheckCircle className="h-3 w-3" />;
-      case 'Pending': return <Clock className="h-3 w-3" />;
-      case 'Cancelled': return <CalendarX className="h-3 w-3" />;
-      case 'Completed': return <CheckCircle className="h-3 w-3" />;
+      case 'confirmed': return <CheckCircle className="h-3 w-3" />;
+      case 'pending': return <Clock className="h-3 w-3" />;
+      case 'cancelled': return <CalendarX className="h-3 w-3" />;
+      case 'completed': return <CheckCircle className="h-3 w-3" />;
+      case 'rescheduled': return <CalendarPlus className="h-3 w-3" />;
       default: return <Clock className="h-3 w-3" />;
     }
   };
 
-  const stats = getBookingStats();
-
   return (
-    <Tabs defaultValue="dashboard" className="space-y-6">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
       {/* Main Navigation Tabs */}
       <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -298,17 +431,17 @@ const BookingManagement = () => {
         {/* Welcome Header */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome back to your Booking Dashboard</h2>
-          <p className="text-gray-600">You have {stats.pending} pending bookings. Today's schedule includes {todayBookings.length} sessions.</p>
+          <p className="text-gray-600">You have {bookingStats.pending} pending bookings. Today's schedule includes {todayBookingsState.length} sessions.</p>
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <Card className="border-l-4 border-l-green-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Confirmed Bookings</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+                  <p className="text-2xl font-bold text-green-600">{bookingStats.confirmed}</p>
                   <p className="text-xs text-muted-foreground">This month</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600 opacity-75" />
@@ -321,7 +454,7 @@ const BookingManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pending Requests</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{bookingStats.pending}</p>
                   <p className="text-xs text-muted-foreground">This week</p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600 opacity-75" />
@@ -334,7 +467,7 @@ const BookingManagement = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.totalSessions}</p>
+                  <p className="text-2xl font-bold text-blue-600">{bookingStats.totalSessions}</p>
                   <p className="text-xs text-muted-foreground">This month</p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-600 opacity-75" />
@@ -346,11 +479,24 @@ const BookingManagement = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Client Satisfaction</p>
-                  <p className="text-2xl font-bold text-purple-600">94%</p>
+                  <p className="text-sm font-medium text-muted-foreground">Rescheduled</p>
+                  <p className="text-2xl font-bold text-purple-600">{bookingStats.rescheduled}</p>
                   <p className="text-xs text-muted-foreground">This month</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-purple-600 opacity-75" />
+                <CalendarPlus className="h-8 w-8 text-purple-600 opacity-75" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-red-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
+                  <p className="text-2xl font-bold text-red-600">{bookingStats.cancelled}</p>
+                  <p className="text-xs text-muted-foreground">This month</p>
+                </div>
+                <CalendarX className="h-8 w-8 text-red-600 opacity-75" />
               </div>
             </CardContent>
           </Card>
@@ -366,18 +512,18 @@ const BookingManagement = () => {
                 Today's Schedule
               </CardTitle>
               <CardDescription>
-                Your appointments for {new Date().toLocaleDateString()}
+                Your appointments for {formatDate(new Date().toISOString())}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {todayBookings.length > 0 ? (
+              {todayBookingsState.length > 0 ? (
                 <div className="space-y-3">
-                  {todayBookings.map((booking) => (
+                  {todayBookingsState.map((booking) => (
                     <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{booking.clientName}</p>
                         <p className="text-sm text-muted-foreground">{booking.service}</p>
-                        <p className="text-sm text-muted-foreground">{booking.time}</p>
+                        <p className="text-sm text-muted-foreground">{formatTime(booking.time)}</p>
                       </div>
                       <Badge variant={getStatusBadgeVariant(booking.status)}>
                         {booking.status}
@@ -413,7 +559,7 @@ const BookingManagement = () => {
                       <div>
                         <p className="font-medium">{booking.clientName}</p>
                         <p className="text-sm text-muted-foreground">{booking.service}</p>
-                        <p className="text-sm text-muted-foreground">{booking.date} at {booking.time}</p>
+                        <p className="text-sm text-muted-foreground">{formatDate(booking.date)} at {formatTime(booking.time)}</p>
                       </div>
                       <div className="text-right">
                         <Badge variant={getStatusBadgeVariant(booking.status)} className="mb-2">
@@ -510,6 +656,7 @@ const BookingManagement = () => {
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="rescheduled">Rescheduled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -521,7 +668,7 @@ const BookingManagement = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Confirmed</p>
-                      <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+                      <p className="text-2xl font-bold text-green-600">{bookingStats.confirmed}</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-green-600" />
                   </div>
@@ -533,7 +680,7 @@ const BookingManagement = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                      <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                      <p className="text-2xl font-bold text-yellow-600">{bookingStats.pending}</p>
                     </div>
                     <Clock className="h-8 w-8 text-yellow-600" />
                   </div>
@@ -545,7 +692,7 @@ const BookingManagement = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                      <p className="text-2xl font-bold text-blue-600">{stats.completed}</p>
+                      <p className="text-2xl font-bold text-blue-600">{bookingStats.completed}</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-blue-600" />
                   </div>
@@ -557,7 +704,7 @@ const BookingManagement = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
-                      <p className="text-2xl font-bold text-red-600">1</p>
+                      <p className="text-2xl font-bold text-red-600">{bookingStats.cancelled}</p>
                     </div>
                     <CalendarX className="h-8 w-8 text-red-600" />
                   </div>
@@ -574,7 +721,6 @@ const BookingManagement = () => {
                     <TableHead>Date & Time</TableHead>
                     <TableHead>Service</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Duration</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -599,8 +745,8 @@ const BookingManagement = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{booking.date}</p>
-                          <p className="text-sm text-muted-foreground">{booking.time}</p>
+                          <p className="font-medium">{formatDate(booking.date)}</p>
+                          <p className="text-sm text-muted-foreground">{formatTime(booking.time)}</p>
                         </div>
                       </TableCell>
                       <TableCell>{booking.service}</TableCell>
@@ -610,7 +756,6 @@ const BookingManagement = () => {
                           {booking.sessionType}
                         </Badge>
                       </TableCell>
-                      <TableCell>{booking.duration} min</TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(booking.status)}>
                           {getStatusIcon(booking.status)}
@@ -619,12 +764,12 @@ const BookingManagement = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 flex-wrap">
-                          {booking.status === 'Pending' && (
+                          {booking.status === 'pending' && (
                             <>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleBookingAction(booking.id, 'confirm')}
+                                onClick={() => handleBookingAction(booking.id, 'confirmed')}
                                 title="Confirm booking"
                               >
                                 <CheckCircle className="h-3 w-3" />
@@ -655,7 +800,7 @@ const BookingManagement = () => {
                                         <strong>Service:</strong> {booking.service}
                                       </p>
                                       <p className="text-sm text-muted-foreground">
-                                        <strong>Date:</strong> {booking.date} at {booking.time}
+                                        <strong>Date:</strong> {formatDate(booking.date)} at {formatTime(booking.time)}
                                       </p>
                                     </div>
                                     <Textarea
@@ -681,22 +826,25 @@ const BookingManagement = () => {
                             </>
                           )}
 
-                          {booking.status === 'Confirmed' && (
+                          {(booking.status === 'confirmed' || booking.status === 'rescheduled') && (
                             <>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleBookingAction(booking.id, 'complete')}
+                                onClick={() => handleBookingAction(booking.id, 'completed')}
                                 title="Mark as completed"
                               >
                                 <CheckCircle className="h-3 w-3" />
                               </Button>
-                              <Dialog>
+                              <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
                                 <DialogTrigger asChild>
                                   <Button
                                     variant="secondary"
                                     size="sm"
-                                    onClick={() => setSelectedBooking(booking)}
+                                    onClick={() => {
+                                      setSelectedBooking(booking);
+                                      setIsRescheduleDialogOpen(true);
+                                    }}
                                     title="Reschedule booking"
                                   >
                                     <CalendarPlus className="h-3 w-3" />
@@ -782,7 +930,7 @@ const BookingManagement = () => {
                                         <strong>Service:</strong> {booking.service}
                                       </p>
                                       <p className="text-sm text-muted-foreground">
-                                        <strong>Current:</strong> {booking.date} at {booking.time}
+                                        <strong>Current:</strong> {formatDate(booking.date)} at {formatTime(booking.time)}
                                       </p>
                                     </div>
                                     <Textarea
@@ -808,6 +956,46 @@ const BookingManagement = () => {
                             </>
                           )}
 
+                          {booking.status === 'completed' && (
+                            <Dialog open={isNewBookingDialogOpen} onOpenChange={setIsNewBookingDialogOpen}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  title="Schedule new session"
+                                  onClick={() => setSelectedBooking(booking)}
+                                >
+                                  <Repeat className="h-3 w-3" />
+                                </Button>
+                              </DialogTrigger>
+                              {selectedBooking && currentCounsellor && (
+                                <BookingModal
+                                  isOpen={isNewBookingDialogOpen}
+                                  onClose={() => setIsNewBookingDialogOpen(false)}
+                                  counsellor={{
+                                    id: currentCounsellor.id,
+                                    full_name: currentCounsellor.full_name,
+                                    specializations: currentCounsellor.specializations || [],
+                                    session_types: currentCounsellor.session_types || [],
+                                  }}
+                                  clientInfo={{
+                                    fullName: selectedBooking.clientName,
+                                    email: selectedBooking.clientEmail,
+                                    phone: selectedBooking.clientPhone,
+                                    category: selectedBooking.service,
+                                    needs: selectedBooking.needs || '',
+                                    sessionType: selectedBooking.sessionType,
+                                    urgency: selectedBooking.supportUrgency || '',
+                                  }}
+                                  onBookingSuccess={() => {
+                                    fetchBookings();
+                                    setIsNewBookingDialogOpen(false);
+                                  }}
+                                />
+                              )}
+                            </Dialog>
+                          )}
+
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm" title="View details">
@@ -828,18 +1016,17 @@ const BookingManagement = () => {
 
                                 <div>
                                   <h4 className="font-semibold mb-2">Appointment Details</h4>
-                                  <p><strong>Date:</strong> {booking.date}</p>
-                                  <p><strong>Time:</strong> {booking.time}</p>
+                                  <p><strong>Date:</strong> {formatDate(booking.date)}</p>
+                                  <p><strong>Time:</strong> {formatTime(booking.time)}</p>
                                   <p><strong>Service:</strong> {booking.service}</p>
                                   <p><strong>Session Type:</strong> {booking.sessionType}</p>
-                                  <p><strong>Duration:</strong> {booking.duration} minutes</p>
                                   <p><strong>Status:</strong> {booking.status}</p>
                                 </div>
 
-                                {booking.notes && (
+                                {booking.needs && (
                                   <div>
                                     <h4 className="font-semibold mb-2">Notes</h4>
-                                    <p className="text-sm text-muted-foreground">{booking.notes}</p>
+                                    <p className="text-sm text-muted-foreground">{booking.needs}</p>
                                   </div>
                                 )}
                               </div>
@@ -887,7 +1074,7 @@ const BookingManagement = () => {
 
                       <div className="flex items-center justify-between text-sm">
                         <span>Last Session:</span>
-                        <span className="text-muted-foreground">{client.lastSession}</span>
+                        <span className="text-muted-foreground">{formatDate(client.lastSession)}</span>
                       </div>
 
                       <div className="flex gap-2">
@@ -909,7 +1096,7 @@ const BookingManagement = () => {
                                   {client.totalSessions} total sessions completed
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                  Last session: {client.lastSession}
+                                  Last session: {formatDate(client.lastSession)}
                                 </p>
                               </div>
                               <div>
@@ -959,31 +1146,6 @@ const BookingManagement = () => {
       </TabsContent>
 
       {/* Availability Tab */}
-      <TabsContent value="availability" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Availability & Scheduling
-            </CardTitle>
-            <CardDescription>
-              Set your working hours and manage recurring availability
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8">
-              <Settings className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-4">
-                Availability settings would be configured here
-              </p>
-              <p className="text-sm text-muted-foreground">
-                This would include setting working days, time slots, recurring availability,
-                blocked dates, and exception management for holidays and special requests.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
 
       {/* Reports Tab */}
       <TabsContent value="reports" className="space-y-6">
@@ -1016,7 +1178,7 @@ const BookingManagement = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                      <p className="text-2xl font-bold text-green-600">{stats.totalSessions}</p>
+                      <p className="text-2xl font-bold text-green-600">{bookingStats.totalSessions}</p>
                     </div>
                     <Calendar className="h-8 w-8 text-green-600 opacity-75" />
                   </div>
@@ -1028,7 +1190,7 @@ const BookingManagement = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Session Completion Rate</p>
-                      <p className="text-2xl font-bold text-blue-600">{Math.round((stats.completed / stats.totalSessions) * 100)}%</p>
+                      <p className="text-2xl font-bold text-blue-600">{bookingStats.totalSessions > 0 ? Math.round((bookingStats.completed / bookingStats.totalSessions) * 100) : 0}%</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-blue-600 opacity-75" />
                   </div>

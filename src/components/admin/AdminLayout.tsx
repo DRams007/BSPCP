@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { ReactNode, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,11 @@ import {
   Home,
   Menu,
   Search,
-  MessageSquare
+  MessageSquare,
+  LogOut,
+  User,
+  Shield,
+  Lock,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -21,7 +25,18 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
-  
+
+  // Get current user role from localStorage
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+
+  useEffect(() => {
+    const adminUser = localStorage.getItem('admin_user');
+    if (adminUser) {
+      const user = JSON.parse(adminUser);
+      setCurrentUserRole(user.role || '');
+    }
+  }, []);
+
   const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: Home },
     { name: "Members", href: "/admin/members", icon: Users },
@@ -29,10 +44,26 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: "Content", href: "/admin/content", icon: Calendar },
     { name: "Testimonials", href: "/admin/testimonials", icon: MessageSquare },
     { name: "Reports", href: "/admin/reports", icon: BarChart3 },
+    {
+      name: "Change Password",
+      href: "/admin/change-password",
+      icon: Lock
+    },
+    {
+      name: "Admin Management",
+      href: "/admin/admin-management",
+      icon: Shield,
+      requiresRole: "super_admin"
+    },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   const isActive = (href: string) => location.pathname === href;
+
+  // Filter navigation items based on user role
+  const filteredNavigation = navigation.filter(item =>
+    !item.requiresRole || currentUserRole === item.requiresRole
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,7 +89,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 space-y-2">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -79,7 +110,20 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t space-y-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                localStorage.removeItem('admin_token');
+                localStorage.removeItem('admin_user');
+                window.location.href = '/admin/login';
+              }}
+            >
+              <LogOut className="w-4 h-4 mr-3" />
+              Sign Out
+            </Button>
+
             <div className="text-xs text-muted-foreground">
               <p>BSPCP Admin Portal</p>
               <p>Version 1.0.0</p>

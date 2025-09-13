@@ -1,67 +1,78 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Upload, FileText, Download, Trash2, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Upload, Download, Trash2, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CPDRecord {
   id: string;
   title: string;
-  category: string;
-  hours: number;
-  date: string;
-  provider: string;
-  status: 'approved' | 'pending' | 'rejected';
-  certificateUrl?: string;
+  points: number;
+  completion_date: string | null;
+  status: 'approved';
+  document_path: string | null;
+  document_url?: string;
+  uploaded_at: string;
 }
 
 const CPDUploadForm = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  
-  // Mock CPD records
-  const [cpdRecords] = useState<CPDRecord[]>([
-    {
-      id: '1',
-      title: 'Advanced Trauma Therapy Techniques',
-      category: 'Clinical Training',
-      hours: 8,
-      date: '2024-03-15',
-      provider: 'International Trauma Institute',
-      status: 'approved',
-      certificateUrl: '/certificates/trauma-therapy.pdf'
-    },
-    {
-      id: '2',
-      title: 'Ethics in Digital Counseling',
-      category: 'Ethics',
-      hours: 4,
-      date: '2024-02-28',
-      provider: 'Digital Health Ethics Council',
-      status: 'pending'
-    },
-    {
-      id: '3',
-      title: 'Cognitive Behavioral Therapy Workshop',
-      category: 'Clinical Training',
-      hours: 6,
-      date: '2024-01-20',
-      provider: 'CBT Training Institute',
-      status: 'approved',
-      certificateUrl: '/certificates/cbt-workshop.pdf'
-    }
-  ]);
+  const [cpdRecords, setCpdRecords] = useState<CPDRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingRecord, setDeletingRecord] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const totalHours = cpdRecords
-    .filter(record => record.status === 'approved')
-    .reduce((sum, record) => sum + record.hours, 0);
-  const requiredHours = 40;
-  const progressPercentage = Math.min((totalHours / requiredHours) * 100, 100);
+  // Form state
+  const [title, setTitle] = useState('');
+  const [points, setPoints] = useState('');
+  const [completionDate, setCompletionDate] = useState('');
+
+  // Fetch CPD records on component mount
+  const fetchCpdRecords = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      const response = await fetch('http://localhost:3001/api/member/cpd', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setCpdRecords(data);
+    } catch (error) {
+      console.error('Error fetching CPD records:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load CPD records",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchCpdRecords();
+  }, [fetchCpdRecords]);
+
+  const totalPoints = cpdRecords.reduce((sum, record) => sum + record.points, 0);
+  const requiredPoints = 40;
+  const progressPercentage = Math.min((totalPoints / requiredPoints) * 100, 100);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,28 +83,102 @@ const CPDUploadForm = () => {
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!selectedFile) return;
+    if (!selectedFile || !title || !points) return;
 
     setIsUploading(true);
-    // TODO: Implement Supabase file upload
-    console.log('Uploading CPD evidence:', selectedFile);
-    setTimeout(() => {
-      setIsUploading(false);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const formData = new FormData();
+      formData.append('document', selectedFile);
+      formData.append('title', title);
+      formData.append('points', points);
+      if (completionDate) {
+        formData.append('completionDate', completionDate);
+      }
+
+      const response = await fetch('http://localhost:3001/api/member/cpd', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const newRecord = await response.json();
+      console.log('New CPD record created:', newRecord);
+
+      // Clear form
+      setTitle('');
+      setPoints('');
+      setCompletionDate('');
       setSelectedFile(null);
-      alert('CPD evidence uploaded successfully!');
-    }, 2000);
+
+      // Refresh CPD records
+      fetchCpdRecords();
+
+      toast({
+        title: "Success",
+        description: "CPD evidence uploaded successfully!",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error uploading CPD evidence:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload CPD evidence",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      case 'rejected':
-        return <XCircle className="h-4 w-4 text-red-600" />;
-      default:
-        return null;
+  const handleDeleteCPD = async (recordId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      setDeletingRecord(recordId);
+
+      const response = await fetch(`http://localhost:3001/api/member/cpd/${recordId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Refresh CPD records
+      fetchCpdRecords();
+      setDeleteDialogOpen(false);
+
+      toast({
+        title: "Success",
+        description: "CPD record deleted successfully",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error deleting CPD record:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete CPD record",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingRecord(null);
     }
   };
 
@@ -101,40 +186,45 @@ const CPDUploadForm = () => {
     switch (status) {
       case 'approved':
         return <Badge variant="default" className="bg-green-100 text-green-800">Approved</Badge>;
-      case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending Review</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
       default:
-        return null;
+        return <Badge variant="default" className="bg-green-100 text-green-800">Approved</Badge>;
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="ml-2">Loading CPD records...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Progress Overview */}
+      {/* CPD Progress */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            CPD Progress Overview
-            <Badge variant="outline">{totalHours}/{requiredHours} hours</Badge>
-          </CardTitle>
+          <CardTitle>CPD Progress</CardTitle>
           <CardDescription>
-            Track your Continuing Professional Development progress for the current period
+            Your Continuing Professional Development progress this year
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Progress value={progressPercentage} className="w-full" />
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Progress: {totalHours} hours completed</span>
-              <span>{requiredHours - totalHours} hours remaining</span>
+            <div className="flex justify-between text-sm">
+              <span>CPD Points Earned</span>
+              <span>{totalPoints}/{requiredPoints}</span>
+            </div>
+            <Progress value={progressPercentage} />
+            <div className="text-xs text-muted-foreground">
+              {progressPercentage.toFixed(1)}% of required CPD completed
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Upload New CPD Evidence */}
+      {/* Upload Form */}
       <Card>
         <CardHeader>
           <CardTitle>Upload New CPD Evidence</CardTitle>
@@ -144,54 +234,40 @@ const CPDUploadForm = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpload} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Activity Title</label>
-                <Input placeholder="e.g., Advanced Therapy Techniques" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Category</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="clinical">Clinical Training</SelectItem>
-                    <SelectItem value="ethics">Ethics & Professional Standards</SelectItem>
-                    <SelectItem value="research">Research & Evidence-Based Practice</SelectItem>
-                    <SelectItem value="supervision">Supervision & Mentoring</SelectItem>
-                    <SelectItem value="personal">Personal Development</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Hours Completed</label>
-                <Input type="number" placeholder="8" min="0" step="0.5" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Completion Date</label>
-                <Input type="date" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Training Provider</label>
-                <Input placeholder="Institution or organization" />
-              </div>
-            </div>
-
             <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
-              <Textarea 
-                placeholder="Brief description of the learning outcomes and content covered"
-                className="min-h-20"
+              <label className="block text-sm font-medium mb-2">Title *</label>
+              <Input
+                type="text"
+                placeholder="e.g., Advanced Trauma Therapy Workshop"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
               />
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">CPD Points *</label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 10"
+                  value={points}
+                  onChange={(e) => setPoints(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Completion Date</label>
+                <Input
+                  type="date"
+                  value={completionDate}
+                  onChange={(e) => setCompletionDate(e.target.value)}
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-sm font-medium mb-2">Upload Certificate/Evidence</label>
+              <label className="block text-sm font-medium mb-2">Upload Certificate/Evidence *</label>
               <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
                 <div className="text-center">
                   <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -206,6 +282,7 @@ const CPDUploadForm = () => {
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                       onChange={handleFileSelect}
                       className="hidden"
+                      required
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
@@ -220,12 +297,19 @@ const CPDUploadForm = () => {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={isUploading || !selectedFile}
+            <Button
+              type="submit"
+              disabled={isUploading || !selectedFile || !title || !points}
               className="w-full"
             >
-              {isUploading ? 'Uploading...' : 'Submit CPD Evidence'}
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                'Submit CPD Evidence'
+              )}
             </Button>
           </form>
         </CardContent>
@@ -234,60 +318,70 @@ const CPDUploadForm = () => {
       {/* CPD Records Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Your CPD Records</CardTitle>
+          <CardTitle>My CPD Records</CardTitle>
           <CardDescription>
-            View and manage your submitted CPD evidence
+            Your uploaded CPD evidence and certificates
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Activity</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Hours</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {cpdRecords.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{record.title}</div>
-                      <div className="text-sm text-muted-foreground">{record.provider}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{record.category}</TableCell>
-                  <TableCell>{record.hours} hrs</TableCell>
-                  <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(record.status)}
-                      {getStatusBadge(record.status)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {record.certificateUrl && (
-                        <Button variant="ghost" size="sm">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm">
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {cpdRecords.length === 0 ? (
+            <p className="text-muted-foreground">No CPD records yet. Upload your first CPD evidence above.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Points</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {cpdRecords.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{record.title}</TableCell>
+                    <TableCell>{record.points}</TableCell>
+                    <TableCell>
+                      {record.completion_date
+                        ? new Date(record.completion_date).toLocaleDateString()
+                        : 'N/A'
+                      }
+                    </TableCell>
+                    <TableCell>{getStatusBadge(record.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        {record.document_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <a href={record.document_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="mr-2 h-4 w-4" />
+                              View
+                            </a>
+                          </Button>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteCPD(record.id)}
+                          disabled={deletingRecord === record.id}
+                        >
+                          {deletingRecord === record.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

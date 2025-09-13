@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, MessageSquare, AlertCircle } from "lucide-react";
+import { Star, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const TestimonialForm = () => {
   const [formData, setFormData] = useState({
@@ -24,9 +23,20 @@ const TestimonialForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
+
+    try {
+      const response = await fetch('http://localhost:3001/api/testimonials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit testimonial');
+      }
+
       toast({
         title: "Thank you for your testimonial!",
         description: "Your testimonial has been submitted and will be reviewed before publication.",
@@ -39,11 +49,19 @@ const TestimonialForm = () => {
         rating: 5,
         anonymous: false
       });
+    } catch (error) {
+      console.error("Error submitting testimonial:", error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your testimonial. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -65,14 +83,6 @@ const TestimonialForm = () => {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <Alert className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/10">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800 dark:text-amber-200">
-              <strong>Note:</strong> To submit testimonials and have them saved permanently, this site needs to be connected to a database. 
-              Currently, testimonials are only displayed temporarily for demonstration.
-            </AlertDescription>
-          </Alert>
-
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-2xl text-center">Submit Your Testimonial</CardTitle>
@@ -134,6 +144,7 @@ const TestimonialForm = () => {
                         type="button"
                         onClick={() => handleInputChange("rating", star)}
                         className="focus:outline-none"
+                        aria-label={`${star} star rating`}
                       >
                         <Star
                           className={`w-6 h-6 ${
@@ -161,9 +172,6 @@ const TestimonialForm = () => {
                     required
                     className="resize-none"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Minimum 50 characters. Please be respectful and honest in your review.
-                  </p>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -173,6 +181,7 @@ const TestimonialForm = () => {
                     checked={formData.anonymous}
                     onChange={(e) => handleInputChange("anonymous", e.target.checked)}
                     className="rounded border-border"
+                    aria-label="Submit anonymously"
                   />
                   <Label htmlFor="anonymous" className="text-sm">
                     Submit anonymously (your name will not be displayed)
@@ -182,7 +191,7 @@ const TestimonialForm = () => {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isSubmitting || formData.content.length < 50}
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? "Submitting..." : "Submit Testimonial"}
                 </Button>

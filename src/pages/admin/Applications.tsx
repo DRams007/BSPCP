@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +18,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 import { 
   Eye, 
   Check, 
@@ -32,99 +34,103 @@ import {
   AlertCircle,
   User,
   Building,
-  GraduationCap
+  GraduationCap,
+  Mail
 } from "lucide-react";
+import LoadingSpinner from "@/components/ui/loading-spinner"; // Assuming you have a loading spinner component
+
+interface Application {
+  id: number;
+  name: string;
+  email: string;
+  occupation: string;
+  nationality: string;
+  qualification: string;
+  experience: string;
+  organization: string;
+  documents: { name: string; uploaded: boolean; url?: string }[];
+  application_status: string;
+  submittedDate: string;
+  personalInfo: {
+    dateOfBirth: string;
+    idNumber: string;
+    physicalAddress: string;
+    postalAddress: string;
+  };
+  phone: string;
+}
 
 const Applications = () => {
   const { toast } = useToast();
-  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [reviewComment, setReviewComment] = useState("");
-  
-  // Mock applications data
-  const applications = [
-    {
-      id: 1,
-      name: "Dr. Patricia Wilson",
-      email: "p.wilson@email.com",
-      phone: "+267 75123456",
-      nationality: "Botswana",
-      occupation: "Clinical Psychologist",
-      organization: "Riverside Mental Health",
-      qualification: "PhD Clinical Psychology",
-      experience: "8 years",
-      submittedDate: "2024-01-28",
-      status: "pending",
-      documents: [
-        { name: "Degree Certificate", uploaded: true },
-        { name: "Professional License", uploaded: true },
-        { name: "CV/Resume", uploaded: true },
-        { name: "References", uploaded: false }
-      ],
-      personalInfo: {
-        dateOfBirth: "1985-03-15",
-        idNumber: "850315001234",
-        physicalAddress: "Plot 123, Gaborone West",
-        postalAddress: "P.O. Box 456, Gaborone"
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchApplications = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:3001/api/applications');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    },
-    {
-      id: 2,
-      name: "Maria Santos",
-      email: "maria.santos@email.com",
-      phone: "+267 76234567",
-      nationality: "Brazil",
-      occupation: "Counselling Psychologist", 
-      organization: "Hope Counselling Services",
-      qualification: "MSc Counselling Psychology",
-      experience: "5 years",
-      submittedDate: "2024-01-30",
-      status: "under_review",
-      documents: [
-        { name: "Degree Certificate", uploaded: true },
-        { name: "Professional License", uploaded: true },
-        { name: "CV/Resume", uploaded: true },
-        { name: "References", uploaded: true }
-      ],
-      personalInfo: {
-        dateOfBirth: "1988-07-22",
-        idNumber: "880722005678", 
-        physicalAddress: "Block 5, Broadhurst",
-        postalAddress: "P.O. Box 789, Gaborone"
-      }
-    },
-    {
-      id: 3,
-      name: "John Maruping",
-      email: "j.maruping@email.com",
-      phone: "+267 77345678",
-      nationality: "Botswana",
-      occupation: "Substance Abuse Counsellor",
-      organization: "Addiction Recovery Center",
-      qualification: "BSc Psychology + Addiction Counselling Cert",
-      experience: "3 years",
-      submittedDate: "2024-02-02",
-      status: "pending",
-      documents: [
-        { name: "Degree Certificate", uploaded: true },
-        { name: "Professional License", uploaded: false },
-        { name: "CV/Resume", uploaded: true },
-        { name: "References", uploaded: true }
-      ],
-      personalInfo: {
-        dateOfBirth: "1990-11-08",
-        idNumber: "901108009876",
-        physicalAddress: "Extension 12, Francistown",
-        postalAddress: "P.O. Box 321, Francistown"
-      }
+      const data = await response.json();
+      setApplications(data);
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message);
+      toast({
+        title: "Error",
+        description: `Failed to fetch applications: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [toast]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  const updateApplicationStatus = async (id: number, status: string, comment: string = "") => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/applications/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: status, reviewComment: comment }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: `Application ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        description: `The membership application has been ${status} successfully.`,
+      });
+      setReviewComment("");
+      setSelectedApplication(null);
+      fetchApplications(); // Re-fetch applications to update the list
+    } catch (err) {
+      const error = err as Error;
+      toast({
+        title: "Error",
+        description: `Failed to update application status: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleApprove = (applicationId: number) => {
-    toast({
-      title: "Application Approved",
-      description: "The membership application has been approved successfully.",
-    });
-    // Here you would update the application status in your backend
+    updateApplicationStatus(applicationId, "approved");
   };
 
   const handleReject = (applicationId: number) => {
@@ -136,13 +142,38 @@ const Applications = () => {
       });
       return;
     }
-    
+    updateApplicationStatus(applicationId, "rejected", reviewComment);
+  };
+
+  const handleReApprove = (applicationId: number) => {
+    const reason = reviewComment || `Re-approved application for ${selectedApplication?.name}. Previous concerns have been addressed.`;
+    updateApplicationStatus(applicationId, "approved", reason);
+  };
+
+  const handleRequestMoreInfo = () => {
+    if (!selectedApplication) return;
+
+    setEmailSubject(`Regarding your Membership Application - ${selectedApplication.name}`);
+    setEmailBody(`Dear ${selectedApplication.name},\n\nThank you for your application to the Botswana Wellbeing Pathways. We are currently reviewing your application and require some additional information. Please provide further details regarding...\n\nSincerely,\nBotswana Wellbeing Pathways Admin Team`);
+    setShowEmailDialog(true);
+  };
+
+  const handleSendEmail = () => {
+    if (!selectedApplication) return;
+
     toast({
-      title: "Application Rejected",
-      description: "The application has been rejected with feedback.",
+      title: "Email Sent",
+      description: `Email sent to ${selectedApplication.email} with subject: "${emailSubject}"`,
     });
-    setReviewComment("");
-    // Here you would update the application status in your backend
+    console.log("Sending email:", {
+      to: selectedApplication.email,
+      subject: emailSubject,
+      body: emailBody,
+    });
+    setShowEmailDialog(false);
+    setEmailSubject("");
+    setEmailBody("");
+    // Here you would integrate with an email sending service
   };
 
   const getStatusColor = (status: string) => {
@@ -243,9 +274,9 @@ const Applications = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(application.status)}>
-                        <span className="mr-1">{getStatusIcon(application.status)}</span>
-                        {application.status.replace('_', ' ').charAt(0).toUpperCase() + application.status.replace('_', ' ').slice(1)}
+                      <Badge className={getStatusColor(application.application_status)}>
+                        <span className="mr-1">{getStatusIcon(application.application_status)}</span>
+                        {application.application_status.replace('_', ' ').charAt(0).toUpperCase() + application.application_status.replace('_', ' ').slice(1)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm">
@@ -330,7 +361,25 @@ const Applications = () => {
                                             <span className="text-sm">{doc.name}</span>
                                           </div>
                                           {doc.uploaded && (
-                                            <Button variant="outline" size="sm">
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm"
+                                              onClick={() => {
+                                                if (doc.url) {
+                                                  window.open(doc.url, "_blank");
+                                                  toast({
+                                                    title: "Document Opened",
+                                                    description: `Opening ${doc.name} in a new tab.`,
+                                                  });
+                                                } else {
+                                                  toast({
+                                                    title: "Document Not Available",
+                                                    description: `No URL found for ${doc.name}.`,
+                                                    variant: "destructive",
+                                                  });
+                                                }
+                                              }}
+                                            >
                                               <Download className="w-3 h-3" />
                                             </Button>
                                           )}
@@ -344,6 +393,16 @@ const Applications = () => {
                                 <Card className="md:col-span-2">
                                   <CardHeader className="pb-3">
                                     <CardTitle className="text-lg">Review & Decision</CardTitle>
+                                    {selectedApplication.application_status === 'rejected' && (
+                                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                        <div className="flex items-center">
+                                          <AlertCircle className="w-5 h-5 text-amber-600 mr-2" />
+                                          <p className="text-sm text-amber-800 font-medium">
+                                            This application was previously rejected. You can re-approve if the applicant has addressed the issues.
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
                                   </CardHeader>
                                   <CardContent className="space-y-4">
                                     <div>
@@ -356,29 +415,90 @@ const Applications = () => {
                                         rows={4}
                                       />
                                     </div>
-                                    <div className="flex gap-3">
-                                      <Button 
-                                        onClick={() => handleApprove(selectedApplication.id)}
-                                        className="bg-green-600 hover:bg-green-700"
-                                      >
-                                        <Check className="w-4 h-4 mr-2" />
-                                        Approve Application
-                                      </Button>
-                                      <Button 
-                                        variant="destructive"
-                                        onClick={() => handleReject(selectedApplication.id)}
-                                      >
-                                        <X className="w-4 h-4 mr-2" />
-                                        Reject Application
-                                      </Button>
-                                      <Button variant="outline">
-                                        Request More Info
-                                      </Button>
+                                    <div className="flex gap-3 flex-wrap">
+                                      {selectedApplication.application_status !== 'rejected' ? (
+                                        <>
+                                          <Button
+                                            onClick={() => handleApprove(selectedApplication.id)}
+                                            className="bg-green-600 hover:bg-green-700"
+                                          >
+                                            <Check className="w-4 h-4 mr-2" />
+                                            Approve Application
+                                          </Button>
+                                          <Button
+                                            variant="destructive"
+                                            onClick={() => handleReject(selectedApplication.id)}
+                                          >
+                                            <X className="w-4 h-4 mr-2" />
+                                            Reject Application
+                                          </Button>
+                                          <Button variant="outline" onClick={handleRequestMoreInfo}>
+                                            <Mail className="w-4 h-4 mr-2" />
+                                            Request More Info
+                                          </Button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Button
+                                            onClick={() => handleReApprove(selectedApplication.id)}
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                          >
+                                            <Check className="w-4 h-4 mr-2" />
+                                            Re-Approve Application
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            onClick={handleRequestMoreInfo}
+                                          >
+                                            <Mail className="w-4 h-4 mr-2" />
+                                            Contact Applicant
+                                          </Button>
+                                        </>
+                                      )}
                                     </div>
                                   </CardContent>
                                 </Card>
                               </div>
                             )}
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Email Dialog */}
+                        <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Send Email to {selectedApplication?.name}</DialogTitle>
+                              <DialogDescription>
+                                Compose an email to request additional information from the applicant.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                              <div>
+                                <Label htmlFor="emailTo">To</Label>
+                                <Input id="emailTo" value={selectedApplication?.email} readOnly />
+                              </div>
+                              <div>
+                                <Label htmlFor="emailSubject">Subject</Label>
+                                <Input 
+                                  id="emailSubject" 
+                                  value={emailSubject} 
+                                  onChange={(e) => setEmailSubject(e.target.value)} 
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="emailBody">Body</Label>
+                                <Textarea
+                                  id="emailBody"
+                                  value={emailBody}
+                                  onChange={(e) => setEmailBody(e.target.value)}
+                                  rows={8}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
+                              <Button onClick={handleSendEmail}>Send Email</Button>
+                            </div>
                           </DialogContent>
                         </Dialog>
                       </div>
@@ -387,6 +507,21 @@ const Applications = () => {
                 ))}
               </TableBody>
             </Table>
+            {loading && (
+              <div className="flex justify-center items-center p-4">
+                <LoadingSpinner />
+                <p className="ml-2">Loading applications...</p>
+              </div>
+            )}
+            {error && (
+              <div className="text-center text-red-500 p-4">
+                <p>Error: {error}</p>
+                <Button onClick={fetchApplications} className="mt-2">Retry</Button>
+              </div>
+            )}
+            {!loading && !error && applications.length === 0 && (
+              <p className="text-center text-muted-foreground p-4">No membership applications found.</p>
+            )}
           </CardContent>
         </Card>
 
@@ -395,7 +530,7 @@ const Applications = () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-yellow-600">
-                {applications.filter(app => app.status === 'pending').length}
+                {applications.filter(app => app.application_status === 'pending').length}
               </div>
               <p className="text-sm text-muted-foreground">Pending Review</p>
             </CardContent>
@@ -403,7 +538,7 @@ const Applications = () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-blue-600">
-                {applications.filter(app => app.status === 'under_review').length}
+                {applications.filter(app => app.application_status === 'under_review').length}
               </div>
               <p className="text-sm text-muted-foreground">Under Review</p>
             </CardContent>
@@ -411,7 +546,7 @@ const Applications = () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-green-600">
-                {applications.filter(app => app.status === 'approved').length}
+                {applications.filter(app => app.application_status === 'approved').length}
               </div>
               <p className="text-sm text-muted-foreground">Approved Today</p>
             </CardContent>

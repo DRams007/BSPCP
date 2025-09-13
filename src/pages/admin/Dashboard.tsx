@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Users, 
-  UserCheck, 
-  FileText, 
-  Calendar, 
-  TrendingUp, 
+import {
+  Users,
+  FileText,
+  Calendar,
   AlertCircle,
   Settings,
   LogOut,
@@ -22,18 +20,51 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [stats, setStats] = useState({
-    totalMembers: 324,
-    pendingApplications: 12,
-    activeNews: 8,
-    upcomingEvents: 5,
-    monthlyRevenue: 45600,
-    approvalRate: 94
+    totalMembers: 0,
+    pendingApplications: 0,
+    activeNews: 0,
+    upcomingEvents: 0
   });
+  const [loading, setLoading] = useState(true);
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        navigate("/admin/login");
+        return;
+      }
+
+      const response = await fetch("/api/admin/dashboard-stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch dashboard statistics");
+      }
+
+      const data = await response.json();
+      setStats(data);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard statistics",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
     if (!token) {
       navigate("/admin/login");
+    } else {
+      fetchStats();
     }
   }, [navigate]);
 
@@ -80,7 +111,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Members</CardTitle>
@@ -107,18 +138,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">P{stats.monthlyRevenue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                +8% from last month
-              </p>
-            </CardContent>
-          </Card>
+
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -146,18 +166,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Approval Rate</CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.approvalRate}%</div>
-              <p className="text-xs text-muted-foreground">
-                Application success rate
-              </p>
-            </CardContent>
-          </Card>
+
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
