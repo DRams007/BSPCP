@@ -35,7 +35,7 @@ const AdminLogin = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ const AdminLogin = () => {
           <div className="mt-4 p-3 bg-muted rounded-md">
             <p className="text-sm text-muted-foreground">
               Default admin credentials:<br />
-              Email/Username: admin@bspcp.org<br />
+              Email/Username: admin@bspcp.org.uk<br />
               Password: TempAdmin123!
             </p>
             <p className="text-xs text-amber-600 mt-2">
