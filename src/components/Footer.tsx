@@ -19,16 +19,16 @@ const Footer = () => {
               who provide compassionate, evidence-based care throughout Botswana.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.facebook.com/profile.php?id=100084447950377" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
+              <a href="https://www.facebook.com/profile.php?id=100084447950377" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300" aria-label="Visit Facebook">
                 <Facebook className="w-6 h-6" />
               </a>
-              <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
+              <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300" aria-label="Visit Twitter">
                 <Twitter className="w-6 h-6" />
               </a>
-              <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
+              <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300" aria-label="Visit LinkedIn">
                 <Linkedin className="w-6 h-6" />
               </a>
-              <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
+              <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300" aria-label="Visit Instagram">
                 <Instagram className="w-6 h-6" />
               </a>
             </div>
