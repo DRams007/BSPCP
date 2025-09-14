@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Phone, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   
   const navigationItems = [{
     name: 'Home',
@@ -34,7 +35,29 @@ const Navigation = () => {
   }];
   
   const isActive = (path: string) => location.pathname === path;
-  
+
+  const handleGetHelpClick = () => {
+    // Navigate first
+    navigate('/find-counsellor#tell-us-about-your-needs');
+
+    // Use timeout to ensure navigation completes before scrolling
+    setTimeout(() => {
+      const element = document.getElementById('tell-us-about-your-needs');
+      if (element) {
+        const headerOffset = 80; // Account for sticky navigation height
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 100);
+
+    setIsMenuOpen(false); // Close mobile menu if open
+  };
+
   return (
     <nav className="bg-background border-b border-border sticky top-0 z-50 shadow-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -73,7 +96,10 @@ const Navigation = () => {
               
               
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-source font-medium mx-0">
+            <Button
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-source font-medium mx-0"
+              onClick={handleGetHelpClick}
+            >
               Get Help Now
             </Button>
           </div>
@@ -115,9 +141,9 @@ const Navigation = () => {
                 <Phone className="w-4 h-4" />
                 <span>Emergency: 16222</span>
               </div>
-              <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-source font-medium" 
-                onClick={() => setIsMenuOpen(false)}
+              <Button
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-source font-medium"
+                onClick={handleGetHelpClick}
               >
                 Get Help Now
               </Button>

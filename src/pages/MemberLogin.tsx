@@ -149,15 +149,15 @@ const MemberLogin = () => {
               </Form>
               
               <div className="mt-6 text-center space-y-2">
-                <Link 
-                  to="/member-signup" 
+                <Link
+                  to="/membership#application-form"
                   className="text-primary hover:underline text-sm"
                 >
                   Don't have an account? Sign up here
                 </Link>
                 <br />
-                <Link 
-                  to="/forgot-password" 
+                <Link
+                  to="/forgot-password"
                   className="text-muted-foreground hover:underline text-sm"
                 >
                   Forgot your password?

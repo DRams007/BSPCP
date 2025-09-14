@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, Phone, Mail, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Heart, Phone, Mail, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -10,7 +10,7 @@ const Footer = () => {
           <div>
             <div className="flex items-center space-x-2 mb-6">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Heart className="w-5 h-5 text-primary-foreground" />
+                <Heart className="w-6 h-6 text-primary-foreground" />
               </div>
               <span className="font-poppins font-semibold text-xl">BSPCP</span>
             </div>
@@ -20,16 +20,16 @@ const Footer = () => {
             </p>
             <div className="flex space-x-4">
               <a href="https://www.facebook.com/profile.php?id=100084447950377" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
-                <Facebook className="w-5 h-5" />
+                <Facebook className="w-6 h-6" />
               </a>
               <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
-                <Twitter className="w-5 h-5" />
+                <Twitter className="w-6 h-6" />
               </a>
               <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
-                <Linkedin className="w-5 h-5" />
+                <Linkedin className="w-6 h-6" />
               </a>
               <a href="#" className="w-10 h-10 bg-cream/10 rounded-full flex items-center justify-center hover:bg-cream/20 transition-colors duration-300">
-                <Instagram className="w-5 h-5" />
+                <Instagram className="w-6 h-6" />
               </a>
             </div>
           </div>
@@ -103,19 +103,12 @@ const Footer = () => {
             <h3 className="font-poppins font-semibold text-lg mb-6">Contact Us</h3>
             <ul className="space-y-4">
               <li className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-primary" />
-                <span className="font-source text-cream/80">
-                  Plot 123, Main Mall<br />
-                  Gaborone, Botswana
-                </span>
+                <Phone className="w-6 h-6 text-primary" />
+                <span className="font-source text-cream/80">+267 75078844</span>
               </li>
               <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-primary" />
-                <span className="font-source text-cream/80">+267 123 4567</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-primary" />
-                <span className="font-source text-cream/80">info@bspcp.org.bw</span>
+                <Mail className="w-6 h-6 text-primary" />
+                <span className="font-source text-cream/80">bwprofessionalcounsellors@gmail.com</span>
               </li>
             </ul>
             

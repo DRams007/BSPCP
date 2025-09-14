@@ -6,25 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Phone, Mail, Clock, MessageCircle, AlertTriangle, Users, HelpCircle } from 'lucide-react';
+import { Phone, Mail, Clock, MessageCircle, AlertTriangle, Users, HelpCircle } from 'lucide-react';
 
 const Contact = () => {
   const contactInfo = [
     {
-      icon: MapPin,
-      title: 'Main Office',
-      details: [
-        'Plot 123, Main Mall',
-        'Gaborone, Botswana',
-        'P.O. Box 1234'
-      ]
-    },
-    {
       icon: Phone,
       title: 'Phone',
       details: [
-        '+267 123 4567',
-        '+267 123 4568 (Fax)',
+        '+267 75078844',
         'Monday - Friday: 8:00 AM - 5:00 PM'
       ]
     },
@@ -32,9 +22,7 @@ const Contact = () => {
       icon: Mail,
       title: 'Email',
       details: [
-        'info@bspcp.org.bw',
-        'membership@bspcp.org.bw',
-        'support@bspcp.org.bw'
+        'bwprofessionalcounsellors@gmail.com'
       ]
     }
   ];
@@ -105,7 +93,7 @@ const Contact = () => {
       {/* Contact Information */}
       <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-3xl mx-auto">
             {contactInfo.map((info, index) => (
               <Card key={index} className="text-center hover:shadow-soft transition-all duration-300">
                 <CardContent className="p-6">
@@ -303,65 +291,7 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Map Section */}
-      <section className="py-20 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
-              Find Us
-            </h2>
-            <p className="font-source text-lg text-muted-foreground">
-              Visit our main office in the heart of Gaborone for in-person support.
-            </p>
-          </div>
 
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="h-96 bg-gradient-gentle flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-16 h-16 text-primary mx-auto mb-4" />
-                  <h3 className="font-poppins font-semibold text-xl text-foreground mb-2">
-                    BSPCP Main Office
-                  </h3>
-                  <p className="font-source text-muted-foreground">
-                    Plot 123, Main Mall<br />
-                    Gaborone, Botswana
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="mt-8 text-center">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <h4 className="font-poppins font-semibold text-lg text-foreground mb-2">
-                  Parking
-                </h4>
-                <p className="font-source text-muted-foreground">
-                  Free parking available in the Main Mall parking area
-                </p>
-              </div>
-              <div className="text-center">
-                <h4 className="font-poppins font-semibold text-lg text-foreground mb-2">
-                  Public Transport
-                </h4>
-                <p className="font-source text-muted-foreground">
-                  Accessible by public transport and taxi services
-                </p>
-              </div>
-              <div className="text-center">
-                <h4 className="font-poppins font-semibold text-lg text-foreground mb-2">
-                  Accessibility
-                </h4>
-                <p className="font-source text-muted-foreground">
-                  Wheelchair accessible entrance and facilities
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <Footer />
     </div>

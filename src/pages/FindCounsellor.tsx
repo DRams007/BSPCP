@@ -282,7 +282,7 @@ const FindCounsellor = () => {
       </section>
 
       {/* Quick Request Form */}
-      <section ref={needsFormRef} className="py-20 bg-gradient-gentle">
+      <section ref={needsFormRef} id="tell-us-about-your-needs" className="py-20 bg-gradient-gentle">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
