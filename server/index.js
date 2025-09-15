@@ -1586,14 +1586,14 @@ app.get('/api/testimonials', async (req, res) => {
     let paramIndex = 1;
 
     if (status && status !== 'all') {
-      query += ` AND status ILIKE ${paramIndex}`; // Changed to ILIKE for case-insensitive comparison
+      query += ` AND status ILIKE $${paramIndex}`; // Fixed: Added $ for PostgreSQL parameter placeholder
       queryParams.push(status);
       paramIndex++;
     }
     if (search) {
-      query += ` AND (name ILIKE ${paramIndex} OR content ILIKE ${paramIndex} OR role ILIKE ${paramIndex})`;
-      queryParams.push(`%${search}%`);
-      paramIndex++;
+      query += ` AND (name ILIKE $${paramIndex} OR content ILIKE $${paramIndex + 1} OR role ILIKE $${paramIndex + 2})`;
+      queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      paramIndex += 3;
     }
 
     query += ' ORDER BY created_at DESC';
