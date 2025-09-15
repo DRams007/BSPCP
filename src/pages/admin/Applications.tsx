@@ -80,7 +80,7 @@ const Applications = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:3001/api/applications');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/applications`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -105,7 +105,7 @@ const Applications = () => {
 
   const updateApplicationStatus = async (id: number, status: string, comment: string = "") => {
     try {
-      const response = await fetch(`http://localhost:3001/api/applications/${id}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/applications/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -191,7 +191,7 @@ const Applications = () => {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/applications/${applicationToDelete.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/applications/${applicationToDelete.id}`, {
         method: 'DELETE',
       });
 

@@ -53,7 +53,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, counsellor
 
     setFetchingBookings(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/counsellors/${counsellor.id}/bookings/date?date=${date}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/counsellors/${counsellor.id}/bookings/date?date=${date}`);
       if (response.ok) {
         const data: Booking[] = await response.json();
         setExistingBookings(data);
@@ -122,7 +122,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, counsellor
         bookingTime: selectedTime,
       };
 
-      const response = await fetch('http://localhost:3001/api/bookings', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -138,7 +138,7 @@ const Membership = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/api/membership', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/membership`, {
         method: 'POST',
         body: formData,
       });

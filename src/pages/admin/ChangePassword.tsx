@@ -121,7 +121,7 @@ const ChangePassword = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/admin/change-password', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/change-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

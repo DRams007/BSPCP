@@ -123,7 +123,7 @@ const AdminManagement = () => {
       }
 
       console.log('🔍 AdminManagement: Loading admin users...');
-      const response = await fetch('http://localhost:3001/api/admins', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admins`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -203,7 +203,7 @@ const AdminManagement = () => {
     const token = localStorage.getItem('admin_token');
 
     try {
-      const response = await fetch('http://localhost:3001/api/admins', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admins`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -271,7 +271,7 @@ const AdminManagement = () => {
 
     const token = localStorage.getItem('admin_token');
     try {
-      const response = await fetch(`http://localhost:3001/api/admins/${adminId}/role`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admins/${adminId}/role`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -327,7 +327,7 @@ const AdminManagement = () => {
     const token = localStorage.getItem('admin_token');
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admins/${adminId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admins/${adminId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -414,7 +414,7 @@ const AdminManagement = () => {
     const token = localStorage.getItem('admin_token');
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admins/${adminId}/reset-password`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admins/${adminId}/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -476,7 +476,7 @@ const AdminManagement = () => {
     const token = localStorage.getItem('admin_token');
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admins/${adminId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admins/${adminId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

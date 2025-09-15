@@ -48,7 +48,7 @@ const MemberDashboard = () => {
         throw new Error('No authentication token found.');
       }
 
-      const response = await fetch('http://localhost:3001/api/member/profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

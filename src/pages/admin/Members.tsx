@@ -114,7 +114,7 @@ const Members = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:3001/api/applications?status=approved");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/applications?status=approved`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -164,7 +164,7 @@ const Members = () => {
 
   const handleStatusChange = async (memberId: number, newStatus: "active" | "pending" | "suspended") => {
     try {
-      const response = await fetch(`http://localhost:3001/api/members/${memberId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/members/${memberId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -210,7 +210,7 @@ const Members = () => {
 
   const sendEmail = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/send-email", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/send-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

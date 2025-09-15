@@ -148,7 +148,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
         profile_photo_url: profileImage, // Ensure the most current profile photo URL is sent
       };
 
-      const response = await fetch(`http://localhost:3001/api/member/profile/${member.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/profile/${member.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +194,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
         throw new Error('No authentication token found.');
       }
 
-      const response = await fetch('http://localhost:3001/api/member/profile-photo', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/profile-photo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

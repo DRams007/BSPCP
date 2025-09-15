@@ -63,7 +63,7 @@ const ContactEditForm = ({ member, onContactUpdate }: ContactEditFormProps) => {
         throw new Error('No authentication token found.');
       }
 
-      const response = await fetch(`http://localhost:3001/api/member/contact/${member.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/contact/${member.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

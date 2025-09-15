@@ -6,7 +6,7 @@ const DbTest: React.FC = () => {
   useEffect(() => {
     const testConnection = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/db-test');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/db-test`);
         const data = await response.json();
         if (response.ok) {
           setMessage(data.message);

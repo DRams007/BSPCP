@@ -110,7 +110,7 @@ const BookingManagement = () => {
       if (!token) {
         throw new Error('No authentication token found.');
       }
-      const response = await fetch('http://localhost:3001/api/member/profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -140,7 +140,7 @@ const BookingManagement = () => {
         throw new Error('No authentication token found.');
       }
 
-      const response = await fetch(`http://localhost:3001/api/member/bookings`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/bookings`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -196,7 +196,7 @@ const BookingManagement = () => {
       if (!token) {
         throw new Error('No authentication token found.');
       }
-      const response = await fetch('http://localhost:3001/api/member/bookings/today', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/bookings/today`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -264,7 +264,7 @@ const BookingManagement = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found.');
 
-      const response = await fetch(`http://localhost:3001/api/bookings/${bookingId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${bookingId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -308,7 +308,7 @@ const BookingManagement = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found.');
 
-      const response = await fetch(`http://localhost:3001/api/bookings/${bookingId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${bookingId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -346,7 +346,7 @@ const BookingManagement = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found.');
 
-      const response = await fetch(`http://localhost:3001/api/bookings/${bookingId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${bookingId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

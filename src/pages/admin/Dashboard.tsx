@@ -49,11 +49,22 @@ const AdminDashboard = () => {
       setStats(data);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard statistics",
-        variant: "destructive",
-      });
+
+      // Check if it's a network/db error vs JSON parsing error
+      if (error.message && error.message.includes('SyntaxError: Unexpected token')) {
+        toast({
+          title: "Authentication Error",
+          description: "Please login again to refresh your session",
+          variant: "destructive",
+        });
+        navigate("/admin/login");
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard statistics",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

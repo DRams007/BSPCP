@@ -41,7 +41,7 @@ const CPDUploadForm = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/member/cpd', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/cpd`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -95,7 +95,7 @@ const CPDUploadForm = () => {
         formData.append('completionDate', completionDate);
       }
 
-      const response = await fetch('http://localhost:3001/api/member/cpd', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/cpd`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -145,7 +145,7 @@ const CPDUploadForm = () => {
 
       setDeletingRecord(recordId);
 
-      const response = await fetch(`http://localhost:3001/api/member/cpd/${recordId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/cpd/${recordId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -54,8 +54,9 @@ fs.mkdir(backupDir, { recursive: true }).catch(err => console.warn('Could not cr
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(uploadDir));
 // Helper to construct full URL
-const getFullUrl = (filePath, baseUrl) => {
+const getFullUrl = (filePath, req) => {
   if (!filePath) return null;
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
   // Normalize file path to use forward slashes for consistency
   const normalizedPath = filePath.replace(/\\/g, '/');
 
@@ -99,6 +100,9 @@ app.post('/api/membership', upload.fields([
     phone, email, website, physicalAddress, city,
     emergencyContact, emergencyPhone, showEmail, showPhone, showAddress
     } = req.body;
+
+    console.log('Received gender:', gender);
+    console.log('Received dateOfBirth:', dateOfBirth);
 
     // Calculate full_name for storage
     const calculatedFullName = `${firstName} ${lastName}`.trim();
@@ -260,23 +264,22 @@ app.get('/api/applications', async (req, res) => {
 
     const applications = result.rows.map(row => {
       const documents = [];
-      const baseUrl = `http://localhost:${PORT}`;
 
       if (row.personal_documents && row.personal_documents.idDocumentPath) {
-        documents.push({ name: "ID Document", uploaded: true, url: getFullUrl(row.personal_documents.idDocumentPath, baseUrl) });
+        documents.push({ name: "ID Document", uploaded: true, url: getFullUrl(row.personal_documents.idDocumentPath, req) });
       }
       // Exclude Profile Image as per new requirement
       // if (row.personal_documents && row.personal_documents.profileImagePath) {
-      //   documents.push({ name: "Profile Image", uploaded: true, url: getFullUrl(row.personal_documents.profileImagePath, baseUrl) });
+      //   documents.push({ name: "Profile Image", uploaded: true, url: getFullUrl(row.personal_documents.profileImagePath, req) });
       // }
       if (row.proof_of_payment_path) {
-        documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.proof_of_payment_path, baseUrl) });
+        documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.proof_of_payment_path, req) });
       }
       if (row.certificates) {
         const certificateDocs = row.certificates.map(cert => ({
           name: cert.name,
           uploaded: cert.uploaded,
-          url: getFullUrl(cert.url, baseUrl)
+          url: getFullUrl(cert.url, req)
         }));
         documents.push(...certificateDocs);
       }
@@ -305,17 +308,17 @@ app.get('/api/applications', async (req, res) => {
         // Include structured documents for frontend modal
         memberDocuments: {
           idDocument: row.personal_documents && row.personal_documents.idDocumentPath
-            ? { name: 'ID Document', url: getFullUrl(row.personal_documents.idDocumentPath, baseUrl) }
+            ? { name: 'ID Document', url: getFullUrl(row.personal_documents.idDocumentPath, req) }
             : null,
           certificates: row.certificates ? row.certificates.map(cert => ({
             name: cert.name,
-            url: getFullUrl(cert.url, baseUrl)
+            url: getFullUrl(cert.url, req)
           })) : [],
           cpdDocuments: row.cpd_documents ? row.cpd_documents.map(cpd => ({
             title: cpd.title,
             points: cpd.points,
             completion_date: cpd.completion_date,
-            url: cpd.path && cpd.path.trim() ? getFullUrl(cpd.path, baseUrl) : null
+            url: cpd.path && cpd.path.trim() ? getFullUrl(cpd.path, req) : null
           })) : []
         },
         // Add other fields as needed
@@ -435,7 +438,7 @@ app.put('/api/applications/:id/status', async (req, res) => {
         console.log('\nYour auto-generated username:', username);
         console.log('\n🔑 Next Steps:');
         console.log('1. Click this link to create your password:');
-        console.log(`   http://localhost:8080/set-password?token=${setupToken}`);
+        console.log(`   ${req.protocol}://${req.get('host')}/set-password?token=${setupToken}`);
         console.log('2. Choose a strong, memorable password');
         console.log('3. Login to your member dashboard');
         console.log('\n🛡️ Security Benefits:');
@@ -539,7 +542,7 @@ app.delete('/api/applications/:id', async (req, res) => {
     console.log('========================');
 
     res.json({
-      message: `Application for ${memberName} has been permanently deleted.`,
+      message: `Application for ${memberName} has been permanently deleted.`, 
       deletedMember: memberName,
       filesCleaned: filesToDelete.length
     });
@@ -737,7 +740,7 @@ app.post('/api/member/forgot-password', async (req, res) => {
     console.log(`Generated reset token for ${member.email}: ${resetToken}`);
 
     // Simulate sending email
-    const resetLink = `http://localhost:8080/reset-password?token=${resetToken}`; // Frontend reset password page
+    const resetLink = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`; // Frontend reset password page
     console.log('Simulating password reset email:');
     console.log('To:', member.email);
     console.log('Subject: Password Reset Request');
@@ -1120,10 +1123,9 @@ const query = `
 
     if (result.rows.length > 0) {
       const memberProfile = result.rows[0];
-      const baseUrl = `http://localhost:${PORT}`;
 
       if (memberProfile.profile_image_path) {
-        memberProfile.profile_photo_url = getFullUrl(memberProfile.profile_image_path, baseUrl);
+        memberProfile.profile_photo_url = getFullUrl(memberProfile.profile_image_path, req);
       } else {
         memberProfile.profile_photo_url = '/placeholder.svg'; // Default placeholder if no image
       }
@@ -1278,10 +1280,9 @@ app.get('/api/member/cpd', authenticateToken, async (req, res) => {
     client.release();
 
     const cpdRecords = result.rows.map(row => {
-      const baseUrl = `http://localhost:${PORT}`;
       return {
         ...row,
-        document_url: row.document_path ? getFullUrl(row.document_path, baseUrl) : null
+        document_url: row.document_path ? getFullUrl(row.document_path, req) : null
       };
     });
 
@@ -1439,8 +1440,6 @@ app.post('/api/content', upload.single('image'), async (req, res) => {
 
 
 
-
-
 // New API endpoint to delete content
 app.delete('/api/content/:id', async (req, res) => {
   const { id } = req.params;
@@ -1473,17 +1472,17 @@ app.get('/api/content', async (req, res) => {
     let paramIndex = 1;
 
     if (status && status !== 'all') {
-      query += ` AND status = $${paramIndex}`;
+      query += ` AND status = ${paramIndex}`;
       queryParams.push(status);
       paramIndex++;
     }
     if (type && type !== 'all') {
-      query += ` AND type = $${paramIndex}`;
+      query += ` AND type = ${paramIndex}`;
       queryParams.push(type);
       paramIndex++;
     }
     if (search) {
-      query += ` AND (title ILIKE $${paramIndex} OR content ILIKE $${paramIndex} OR tags ILIKE $${paramIndex})`;
+      query += ` AND (title ILIKE ${paramIndex} OR content ILIKE ${paramIndex} OR tags ILIKE ${paramIndex})`;
       queryParams.push(`%${search}%`);
       paramIndex++;
     }
@@ -1587,12 +1586,12 @@ app.get('/api/testimonials', async (req, res) => {
     let paramIndex = 1;
 
     if (status && status !== 'all') {
-      query += ` AND status ILIKE $${paramIndex}`; // Changed to ILIKE for case-insensitive comparison
+      query += ` AND status ILIKE ${paramIndex}`; // Changed to ILIKE for case-insensitive comparison
       queryParams.push(status);
       paramIndex++;
     }
     if (search) {
-      query += ` AND (name ILIKE $${paramIndex} OR content ILIKE $${paramIndex} OR role ILIKE $${paramIndex})`;
+      query += ` AND (name ILIKE ${paramIndex} OR content ILIKE ${paramIndex} OR role ILIKE ${paramIndex})`;
       queryParams.push(`%${search}%`);
       paramIndex++;
     }
@@ -1689,8 +1688,7 @@ app.post('/api/member/profile-photo', authenticateToken, upload.single('profileI
     }
 
     // Construct the public URL for the image
-    const baseUrl = `http://localhost:${PORT}`;
-    const publicUrl = `${baseUrl}/uploads/${path.basename(profileImagePath)}`;
+    const publicUrl = getFullUrl(profileImagePath, req);
     console.log('Public URL for photo:', publicUrl);
 
     res.status(200).json({ message: 'Profile photo uploaded successfully!', profile_photo_url: publicUrl });
@@ -1747,10 +1745,9 @@ app.get('/api/counsellors', async (req, res) => {
     const result = await client.query(query, queryParams);
     client.release();
 
-    const baseUrl = `http://localhost:${PORT}`;
     const counsellors = result.rows.map(c => ({
       ...c,
-      profile_photo_url: c.profile_image_path ? getFullUrl(c.profile_image_path, baseUrl) : '/placeholder.svg'
+      profile_photo_url: c.profile_image_path ? getFullUrl(c.profile_image_path, req) : '/placeholder.svg'
     }));
 
     console.log('Filtered counsellors from DB:', counsellors.map(c => ({ id: c.id, full_name: c.full_name, session_types: c.session_types })));
@@ -1795,8 +1792,7 @@ app.get('/api/counsellors/:id', async (req, res) => {
 
     if (result.rows.length > 0) {
       const counsellor = result.rows[0];
-      const baseUrl = `http://localhost:${PORT}`;
-      counsellor.profile_photo_url = counsellor.profile_image_path ? getFullUrl(counsellor.profile_image_path, baseUrl) : '/placeholder.svg';
+      counsellor.profile_photo_url = counsellor.profile_image_path ? getFullUrl(counsellor.profile_image_path, req) : '/placeholder.svg';
       res.json(counsellor);
     } else {
       res.status(404).json({ error: 'Counsellor not found or not active/approved' });
@@ -1906,7 +1902,7 @@ app.put('/api/bookings/:id/status', authenticateToken, async (req, res) => {
     let query = `
       UPDATE bookings
       SET status = $1,
-          needs = CASE WHEN $2::text IS NOT NULL THEN needs || E'\\n' || $2 ELSE needs END
+          needs = CASE WHEN $2::text IS NOT NULL THEN needs || E'\n' || $2 ELSE needs END
       WHERE id = $3 AND counsellor_id = $4
       RETURNING *;
     `;
@@ -1954,6 +1950,37 @@ app.put('/api/bookings/:id', authenticateToken, async (req, res) => {
     if (client) { // Check if client is defined before releasing
       client.release();
     }
+  }
+});
+
+app.get('/api/admin/dashboard-stats', async (req, res) => {
+  try {
+    const client = await pool.connect();
+
+    const totalMembersResult = await client.query(
+      `SELECT COUNT(*) FROM members WHERE member_status = 'active';`
+    );
+    const pendingApplicationsResult = await client.query(
+      `SELECT COUNT(*) FROM members WHERE application_status = 'pending';`
+    );
+    const activeNewsResult = await client.query(
+      `SELECT COUNT(*) FROM content WHERE type = 'news' AND status = 'Published';`
+    );
+    const upcomingEventsResult = await client.query(
+      `SELECT COUNT(*) FROM content WHERE type = 'event' AND status = 'Published' AND event_date >= NOW();`
+    );
+
+    client.release();
+
+    res.json({
+      totalMembers: parseInt(totalMembersResult.rows[0].count, 10),
+      pendingApplications: parseInt(pendingApplicationsResult.rows[0].count, 10),
+      activeNews: parseInt(activeNewsResult.rows[0].count, 10),
+      upcomingEvents: parseInt(upcomingEventsResult.rows[0].count, 10),
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
 
@@ -2146,12 +2173,12 @@ app.post('/api/backup', async (req, res) => {
             `dropdb -h localhost -U postgres BSPCP`,
             'Step 2: Create fresh database',
             `createdb -h localhost -U postgres BSPCP`,
-            'Step 3: Restore from backup (choose one):',
-            `pg_restore -h localhost -U postgres -d BSPCP "${path.basename(dumpFilePath)}"`,
+            'Step 3: Restore from backup (choose one)',
+            `pg_restore -h localhost -U postgres -d BSPCP "${path.basename(dumpFilePath)}"`, 
             'OR',
-            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`,
+            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`, 
             'OR',
-            `psql -h localhost -U postgres -d BSPCP < "${path.basename(sqlFilePath)}"`,
+            `psql -h localhost -U postgres -d BSPCP < "${path.basename(sqlFilePath)}"`, 
             '▶ BEST for development/staging environments'
           ],
           'Force Restore into Existing Database': [
@@ -2159,22 +2186,22 @@ app.post('/api/backup', async (req, res) => {
             '⚠️ WARNING: This will DROP existing tables first, potentially losing data',
             'Step 1: Verify you have backups of current data',
             'Step 2: Force restore with clean option',
-            `pg_restore -h localhost -U postgres -d BSPCP --clean --if-exists "${path.basename(dumpFilePath)}"`,
+            `pg_restore -h localhost -U postgres -d BSPCP --clean --if-exists "${path.basename(dumpFilePath)}"`, 
             'OR with psql (if current DB has issues)',
-            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}" --variable ON_ERROR_STOP=off`,
+            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}" --variable ON_ERROR_STOP=off`, 
             '▶ USE with CAUTION - backup current data first!'
           ],
           'Safe Side-by-Side Restore': [
             'Option 3 - Create new database copy (safe - no data loss)',
             'Step 1: Create new database with timestamp',
-            `createdb -h localhost -U postgres "BSPCP_backup_${new Date().toISOString().split('T')[0]}"`,
+            `createdb -h localhost -U postgres "BSPCP_backup_${new Date().toISOString().split('T')[0]}"`, 
             'Step 2: Restore to the new database',
-            `pg_restore -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" "${path.basename(dumpFilePath)}"`,
+            `pg_restore -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" "${path.basename(dumpFilePath)}"`, 
             'OR',
-            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" < "${path.basename(bakFilePath)}"`,
+            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" < "${path.basename(bakFilePath)}"`, 
             'Step 3: Compare databases and merge if needed',
-            `psql -h localhost -U postgres -d BSPCP -c "SELECT COUNT(*) FROM members;"`,
-            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" -c "SELECT COUNT(*) FROM members;"`,
+            `psql -h localhost -U postgres -d BSPCP -c "SELECT COUNT(*) FROM members;"`, 
+            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" -c "SELECT COUNT(*) FROM members;"`, 
             '▶ SAFEST option - keeps both original and backup data'
           ],
           quickRestoreMethods: {
@@ -2182,7 +2209,7 @@ app.post('/api/backup', async (req, res) => {
               `pg_restore -h localhost -U postgres -d BSPCP "${path.basename(dumpFilePath)}"`
             ],
             'SQL Text Restore': [
-              `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`,
+              `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`, 
               'OR',
               `psql -h localhost -U postgres -d BSPCP < "${path.basename(sqlFilePath)}"`
             ]
@@ -2537,14 +2564,16 @@ const authenticateAdminToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (token == null) return res.sendStatus(401);
+  // Return JSON error instead of HTML status codes
+  if (token == null) return res.status(401).json({ error: 'Access token required' });
 
   jwt.verify(token, JWT_SECRET, async (err, decoded) => {
-    if (err) return res.sendStatus(403);
+    let client;
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
 
     try {
       // Verify admin still exists and is active
-      const client = await pool.connect();
+      client = await pool.connect();
       const adminResult = await client.query(
         'SELECT id, is_active, role FROM admins WHERE id = $1',
         [decoded.adminId]
@@ -2569,6 +2598,7 @@ const authenticateAdminToken = (req, res, next) => {
       );
 
       client.release();
+      client = null;
 
       if (sessionResult.rows.length === 0) {
         return res.status(401).json({ error: 'Token has been invalidated' });
@@ -2581,8 +2611,11 @@ const authenticateAdminToken = (req, res, next) => {
       };
       next();
     } catch (dbError) {
+      if (client) {
+        client.release();
+      }
       console.error('Admin token verification error:', dbError);
-      res.status(500).json({ error: 'Authentication service unavailable' });
+      res.status(500).json({ error: 'Authentication service unavailable', details: dbError.message });
     }
   });
 };
@@ -2832,12 +2865,6 @@ app.put('/api/admin/change-password', authenticateAdminToken, async (req, res) =
        SET password_hash = $1, salt = $2, password_changed_at = NOW()
        WHERE id = $3`,
       [newPasswordHash, salt, req.admin.id]
-    );
-
-    // Invalidate all existing sessions (force logout from other devices)
-    await client.query(
-      'DELETE FROM admin_sessions WHERE admin_id = $1',
-      [req.admin.id]
     );
 
     // Log activity
@@ -3114,7 +3141,7 @@ app.post('/api/admins/:id/reset-password', authenticateAdminToken, requireRole('
     console.log('');
     console.log('🔑 Reset Your Password:');
     console.log('1. Click this link to create a new password:');
-    console.log(`   http://localhost:8080/admin/reset-password?token=${resetToken}`);
+    console.log(`   ${req.protocol}://${req.get('host')}/admin/reset-password?token=${resetToken}`);
     console.log('2. Choose a strong, memorable password');
     console.log('3. Login to your admin dashboard');
     console.log('');
@@ -3294,8 +3321,9 @@ app.put('/api/admins/:id/status', authenticateAdminToken, requireRole('super_adm
 
 // Dashboard statistics endpoint
 app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
 
     // Get member statistics
     const membersResult = await client.query(`
@@ -3342,16 +3370,28 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
     );
 
     client.release();
+    client = null;
 
     res.json(stats);
 
   } catch (error) {
+    if (client) {
+      client.release();
+    }
     console.error('Error fetching dashboard statistics:', error);
     res.status(500).json({ error: 'Failed to load dashboard statistics' });
   }
 });
 
-app.listen(PORT, () => {
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// All other GET requests not handled by API routes should return the React app
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
+});
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Admin Authentication API endpoints available at:');
   console.log('POST /api/admin/login - Admin login');

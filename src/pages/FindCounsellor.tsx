@@ -95,7 +95,7 @@ const FindCounsellor = () => {
   useEffect(() => {
     const fetchCounsellors = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/counsellors');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/counsellors`);
         if (!response.ok) {
           throw new Error('Failed to fetch counsellors');
         }
@@ -117,7 +117,7 @@ const FindCounsellor = () => {
     setModalLoading(true);
     setModalError(null);
     try {
-      const response = await fetch(`http://localhost:3001/api/counsellors/${id}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/counsellors/${id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch counsellor details');
       }

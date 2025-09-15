@@ -38,7 +38,7 @@ const NewsEvents = () => {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/public-content');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/public-content`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -66,7 +66,7 @@ const NewsEvents = () => {
 
   const getFullImageUrl = (imagePath?: string) => {
     if (!imagePath) return '/placeholder.svg';
-    const baseUrl = 'http://localhost:3001'; // Ensure this matches your backend server URL
+    const baseUrl = import.meta.env.VITE_API_URL; // Ensure this matches your backend server URL
 
     // Normalize path to use forward slashes for consistency
     const normalizedPath = imagePath.replace(/\\/g, '/');
