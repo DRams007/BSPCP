@@ -347,8 +347,8 @@ app.put('/api/applications/:id/status', async (req, res) => {
     let queryParams;
 
     if (status === 'approved') {
-      // Update member status to approved and set member as active immediately
-      query = `UPDATE members SET application_status = $1, member_status = 'active', review_comment = $2 WHERE id = $3 RETURNING *`;
+      // Update member status to approved and set member as pending password setup (they need to set their password first)
+      query = `UPDATE members SET application_status = $1, member_status = 'pending_password_setup', review_comment = $2 WHERE id = $3 RETURNING *`;
       queryParams = [status, reviewComment, id];
     } else {
       query = `UPDATE members SET application_status = $1, review_comment = $2 WHERE id = $3 RETURNING *`;
