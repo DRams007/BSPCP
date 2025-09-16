@@ -1,73 +1,95 @@
-# Welcome to your Lovable project
+# BSPCP - Botswana Society for Professional Counsellors & Psychotherapists
 
-## Project info
+A web application connecting individuals with qualified mental health professionals in Botswana.
 
-**URL**: https://lovable.dev/projects/4f0e10ad-e0b5-476c-9cc3-ad9eb038d2f0
+## Features
 
-## How can I edit this code?
+- **Find Counsellors**: Browse and connect with licensed counsellors and psychotherapists
+- **Membership Management**: Professional membership system for BSPCP members
+- **Admin Dashboard**: Complete administrative interface for managing content, members, and applications
+- **Testimonials**: Client feedback and success stories
+- **News & Events**: Latest updates from the counselling community
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React, TypeScript, Vite
+- **UI Framework**: shadcn/ui, Tailwind CSS
+- **Backend**: Node.js, Express
+- **Database**: PostgreSQL
+- **Authentication**: JWT tokens
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4f0e10ad-e0b5-476c-9cc3-ad9eb038d2f0) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js (v18+)
+- npm
+- PostgreSQL database
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Customizing the Favicon
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Replace the `public/favicon.ico` file with your own BSPCP logo to customize the browser tab icon.
 
-Follow these steps:
+### Installation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd bspcp
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. Install dependencies:
+```bash
+npm install
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your database and other configuration settings
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+4. Set up the database:
+```bash
+npm run db:setup
+```
+
+5. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Usage
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Development
 
-**Use GitHub Codespaces**
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Database Management
 
-## What technologies are used for this project?
+The application uses sample seed data for initial setup. Run database setup scripts located in the `server/` directory.
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+├── public/              # Static assets
+├── src/                 # React application
+│   ├── components/      # Reusable React components
+│   ├── pages/          # Page components
+│   └── types/          # TypeScript type definitions
+├── server/              # Backend Node.js server
+└── dist/               # Production build output
+```
 
-## How can I deploy this project?
+## Contributing
 
-Simply open [Lovable](https://lovable.dev/projects/4f0e10ad-e0b5-476c-9cc3-ad9eb038d2f0) and click on Share -> Publish.
+This project is maintained by the BSPCP development team. For contributions, please contact the administrators through the admin panel or GitHub repository.
 
-## Can I connect a custom domain to my Lovable project?
+## License
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Copyright Botswana Society for Professional Counsellors & Psychotherapists. All rights reserved.

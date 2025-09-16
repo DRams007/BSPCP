@@ -62,7 +62,7 @@ const HeroSection = () => {
           {/* Image Section */}
           <div className="relative lg:block hidden">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-              <img src="/lovable-uploads/62e60043-5351-4cad-b6c4-92743d7c0bc8.png" alt="Counseling therapy session" className="w-full h-auto object-cover" />
+              <img src="/uploads/62e60043-5351-4cad-b6c4-92743d7c0bc8.png" alt="Counseling therapy session" className="w-full h-auto object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
           </div>

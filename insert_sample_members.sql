@@ -26,7 +26,7 @@ BEGIN
     VALUES (member_1_id, 'server/uploads/1757156754106-itekeng 3sets.pdf', NULL); -- Removed profile image
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_1_id, 'public/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'PhD Certificate.png');
+    VALUES (member_1_id, 'public/uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'PhD Certificate.png');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_1_id, 'server/uploads/1757157616174-itekeng.pdf'); -- Added proof of payment
@@ -54,7 +54,7 @@ BEGIN
     VALUES (member_2_id, 'server/uploads/1757156754170-itekeng 2seth.pdf', NULL); -- Removed profile image
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_2_id, 'public/lovable-uploads/First_Annual_BSPCP.jpg', 'MSc Certificate.jpg');
+    VALUES (member_2_id, 'public/uploads/First_Annual_BSPCP.jpg', 'MSc Certificate.jpg');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_2_id, 'server/uploads/1757157616149-itekeng 3sets.pdf'); -- Added proof of payment
@@ -82,7 +82,7 @@ BEGIN
     VALUES (member_3_id, 'server/uploads/1757156754210-itekeng 2mat.pdf', NULL); -- Removed profile image
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_3_id, 'public/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'MA Certificate.png');
+    VALUES (member_3_id, 'public/uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'MA Certificate.png');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_3_id, 'server/uploads/1757157616104-itekeng 3sets.pdf'); -- Added proof of payment
@@ -110,7 +110,7 @@ BEGIN
     VALUES (member_4_id, 'server/uploads/1757157616104-itekeng 3sets.pdf', NULL); -- Removed profile image
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_4_id, 'public/lovable-uploads/First_Annual_BSPCP.jpg', 'MD Certificate.jpg');
+    VALUES (member_4_id, 'public/uploads/First_Annual_BSPCP.jpg', 'MD Certificate.jpg');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_4_id, 'server/uploads/1757157616104-itekeng 3sets.pdf'); -- Added proof of payment
@@ -135,10 +135,10 @@ BEGIN
     VALUES (member_5_id, '+267 71234567', 'emily.brown@example.com', 'www.emilybrowncounselling.com', 'Plot 20, Village', 'Gaborone', 'Peter Brown', '+267 72345678', TRUE, TRUE, TRUE);
 
     INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path)
-    VALUES (member_5_id, 'server/uploads/1757270505514-sg2.png', 'public/lovable-uploads/62e60043-5351-4cad-b6c4-92743d7c0bc8.png');
+    VALUES (member_5_id, 'server/uploads/1757270505514-sg2.png', 'public/uploads/62e60043-5351-4cad-b6c4-92743d7c0bc8.png');
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_5_id, 'public/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'MA Counselling Certificate.png');
+    VALUES (member_5_id, 'public/uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'MA Counselling Certificate.png');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_5_id, 'server/uploads/1757270523887-sg.png');
@@ -163,10 +163,10 @@ BEGIN
     VALUES (member_6_id, '+267 73456789', 'frank.davis@example.com', NULL, 'Unit 1, CBD', 'Gaborone', 'Grace Davis', '+267 74567890', TRUE, TRUE, TRUE);
 
     INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path)
-    VALUES (member_6_id, 'server/uploads/1757270639623-test.jpg', 'public/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png');
+    VALUES (member_6_id, 'server/uploads/1757270639623-test.jpg', 'public/uploads/cb7bf666-f956-408d-884e-b05416c37837.png');
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_6_id, 'public/lovable-uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png', 'MSc Psychotherapy Certificate.png');
+    VALUES (member_6_id, 'public/uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png', 'MSc Psychotherapy Certificate.png');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_6_id, 'server/uploads/1757270664865-test.jpg');
@@ -191,10 +191,10 @@ BEGIN
     VALUES (member_7_id, '+267 75678901', 'grace.evans@example.com', NULL, 'Plot 50, Phase 2', 'Francistown', 'Henry Evans', '+267 76789012', TRUE, TRUE, TRUE);
 
     INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path)
-    VALUES (member_7_id, 'server/uploads/1757270736992-test.jpg', 'public/lovable-uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png');
+    VALUES (member_7_id, 'server/uploads/1757270736992-test.jpg', 'public/uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png');
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_7_id, 'public/lovable-uploads/First_Annual_BSPCP.jpg', 'PhD Child Psychology Certificate.jpg');
+    VALUES (member_7_id, 'public/uploads/First_Annual_BSPCP.jpg', 'PhD Child Psychology Certificate.jpg');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_7_id, 'server/uploads/1757272512247-test.jpg');
@@ -219,10 +219,10 @@ BEGIN
     VALUES (member_8_id, '+267 76789012', 'harry.foster@example.com', 'www.recoverycentre.org', 'Plot 15, Industrial', 'Maun', 'Ivy Foster', '+267 77890123', TRUE, TRUE, TRUE);
 
     INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path)
-    VALUES (member_8_id, 'server/uploads/1757272540183-test.jpg', 'public/lovable-uploads/62e60043-5351-4cad-b6c4-92743d7c0bc8.png');
+    VALUES (member_8_id, 'server/uploads/1757272540183-test.jpg', 'public/uploads/62e60043-5351-4cad-b6c4-92743d7c0bc8.png');
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_8_id, 'public/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'Diploma Addiction Counselling.png');
+    VALUES (member_8_id, 'public/uploads/cb7bf666-f956-408d-884e-b05416c37837.png', 'Diploma Addiction Counselling.png');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_8_id, 'server/uploads/1757272739566-test.jpg');
@@ -247,10 +247,10 @@ BEGIN
     VALUES (member_9_id, '+267 77890123', 'ivy.green@example.com', NULL, 'House 3, Block 7', 'Kasane', 'Jack Green', '+267 78901234', TRUE, TRUE, FALSE);
 
     INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path)
-    VALUES (member_9_id, 'server/uploads/1757272777543-test.jpg', 'public/lovable-uploads/cb7bf666-f956-408d-884e-b05416c37837.png');
+    VALUES (member_9_id, 'server/uploads/1757272777543-test.jpg', 'public/uploads/cb7bf666-f956-408d-884e-b05416c37837.png');
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_9_id, 'public/lovable-uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png', 'Grief Counselling Certificate.png');
+    VALUES (member_9_id, 'public/uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png', 'Grief Counselling Certificate.png');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_9_id, 'server/uploads/1757272831607-test.jpg');
@@ -275,10 +275,10 @@ BEGIN
     VALUES (member_10_id, '+267 78901234', 'jack.hall@example.com', 'www.futurepathways.com', 'Office Park, Extension 11', 'Gaborone', 'Kelly Hall', '+267 79012345', TRUE, TRUE, TRUE);
 
     INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path)
-    VALUES (member_10_id, 'server/uploads/1757272994182-test.jpg', 'public/lovable-uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png');
+    VALUES (member_10_id, 'server/uploads/1757272994182-test.jpg', 'public/uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png');
 
     INSERT INTO member_certificates (member_id, file_path, original_filename)
-    VALUES (member_10_id, 'public/lovable-uploads/First_Annual_BSPCP.jpg', 'MSc Career Guidance Certificate.jpg');
+    VALUES (member_10_id, 'public/uploads/First_Annual_BSPCP.jpg', 'MSc Career Guidance Certificate.jpg');
 
     INSERT INTO member_payments (member_id, proof_of_payment_path)
     VALUES (member_10_id, 'server/uploads/1757273248214-test.jpg');
