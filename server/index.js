@@ -3387,9 +3387,11 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // All other GET requests not handled by API routes should return the React app
-app.get('*', (req, res) => {
+// All other GET requests not handled by API routes should return the React app
+app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
 });
+
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
