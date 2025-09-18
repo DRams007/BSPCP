@@ -22,7 +22,7 @@ const Contact = () => {
       icon: Mail,
       title: 'Email',
       details: [
-        'bwprofessionalcounsellors@gmail.com'
+        'info@bspcp.org.bw'
       ]
     }
   ];
@@ -50,26 +50,6 @@ const Contact = () => {
     }
   ];
 
-  const emergencyContacts = [
-    {
-      name: 'Emergency Services',
-      number: '997',
-      description: 'Police, Fire, Medical emergencies',
-      available: '24/7'
-    },
-    {
-      name: 'Crisis Helpline',
-      number: '16222',
-      description: 'Mental health crisis support',
-      available: '24/7'
-    },
-    {
-      name: 'Suicide Prevention',
-      number: '3905050',
-      description: 'Immediate suicide prevention help',
-      available: '24/7'
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -244,52 +224,6 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* Emergency Contacts */}
-      <section className="py-16 bg-destructive/5 border-t-4 border-destructive">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-destructive/20 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-8 h-8 text-destructive" />
-              </div>
-            </div>
-            <h2 className="font-poppins font-bold text-2xl md:text-3xl text-foreground mb-4">
-              Emergency Contacts
-            </h2>
-            <p className="font-source text-lg text-muted-foreground max-w-2xl mx-auto">
-              If you're experiencing a mental health emergency or crisis, immediate help is available.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {emergencyContacts.map((contact, index) => (
-              <Card key={index} className="border-destructive/20 bg-background text-center">
-                <CardContent className="p-6">
-                  <h3 className="font-poppins font-semibold text-lg text-foreground mb-2">
-                    {contact.name}
-                  </h3>
-                  <div className="font-poppins font-bold text-2xl text-destructive mb-2">
-                    {contact.number}
-                  </div>
-                  <p className="font-source text-sm text-muted-foreground mb-3">
-                    {contact.description}
-                  </p>
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>{contact.available}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="text-center mt-8">
-            <p className="font-source text-sm text-muted-foreground">
-              If you're in immediate danger, please call emergency services or go to your nearest hospital.
-            </p>
-          </div>
-        </div>
-      </section>
 
 
 

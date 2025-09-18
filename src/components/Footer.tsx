@@ -108,19 +108,10 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-6 h-6 text-primary" />
-                <span className="font-source text-cream/80">bwprofessionalcounsellors@gmail.com</span>
+                <span className="font-source text-cream/80">info@bspcp.org.bw</span>
               </li>
             </ul>
             
-            <div className="mt-6 p-4 bg-destructive/20 rounded-lg">
-              <h4 className="font-poppins font-semibold text-sm mb-2">Emergency Support</h4>
-              <p className="font-source text-xs text-cream/80 mb-2">
-                If you're in crisis, help is available 24/7
-              </p>
-              <p className="font-source font-bold text-destructive">
-                Crisis Hotline: 16222
-              </p>
-            </div>
           </div>
         </div>
 
