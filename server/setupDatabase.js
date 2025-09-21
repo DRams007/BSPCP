@@ -23,6 +23,8 @@ async function setupDatabase() {
     await pool.query(`DROP TABLE IF EXISTS bookings CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS testimonials CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_cpd CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS notification_recipients CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS notification_settings CASCADE;`);
 
     await pool.query(`
       CREATE TABLE members (
@@ -265,6 +267,48 @@ async function setupDatabase() {
           details TEXT, -- Additional context/details
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    // Counselling notification preferences table (for counsellors to manage booking notifications)
+    await pool.query(`
+      CREATE TABLE counsellor_notification_preferences (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+          booking_notifications BOOLEAN DEFAULT true,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(member_id)
+      );
+    `);
+
+    // Notification management tables
+    await pool.query(`
+      CREATE TABLE notification_recipients (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          email VARCHAR(255) NOT NULL UNIQUE,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE notification_settings (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          setting_name VARCHAR(100) NOT NULL UNIQUE,
+          setting_value BOOLEAN DEFAULT true,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Insert default notification settings
+    await pool.query(`
+      INSERT INTO notification_recipients (email) VALUES ('bspcpemailservice@gmail.com');
+    `);
+
+    await pool.query(`
+      INSERT INTO notification_settings (setting_name, setting_value) VALUES ('notifications_enabled', true);
     `);
 
     console.log('Database tables created or updated successfully.');

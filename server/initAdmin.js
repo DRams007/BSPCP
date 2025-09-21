@@ -12,8 +12,15 @@ async function initAdminUser() {
     );
 
     if (existingAdmin.rows.length > 0) {
-      console.log('Default admin user already exists.');
-      return;
+      console.log('Default admin user already exists. Deleting existing admin and recreating...');
+      const adminId = existingAdmin.rows[0].id;
+
+      // Delete related records first (due to foreign key constraints)
+      await pool.query('DELETE FROM admin_permissions WHERE admin_id = $1', [adminId]);
+      await pool.query('DELETE FROM admin_sessions WHERE admin_id = $1', [adminId]);
+      await pool.query('DELETE FROM admins WHERE id = $1', [adminId]);
+
+      console.log('Existing admin user and related data deleted.');
     }
 
     // Create admin user
@@ -61,7 +68,8 @@ async function initAdminUser() {
       { resource: 'backups', action: 'manage' },
       { resource: 'admin_users', action: 'manage' },
       { resource: 'reports', action: 'manage' },
-      { resource: 'settings', action: 'manage' }
+      { resource: 'settings', action: 'manage' },
+      { resource: 'notifications', action: 'manage' }
     ];
 
     for (const perm of defaultPermissions) {

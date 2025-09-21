@@ -16,6 +16,7 @@ import {
   User,
   Shield,
   Lock,
+  Bell,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -54,6 +55,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       href: "/admin/admin-management",
       icon: Shield,
       requiresRole: "super_admin"
+    },
+    {
+      name: "Notifications",
+      href: "/admin/notifications",
+      icon: Bell
     },
     { name: "Settings", href: "/admin/settings", icon: Settings },
   ];

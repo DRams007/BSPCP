@@ -13,9 +13,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CheckCircle, Upload, Users, Award, BookOpen, Network, LogIn } from 'lucide-react';
+import { CheckCircle, Upload, Users, Award, BookOpen, Network, LogIn, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 const membershipSchema = z.object({
   // Members Table Fields
@@ -71,6 +72,7 @@ type MembershipFormData = z.infer<typeof membershipSchema>;
 
 const Membership = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const totalSteps = 4;
   const navigate = useNavigate();
 
@@ -95,6 +97,7 @@ const Membership = () => {
   });
 
   const onSubmit = async (data: MembershipFormData) => {
+    setIsSubmitting(true);
     const formData = new FormData();
 
     // Append all text fields
@@ -102,7 +105,7 @@ const Membership = () => {
       if (key === 'idDocument' || key === 'proofOfPayment' || key === 'certificates' || key === 'profileImage') {
         continue; // Skip file fields for now, handle separately
       }
-      
+
       const value = (data as MembershipFormData)[key as keyof MembershipFormData];
       if (Array.isArray(value)) {
         if (key === 'specializations') {
@@ -166,6 +169,8 @@ const Membership = () => {
         description: 'Could not connect to the server. Please try again later.',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -924,22 +929,35 @@ const Membership = () => {
 
                     <div className="flex justify-between pt-6">
                       {currentStep > 1 && (
-                        <Button type="button" variant="outline" onClick={prevStep}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={prevStep}
+                          disabled={isSubmitting}
+                        >
                           Previous
                         </Button>
                       )}
-                      
+
                       {currentStep < totalSteps ? (
-                        <Button 
-                          type="button" 
+                        <Button
+                          type="button"
                           onClick={nextStep}
                           className={currentStep === 1 ? 'ml-auto' : ''}
+                          disabled={isSubmitting}
                         >
                           Next
                         </Button>
                       ) : (
-                        <Button type="submit">
-                          Submit Application
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="flex items-center gap-2"
+                        >
+                          {isSubmitting && (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          )}
+                          {isSubmitting ? "Submitting Application..." : "Submit Application"}
                         </Button>
                       )}
                     </div>

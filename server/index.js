@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -11,6 +12,10 @@ import crypto from 'crypto';
 import pool from './lib/db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { sendMemberPasswordResetEmail, sendMemberApprovalEmail, sendApplicationNotificationEmail, sendCounsellorBookingNotificationEmail, sendApplicantRequestMoreInfoEmail } from './lib/emailService.js';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -186,6 +191,17 @@ app.post('/api/membership', upload.fields([
     }
 
     await client.query('COMMIT');
+
+    // Send notification email to admin after successful submission
+    try {
+      await sendApplicationNotificationEmail(req.body, memberId);
+      console.log('📧 Application notification email sent successfully for member:', memberId);
+    } catch (emailError) {
+      // Log email error but don't fail the application process
+      console.error('❌ Failed to send application notification email:', emailError.message);
+      // Still successful - application was processed, just email failed
+    }
+
     res.status(201).json({ message: 'Membership application submitted successfully!', memberId });
 
   } catch (error) {
@@ -429,26 +445,14 @@ app.put('/api/applications/:id/status', async (req, res) => {
           { expiresIn: '24h' } // Setup link expires in 24 hours
         );
 
-        console.log('=== PASSWORD SETUP EMAIL (SIMULATED) ===');
-        console.log('To:', memberEmail);
-        console.log('Subject: Welcome to BSPCP - Complete Your Account Setup!');
-        console.log('Body:');
-        console.log(`Dear ${fullName},`);
-        console.log('\nCongratulations! Your BSPCP membership application has been approved.');
-        console.log('\nYour auto-generated username:', username);
-        console.log('\n🔑 Next Steps:');
-        console.log('1. Click this link to create your password:');
-        console.log(`   ${req.protocol}://${req.get('host')}/set-password?token=${setupToken}`);
-        console.log('2. Choose a strong, memorable password');
-        console.log('3. Login to your member dashboard');
-        console.log('\n🛡️ Security Benefits:');
-        console.log('• No default passwords used');
-        console.log('• Your password is completely secure');
-        console.log('• You control your own credentials');
-        console.log('\n📞 Need Help? Contact: contact@bsncp.org');
-        console.log('\nBest regards,');
-        console.log('BSPCP Administration Team');
-        console.log('=== END EMAIL ===');
+        // Send approval email
+        try {
+          await sendMemberApprovalEmail(memberEmail, fullName, username, setupToken);
+          console.log(`📧 Member approval email sent to ${memberEmail} for member ${id}`);
+        } catch (emailError) {
+          console.error('❌ Failed to send member approval email:', emailError.message);
+          // Don't fail the approval process if email fails, but log it
+        }
       }
     }
 
@@ -580,19 +584,61 @@ app.put('/api/members/:id/status', async (req, res) => {
   }
 });
 
+import { sendEmail } from './lib/emailService.js';
+
 // New API endpoint to send emails
 app.post('/api/send-email', async (req, res) => {
   const { recipients, subject, body } = req.body;
   try {
-    // In a real application, you would integrate with an email service here (e.g., Nodemailer, SendGrid)
-    console.log('Simulating email send:');
-    console.log('To:', recipients);
-    console.log('Subject:', subject);
-    console.log('Body:', body);
-    res.status(200).json({ message: 'Email sent successfully (simulated)' });
+    const result = await sendEmail(recipients, subject, body);
+    res.status(200).json({
+      message: 'Email sent successfully',
+      emailResult: {
+        accepted: result.accepted,
+        rejected: result.rejected,
+        envelopeTime: result.envelopeTime,
+        messageTime: result.messageTime,
+        messageSize: result.messageSize,
+        response: result.response
+      }
+    });
   } catch (err) {
     console.error('Error sending email:', err);
     res.status(500).json({ error: 'Failed to send email', details: err.message });
+  }
+});
+
+// New API endpoint to send email to applicant requesting more information
+app.post('/api/send-applicant-email', async (req, res) => {
+  const { applicantEmail, applicantName, subject, body } = req.body;
+
+  // Validate required fields
+  if (!applicantEmail || !applicantName || !subject || !body) {
+    return res.status(400).json({
+      error: 'Missing required fields',
+      details: 'applicantEmail, applicantName, subject, and body are all required'
+    });
+  }
+
+  try {
+    const result = await sendApplicantRequestMoreInfoEmail(applicantEmail, applicantName, subject, body);
+    res.status(200).json({
+      message: 'Email sent successfully to applicant',
+      emailResult: {
+        accepted: result.accepted,
+        rejected: result.rejected,
+        envelopeTime: result.envelopeTime,
+        messageTime: result.messageTime,
+        messageSize: result.messageSize,
+        response: result.response
+      }
+    });
+  } catch (err) {
+    console.error('Error sending email to applicant:', err);
+    res.status(500).json({
+      error: 'Failed to send email to applicant',
+      details: err.message
+    });
   }
 });
 
@@ -734,17 +780,15 @@ app.post('/api/member/forgot-password', async (req, res) => {
     const member = memberResult.rows[0];
     const resetToken = jwt.sign({ memberId: member.id }, JWT_SECRET, { expiresIn: '1h' }); // Token expires in 1 hour
 
-    // In a real application, you would store this token in a database table
-    // For now, we'll just log it and simulate sending an email.
-    // Example: INSERT INTO password_reset_tokens (member_id, token, expires_at) VALUES ($1, $2, NOW() + INTERVAL '1 hour');
-    console.log(`Generated reset token for ${member.email}: ${resetToken}`);
-
-    // Simulate sending email
-    const resetLink = `${req.protocol}://${req.get('host')}/reset-password?token=${resetToken}`; // Frontend reset password page
-    console.log('Simulating password reset email:');
-    console.log('To:', member.email);
-    console.log('Subject: Password Reset Request');
-    console.log(`Body: Please use the following link to reset your password: ${resetLink}`);
+    // Send password reset email
+    try {
+      await sendMemberPasswordResetEmail(member.email, member.full_name, resetToken);
+      console.log(`🔐 Password reset email sent to ${member.email} for member ${member.id}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send password reset email:', emailError.message);
+      client.release();
+      return res.status(500).json({ error: 'Failed to send password reset email', details: emailError.message });
+    }
 
     client.release();
     res.status(200).json({ message: 'If an account with that email exists, you will receive a password reset link.' });
@@ -1217,6 +1261,98 @@ app.put('/api/member/profile/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to update member profile', details: error.message });
   } finally {
     client.release();
+  }
+});
+
+// New API endpoint to get member's notification preferences
+app.get('/api/member/notification-preferences', authenticateToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const memberId = req.user.memberId;
+
+    const result = await client.query(
+      'SELECT member_id, booking_notifications, created_at, updated_at FROM counsellor_notification_preferences WHERE member_id = $1',
+      [memberId]
+    );
+
+    client.release();
+
+    if (result.rows.length > 0) {
+      const preferences = result.rows[0];
+      res.json({
+        id: preferences.member_id,
+        bookingNotifications: preferences.booking_notifications,
+        createdAt: preferences.created_at,
+        updatedAt: preferences.updated_at
+      });
+    } else {
+      // Return default preferences if none exist
+      res.json({
+        id: memberId,
+        bookingNotifications: true, // Default to enabled
+        createdAt: null,
+        updatedAt: null
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching notification preferences:', error);
+    res.status(500).json({ error: 'Failed to fetch notification preferences' });
+  }
+});
+
+// New API endpoint to update member's notification preferences
+app.put('/api/member/notification-preferences', authenticateToken, async (req, res) => {
+  const { bookingNotifications } = req.body;
+
+  if (typeof bookingNotifications !== 'boolean') {
+    return res.status(400).json({ error: 'bookingNotifications must be a boolean value' });
+  }
+
+  try {
+    const client = await pool.connect();
+    const memberId = req.user.memberId;
+
+    // Check if preferences already exist
+    const existingResult = await client.query(
+      'SELECT member_id FROM counsellor_notification_preferences WHERE member_id = $1',
+      [memberId]
+    );
+
+    let result;
+    if (existingResult.rows.length > 0) {
+      // Update existing preferences
+      result = await client.query(
+        `UPDATE counsellor_notification_preferences
+         SET booking_notifications = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE member_id = $2
+         RETURNING member_id, booking_notifications, updated_at`,
+        [bookingNotifications, memberId]
+      );
+    } else {
+      // Create new preferences
+      result = await client.query(
+        `INSERT INTO counsellor_notification_preferences (member_id, booking_notifications)
+         VALUES ($1, $2)
+         RETURNING member_id, booking_notifications, created_at, updated_at`,
+        [memberId, bookingNotifications]
+      );
+    }
+
+    client.release();
+
+    const preferences = result.rows[0];
+    res.json({
+      message: 'Notification preferences updated successfully',
+      preferences: {
+        id: preferences.member_id,
+        bookingNotifications: preferences.booking_notifications,
+        createdAt: preferences.created_at,
+        updatedAt: preferences.updated_at
+      }
+    });
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    res.status(500).json({ error: 'Failed to update notification preferences' });
   }
 });
 
@@ -1821,11 +1957,13 @@ app.post('/api/bookings', async (req, res) => {
       bookingTime,
     } = req.body;
 
-    await client.query(
+    // Insert booking record
+    const bookingResult = await client.query(
       `INSERT INTO bookings (
         counsellor_id, client_name, phone_number, email, category, needs,
         session_type, support_urgency, booking_date, booking_time, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
+      RETURNING *`,
       [
         counsellorId,
         clientName,
@@ -1839,6 +1977,43 @@ app.post('/api/bookings', async (req, res) => {
         bookingTime,
       ]
     );
+
+    const bookingData = bookingResult.rows[0];
+
+    // Get counsellor's email and notification preferences
+    const counsellorQuery = `
+      SELECT
+        m.first_name,
+        m.last_name,
+        CONCAT(m.first_name, ' ', m.last_name) AS full_name,
+        mcd.email,
+        COALESCE(cnp.booking_notifications, true) AS booking_notifications
+      FROM members m
+      JOIN member_contact_details mcd ON m.id = mcd.member_id
+      LEFT JOIN counsellor_notification_preferences cnp ON m.id = cnp.member_id
+      WHERE m.id = $1 AND m.application_status = 'approved' AND m.member_status = 'active'
+    `;
+
+    const counsellorResult = await client.query(counsellorQuery, [counsellorId]);
+
+    // Send notification email if counsellor is found and notifications are enabled (default true)
+    if (counsellorResult.rows.length > 0) {
+      const counsellor = counsellorResult.rows[0];
+
+      if (counsellor.booking_notifications) {
+        try {
+          await sendCounsellorBookingNotificationEmail(bookingData, counsellor.email, counsellor.full_name);
+          console.log('📧 Counsellor booking notification sent successfully for counsellor:', counsellor.email);
+        } catch (emailError) {
+          // Log email error but don't fail the booking process
+          console.error('❌ Failed to send counsellor notification email:', emailError.message);
+        }
+      } else {
+        console.log('📧 Counsellor opted out of booking notifications:', counsellor.email);
+      }
+    } else {
+      console.log('⚠️ Counsellor not found or not active for booking notification');
+    }
 
     res.status(201).json({ message: 'Booking created successfully!' });
   } catch (error) {
@@ -3130,35 +3305,17 @@ app.post('/api/admins/:id/reset-password', authenticateAdminToken, requireRole('
 
     client.release();
 
-    // Simulate sending reset email
-    console.log('=== ADMIN PASSWORD RESET EMAIL (SIMULATED) ===');
-    console.log('To:', admin.email);
-    console.log('Subject: BSPCP Admin - Password Reset Required');
-    console.log('Body:');
-    console.log(`Dear ${admin.first_name || admin.username},`);
-    console.log('');
-    console.log('An administrator has requested a password reset for your BSPCP admin account.');
-    console.log('');
-    console.log('🔑 Reset Your Password:');
-    console.log('1. Click this link to create a new password:');
-    console.log(`   ${req.protocol}://${req.get('host')}/admin/reset-password?token=${resetToken}`);
-    console.log('2. Choose a strong, memorable password');
-    console.log('3. Login to your admin dashboard');
-    console.log('');
-    console.log('🛡️ Security Notice:');
-    console.log('• This link expires in 1 hour');
-    console.log('• Your old password will no longer work');
-    console.log('• Never share your reset link with others');
-    console.log('');
-    console.log('📞 Need Help? Contact the system administrator.');
-    console.log('');
-    console.log('Best regards,');
-    console.log('BSPCP System Administrator');
-    console.log('=== END EMAIL ===');
+    // Send admin password reset email
+    try {
+      await sendAdminPasswordResetEmail(admin.email, admin.first_name || admin.username, admin.username, resetToken);
+      console.log(`📧 Admin password reset email sent to ${admin.email} for admin ${admin.username}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send admin password reset email:', emailError.message);
+      return res.status(500).json({ error: 'Failed to send password reset email', details: emailError.message });
+    }
 
     res.json({
-      message: 'Password reset email has been sent',
-      resetToken: resetToken // For testing/debugging
+      message: 'Password reset email has been sent'
     });
 
   } catch (error) {
@@ -3380,6 +3537,209 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
     }
     console.error('Error fetching dashboard statistics:', error);
     res.status(500).json({ error: 'Failed to load dashboard statistics' });
+  }
+});
+
+// =========================================
+// NOTIFICATION MANAGEMENT ENDPOINTS
+// =========================================
+
+// Get all notification recipients
+app.get('/api/admin/notification-recipients', authenticateAdminToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const recipientsResult = await client.query(
+      `SELECT id, email, is_active, created_at, updated_at
+       FROM notification_recipients
+       ORDER BY created_at DESC`
+    );
+
+    const settingsResult = await client.query(
+      `SELECT setting_value, setting_name
+       FROM notification_settings
+       WHERE setting_name = 'notifications_enabled'`
+    );
+
+    client.release();
+
+    const recipients = recipientsResult.rows.map(recipient => ({
+      id: recipient.id,
+      email: recipient.email,
+      isActive: recipient.is_active,
+      createdAt: recipient.created_at,
+      updatedAt: recipient.updated_at
+    }));
+
+    const settings = {
+      notificationsEnabled: settingsResult.rows.length > 0 ? settingsResult.rows[0].setting_value : true
+    };
+
+    res.json({ recipients, settings });
+  } catch (error) {
+    console.error('Error fetching notification recipients:', error);
+    res.status(500).json({ error: 'Failed to fetch notification recipients' });
+  }
+});
+
+// Add new notification recipient
+app.post('/api/admin/notification-recipients', authenticateAdminToken, async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email address is required' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Check if email already exists
+    const existingResult = await client.query(
+      'SELECT id FROM notification_recipients WHERE email = $1',
+      [email]
+    );
+
+    if (existingResult.rows.length > 0) {
+      client.release();
+      return res.status(409).json({ error: 'Email address already exists' });
+    }
+
+    // Add new recipient
+    const result = await client.query(
+      `INSERT INTO notification_recipients (email, is_active)
+       VALUES ($1, true)
+       RETURNING id, email, is_active, created_at, updated_at`,
+      [email]
+    );
+
+    client.release();
+
+    const recipient = result.rows[0];
+    res.status(201).json({
+      message: 'Notification recipient added successfully',
+      recipient: {
+        id: recipient.id,
+        email: recipient.email,
+        isActive: recipient.is_active,
+        createdAt: recipient.created_at,
+        updatedAt: recipient.updated_at
+      }
+    });
+  } catch (error) {
+    console.error('Error adding notification recipient:', error);
+    res.status(500).json({ error: 'Failed to add notification recipient' });
+  }
+});
+
+// Delete notification recipient
+app.delete('/api/admin/notification-recipients/:id', authenticateAdminToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const client = await pool.connect();
+
+    // Get recipient info before deletion
+    const recipientResult = await client.query(
+      'SELECT email FROM notification_recipients WHERE id = $1',
+      [id]
+    );
+
+    if (recipientResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Notification recipient not found' });
+    }
+
+    const email = recipientResult.rows[0].email;
+
+    // Delete the recipient
+    await client.query('DELETE FROM notification_recipients WHERE id = $1', [id]);
+
+    client.release();
+
+    res.json({
+      message: 'Notification recipient removed successfully',
+      deletedRecipient: email
+    });
+  } catch (error) {
+    console.error('Error deleting notification recipient:', error);
+    res.status(500).json({ error: 'Failed to delete notification recipient' });
+  }
+});
+
+// Toggle notification recipient status
+app.put('/api/admin/notification-recipients/:id/status', authenticateAdminToken, async (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  if (typeof isActive !== 'boolean') {
+    return res.status(400).json({ error: 'isActive must be a boolean value' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    const result = await client.query(
+      `UPDATE notification_recipients
+       SET is_active = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING id, email, is_active, created_at, updated_at`,
+      [isActive, id]
+    );
+
+    if (result.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Notification recipient not found' });
+    }
+
+    client.release();
+
+    const recipient = result.rows[0];
+    res.json({
+      message: `Notification recipient ${isActive ? 'activated' : 'deactivated'} successfully`,
+      recipient: {
+        id: recipient.id,
+        email: recipient.email,
+        isActive: recipient.is_active,
+        createdAt: recipient.created_at,
+        updatedAt: recipient.updated_at
+      }
+    });
+  } catch (error) {
+    console.error('Error updating notification recipient status:', error);
+    res.status(500).json({ error: 'Failed to update notification recipient status' });
+  }
+});
+
+// Update notification settings (enable/disable notifications)
+app.put('/api/admin/notification-settings', authenticateAdminToken, async (req, res) => {
+  const { enabled } = req.body;
+
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'enabled must be a boolean value' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    const result = await client.query(
+      `UPDATE notification_settings
+       SET setting_value = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE setting_name = 'notifications_enabled'
+       RETURNING setting_name, setting_value, updated_at`,
+      [enabled]
+    );
+
+    client.release();
+
+    const setting = result.rows[0];
+    res.json({
+      message: `Notifications ${enabled ? 'enabled' : 'disabled'} successfully`,
+      settings: {
+        notificationsEnabled: setting.setting_value
+      }
+    });
+  } catch (error) {
+    console.error('Error updating notification settings:', error);
+    res.status(500).json({ error: 'Failed to update notification settings' });
   }
 });
 

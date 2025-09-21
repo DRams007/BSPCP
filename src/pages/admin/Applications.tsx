@@ -163,22 +163,47 @@ const Applications = () => {
     setShowEmailDialog(true);
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     if (!selectedApplication) return;
 
-    toast({
-      title: "Email Sent",
-      description: `Email sent to ${selectedApplication.email} with subject: "${emailSubject}"`,
-    });
-    console.log("Sending email:", {
-      to: selectedApplication.email,
-      subject: emailSubject,
-      body: emailBody,
-    });
-    setShowEmailDialog(false);
-    setEmailSubject("");
-    setEmailBody("");
-    // Here you would integrate with an email sending service
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/send-applicant-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          applicantEmail: selectedApplication.email,
+          applicantName: selectedApplication.name,
+          subject: emailSubject,
+          body: emailBody,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: "Email Sent Successfully",
+        description: `Email sent to ${selectedApplication.email} requesting more information.`,
+      });
+
+      console.log("Email sent successfully:", result);
+      setShowEmailDialog(false);
+      setEmailSubject("");
+      setEmailBody("");
+
+    } catch (error) {
+      console.error("Error sending email:", error);
+      toast({
+        title: "Error Sending Email",
+        description: "Failed to send email to applicant. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteApplication = async (application: Application) => {

@@ -12,6 +12,7 @@ import ProfileEditForm from '@/components/member/ProfileEditForm';
 import ContactEditForm from '@/components/member/ContactEditForm';
 import CPDUploadForm from '@/components/member/CPDUploadForm';
 import BookingManagement from '@/components/member/BookingManagement';
+import NotificationPreferences from '@/components/member/NotificationPreferences';
 import { Loader2 } from 'lucide-react'; // Import Loader2 for loading state
 import { IMemberProfile, IMemberContact } from '@/types/member';
 
@@ -146,12 +147,13 @@ const MemberDashboard = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="contact">Contact Info</TabsTrigger>
             <TabsTrigger value="cpd">CPD Evidence</TabsTrigger>
             <TabsTrigger value="bookings">Clients Bookings</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="settings">Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">
@@ -248,6 +250,10 @@ const MemberDashboard = () => {
 
           <TabsContent value="bookings">
             <BookingManagement />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <NotificationPreferences />
           </TabsContent>
 
           <TabsContent value="settings">

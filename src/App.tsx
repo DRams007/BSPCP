@@ -49,6 +49,7 @@ const Applications = lazy(() => import("./pages/admin/Applications"));
 const Content = lazy(() => import("./pages/admin/Content"));
 const Testimonials = lazy(() => import("./pages/admin/Testimonials"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
+const NotificationManagement = lazy(() => import("./pages/admin/NotificationManagement"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 
 // Loading component for Suspense
@@ -117,6 +118,7 @@ const AppContent = () => {
           <Route path="/admin/content" element={<Content />} />
           <Route path="/admin/testimonials" element={<Testimonials />} />
           <Route path="/admin/reports" element={<Reports />} />
+          <Route path="/admin/notifications" element={<NotificationManagement />} />
           <Route path="/admin/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="/db-test" element={<DbTest />} />

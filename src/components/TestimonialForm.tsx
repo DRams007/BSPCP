@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, MessageSquare } from "lucide-react";
+import { Star, MessageSquare, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const TestimonialForm = () => {
@@ -190,9 +190,12 @@ const TestimonialForm = () => {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full flex items-center gap-2"
                   disabled={isSubmitting}
                 >
+                  {isSubmitting && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
                   {isSubmitting ? "Submitting..." : "Submit Testimonial"}
                 </Button>
 
