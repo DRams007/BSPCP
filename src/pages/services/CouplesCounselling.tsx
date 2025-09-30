@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, CheckCircle, Clock, Calendar, MessageCircle, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const CouplesCounselling = () => {
+  const navigate = useNavigate();
   const approaches = [
     'Emotionally Focused Therapy (EFT)',
     'Gottman Method Couples Therapy',
@@ -50,18 +52,12 @@ const CouplesCounselling = () => {
                 to improve communication, resolve conflicts, and build a stronger emotional connection.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-primary hover:bg-cream"
+                  onClick={() => navigate('/find-counsellor')}
                 >
                   Find a Couples Counsellor
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-primary"
-                >
-                  Book Assessment
                 </Button>
               </div>
             </div>
@@ -223,18 +219,12 @@ const CouplesCounselling = () => {
             Take the first step towards a stronger, healthier relationship together.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-white text-terracotta hover:bg-cream"
+              onClick={() => navigate('/find-counsellor')}
             >
               Find Your Couples Counsellor
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-terracotta"
-            >
-              Schedule Free Consultation
             </Button>
           </div>
         </div>

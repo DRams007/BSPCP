@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sprout, CheckCircle, Clock, Calendar, Gamepad2, Book, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const ChildTeenSupport = () => {
+  const navigate = useNavigate();
   const approaches = [
     'Play Therapy for Children',
     'Cognitive Behavioral Therapy for Teens',
@@ -67,18 +69,12 @@ const ChildTeenSupport = () => {
                 approaches to support healthy development and emotional wellbeing.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-primary hover:bg-cream"
+                  onClick={() => navigate('/find-counsellor')}
                 >
                   Find a Child Counsellor
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-primary"
-                >
-                  Parent Resources
                 </Button>
               </div>
             </div>

@@ -178,10 +178,10 @@ const About = () => {
               professional association dedicated to promoting excellence in mental health services across our nation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-primary hover:bg-cream">
+              <Button size="lg" className="bg-white text-primary hover:bg-cream" onClick={() => navigate('/find-counsellor')}>
                 Find a Professional Counsellor
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white bg-[#86995c]">
+              <Button size="lg" variant="outline" className="border-white text-white bg-[#86995c]" onClick={() => navigate('/membership')}>
                 Join Our Community
               </Button>
             </div>

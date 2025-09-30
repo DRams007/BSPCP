@@ -4,8 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Monitor, CheckCircle, Clock, Calendar, Wifi, Shield, Video, MessageSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const OnlineCounselling = () => {
+  const navigate = useNavigate();
   const platforms = [
     'Secure Video Calls',
     'Audio-only Sessions',
@@ -72,18 +74,12 @@ const OnlineCounselling = () => {
                 Same quality care, delivered conveniently through secure online platforms.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-primary hover:bg-cream"
+                  onClick={() => navigate('/find-counsellor')}
                 >
                   Start Online Counselling
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-primary"
-                >
-                  Test Your Setup
                 </Button>
               </div>
             </div>

@@ -52,19 +52,12 @@ const IndividualTherapy = () => {
                 personal growth, and overall wellbeing in a confidential and supportive environment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-primary hover:bg-cream"
                   onClick={() => navigate('/find-counsellor')}
                 >
                   Find a Counsellor
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-primary"
-                >
-                  Book Consultation
                 </Button>
               </div>
             </div>
