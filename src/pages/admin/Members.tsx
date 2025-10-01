@@ -128,7 +128,7 @@ const Members = () => {
         membershipId: app.bspcpMembershipNumber || `BSPCP-${app.id}`,
         application_status: app.application_status,
         member_status: app.member_status,
-        membershipType: app.membership_type,
+        membershipType: app.membershipType,
         submittedDate: app.submittedDate,
         qualification: app.qualification,
         organization: app.organization,
@@ -361,11 +361,17 @@ const Members = () => {
                       <Badge
                         className={`${
                           member.membershipType === 'professional'
+                            ? 'bg-purple-100 text-purple-800'
+                            : member.membershipType === 'student'
                             ? 'bg-blue-100 text-blue-800'
-                            : 'bg-purple-100 text-purple-800'
+                            : 'bg-gray-100 text-gray-800'
                         }`}
                       >
-                        {member.membershipType === 'professional' ? 'Professional' : 'Student'}
+                        {member.membershipType === 'professional'
+                          ? 'Professional'
+                          : member.membershipType === 'student'
+                          ? 'Student'
+                          : member.membershipType || 'Unknown'}
                       </Badge>
                     </TableCell>
                     <TableCell>
