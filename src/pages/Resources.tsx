@@ -25,12 +25,6 @@ const Resources = () => {
     color: 'bg-red-100 text-red-600',
     resources: ['Crisis Hotline Numbers', 'Emergency Contact List', 'Safety Planning Templates', 'When to Seek Immediate Help']
   }, {
-    icon: Video,
-    title: 'Educational Videos & Webinars',
-    description: 'Learn from mental health professionals through video content',
-    color: 'bg-dusty/10 text-dusty',
-    resources: ['Introduction to Counselling', 'Coping Strategies Workshop', 'Family Mental Health Support', 'Professional Development Series']
-  }, {
     icon: GraduationCap,
     title: 'Professional Development',
     description: 'Resources for mental health professionals and students',
@@ -88,28 +82,6 @@ const Resources = () => {
     format: 'Audio/PDF',
     downloads: '3.1k',
     rating: 4.9
-  }];
-  const educationalContent = [{
-    title: 'Understanding Mental Health: A Community Approach',
-    type: 'Webinar',
-    duration: '45 mins',
-    speaker: 'Dr. Keabetswe Moeti',
-    views: '1.2K',
-    date: '2024-01-15'
-  }, {
-    title: 'Parenting Through Difficult Times',
-    type: 'Video Series',
-    duration: '3 episodes',
-    speaker: 'Tshepo Kgathi',
-    views: '850',
-    date: '2024-02-20'
-  }, {
-    title: 'Workplace Mental Health Awareness',
-    type: 'Workshop',
-    duration: '60 mins',
-    speaker: 'Mrs. Goitseone Sebina',
-    views: '650',
-    date: '2024-03-10'
   }];
   return <div className="min-h-screen bg-background">
       <Navigation />
@@ -290,67 +262,6 @@ const Resources = () => {
             <Button size="lg">
               View All Self-Help Tools
               <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Educational Content */}
-      <section className="py-20 bg-gradient-gentle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-poppins font-bold text-3xl md:text-4xl text-foreground mb-4">
-              Educational Videos & Webinars
-            </h2>
-            <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto">
-              Learn from BSPCP's mental health professionals through our library of 
-              educational videos, webinars, and workshop recordings.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {educationalContent.map((content, index) => <Card key={index} className="group hover:shadow-soft transition-all duration-300 overflow-hidden">
-                <div className="relative">
-                  <div className="w-full h-48 bg-gradient-warm flex items-center justify-center">
-                    <Play className="w-16 h-16 text-white group-hover:scale-110 transition-transform duration-300" />
-                  </div>
-                  <Badge className="absolute top-4 left-4 bg-primary/90">
-                    {content.type}
-                  </Badge>
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="font-poppins font-bold text-lg text-foreground mb-2">
-                    {content.title}
-                  </h3>
-                  <p className="font-source text-primary font-medium mb-2">
-                    {content.speaker}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{content.duration}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      <span>{content.views} views</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>{content.date}</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    <Play className="w-4 h-4 mr-2" />
-                    Watch Now
-                  </Button>
-                </CardContent>
-              </Card>)}
-          </div>
-
-          <div className="text-center mt-12">
-            <Button size="lg">
-              Explore Full Library
-              <Video className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </div>

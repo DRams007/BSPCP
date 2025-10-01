@@ -25,6 +25,7 @@ async function setupDatabase() {
     await pool.query(`DROP TABLE IF EXISTS member_cpd CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS notification_recipients CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS notification_settings CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS counsellor_notification_preferences CASCADE;`);
 
     await pool.query(`
       CREATE TABLE members (
@@ -37,6 +38,15 @@ async function setupDatabase() {
           date_of_birth DATE NOT NULL,
           gender VARCHAR(10) NOT NULL,
           nationality VARCHAR(100) NOT NULL,
+          membership_type VARCHAR(50) DEFAULT 'professional' CHECK (membership_type IN ('professional', 'student')),
+          -- Student-specific fields
+          institution_name VARCHAR(255),
+          study_year VARCHAR(50),
+          counselling_coursework TEXT,
+          internship_supervisor_name VARCHAR(255),
+          internship_supervisor_license VARCHAR(100),
+          internship_supervisor_contact VARCHAR(255),
+          supervised_practice_hours VARCHAR(50),
           application_status VARCHAR(50) DEFAULT 'pending',
           member_status VARCHAR(50) DEFAULT 'pending',
           review_comment TEXT,
@@ -309,6 +319,28 @@ async function setupDatabase() {
 
     await pool.query(`
       INSERT INTO notification_settings (setting_name, setting_value) VALUES ('notifications_enabled', true);
+    `);
+
+    // Membership categories for different fee structures
+    await pool.query(`DROP TABLE IF EXISTS membership_categories;`);
+    await pool.query(`
+      CREATE TABLE membership_categories (
+        id SERIAL PRIMARY KEY,
+        category_type VARCHAR(50) UNIQUE NOT NULL,
+        joining_fee DECIMAL(10,2) NOT NULL,
+        annual_fee DECIMAL(10,2) NOT NULL,
+        description TEXT,
+        requires_supervisor_info BOOLEAN DEFAULT FALSE,
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Insert default membership categories
+    await pool.query(`
+      INSERT INTO membership_categories (category_type, joining_fee, annual_fee, description, requires_supervisor_info) VALUES
+      ('professional', 50.00, 150.00, 'Full professional membership for qualified counsellors with Bachelor''s degree minimum', FALSE),
+      ('student', 25.00, 75.00, 'Student membership for counselling trainees still in training programs', TRUE);
     `);
 
     console.log('Database tables created or updated successfully.');

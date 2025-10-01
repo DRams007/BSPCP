@@ -93,8 +93,16 @@ app.post('/api/membership', upload.fields([
     await client.query('BEGIN');
 
     const {
+      // Membership type
+      membershipType = 'professional',
+
       // From members table
       firstName, lastName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality,
+
+      // Student-specific fields
+      institutionName, studyYear, counsellingCoursework,
+      internshipSupervisorName, internshipSupervisorLicense, internshipSupervisorContact,
+      supervisedPracticeHours,
 
       // From member_professional_details table
       occupation, organizationName, highestQualification, otherQualifications,
@@ -112,17 +120,44 @@ app.post('/api/membership', upload.fields([
     // Calculate full_name for storage
     const calculatedFullName = `${firstName} ${lastName}`.trim();
 
-    // 1. Insert into members table
-    const memberResult = await client.query(
+    // 1. Insert into members table (ALL types get created_at timestamp)
+    const memberQuery = membershipType === 'student' ?
       `INSERT INTO members (
-        first_name, last_name, full_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality, cpd_document, cpd_points
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING id`,
-      [firstName, lastName, calculatedFullName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality, req.body.cpdDocument || null, parseInt(req.body.cpdPoints, 10) || 0]
-    );
+        first_name, last_name, full_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality,
+        institution_name, study_year, counselling_coursework, internship_supervisor_name, internship_supervisor_contact,
+        cpd_document, cpd_points, membership_type, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, CURRENT_TIMESTAMP)
+      RETURNING id` :
+      `INSERT INTO members (
+        first_name, last_name, full_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality, cpd_document, cpd_points, membership_type
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id`;
+
+    const memberParams = membershipType === 'student' ?
+      [firstName, lastName, calculatedFullName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality,
+       institutionName || null, studyYear || null, counsellingCoursework || null,
+       internshipSupervisorName || null, internshipSupervisorContact || null,
+       req.body.cpdDocument || null, parseInt(req.body.cpdPoints, 10) || 0, membershipType] :
+      [firstName, lastName, calculatedFullName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality,
+       req.body.cpdDocument || null, parseInt(req.body.cpdPoints, 10) || 0, membershipType];
+
+    const memberResult = await client.query(memberQuery, memberParams);
     const memberId = memberResult.rows[0].id;
 
     // 2. Insert into member_professional_details table
+    // For students, set some fields to 'Student' or defaults, and use student-specific data where applicable
+    let effectiveOccupation = occupation;
+    let effectiveOrganizationName = organizationName;
+    let effectiveEmploymentStatus = employmentStatus;
+    let effectiveYearsExperience = yearsExperience;
+
+    if (membershipType === 'student') {
+      effectiveOccupation = occupation || 'Student Counsellor';
+      effectiveOrganizationName = organizationName || institutionName || 'Student Training Program';
+      effectiveEmploymentStatus = 'student';
+      effectiveYearsExperience = yearsExperience || '0';
+    }
+
     await client.query(
       `INSERT INTO member_professional_details (
         member_id, occupation, organization_name, highest_qualification, other_qualifications,
@@ -130,14 +165,16 @@ app.post('/api/membership', upload.fields([
         bio, title, languages, session_types, fee_range, availability
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
-        memberId, occupation, organizationName, highestQualification, otherQualifications,
+        memberId, effectiveOccupation, effectiveOrganizationName, highestQualification, otherQualifications,
         scholarlyPublications, specializations ? JSON.parse(specializations) : [], // Assuming specializations is sent as a JSON string array
-        employmentStatus, yearsExperience, bio, title,
+        effectiveEmploymentStatus, effectiveYearsExperience, bio, title,
         languages ? JSON.parse(languages) : [], // Assuming languages is sent as a JSON string array
         sessionTypes ? JSON.parse(sessionTypes) : [], // Assuming sessionTypes is sent as a JSON string array
         feeRange, availability
       ]
     );
+
+
 
     // 3. Insert into member_contact_details table
     await client.query(
@@ -227,11 +264,12 @@ app.get('/api/applications', async (req, res) => {
         mcd.email,
         mcd.phone,
         m.nationality,
+        m.membership_type,
         mpd.occupation,
         mpd.organization_name AS organization,
         mpd.highest_qualification AS qualification,
         mpd.years_experience AS experience,
-        m.created_at AS submittedDate,
+        m.created_at,
         m.application_status,
         m.member_status,
         mpd.specializations,
@@ -306,11 +344,12 @@ app.get('/api/applications', async (req, res) => {
         email: row.email,
         phone: row.phone,
         nationality: row.nationality,
+        membershipType: row.membership_type,
         occupation: row.occupation,
         organization: row.organization,
         qualification: row.qualification,
         experience: row.experience,
-        submittedDate: row.submittedDate,
+        created_at: row.created_at,
         application_status: row.application_status,
         member_status: row.member_status,
         personalInfo: {
@@ -362,7 +401,74 @@ app.put('/api/applications/:id/status', async (req, res) => {
     let query;
     let queryParams;
 
-    if (status === 'approved') {
+  // Helper function to generate unique username
+  async function generateUniqueUsername(client, firstName, lastName) {
+    // Clean and prepare names
+    const cleanFirst = (firstName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
+    const cleanLast = (lastName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
+
+    // Strategy 1: firstInitial + lastName (current logic)
+    let baseUsername = `${cleanFirst.charAt(0)}${cleanLast}`;
+
+    // If strategy 1 is empty, use first name only
+    if (!baseUsername || baseUsername.length < 2) {
+      baseUsername = cleanFirst || 'user';
+    }
+
+    // Multiple strategies to try
+    const strategies = [
+      baseUsername,
+      `${cleanFirst}${cleanLast.charAt(0)}`, // firstName + lastInitial
+      `${cleanFirst}${cleanLast}`, // firstName + lastName
+    ];
+
+    // Try each strategy, adding numeric suffix if needed
+    for (const strategy of strategies) {
+      if (!strategy) continue;
+
+      // Check base version first
+      const existingCheck = await client.query(
+        'SELECT id FROM member_authentication WHERE username = $1',
+        [strategy]
+      );
+
+      if (existingCheck.rows.length === 0) {
+        return strategy; // Base version is available
+      }
+
+      // If base version exists, try numeric suffixes
+      for (let suffix = 2; suffix <= 999; suffix++) {
+        const candidate = `${strategy}${suffix}`;
+        const suffixCheck = await client.query(
+          'SELECT id FROM member_authentication WHERE username = $1',
+          [candidate]
+        );
+
+        if (suffixCheck.rows.length === 0) {
+          return candidate; // Found unique username with suffix
+        }
+      }
+    }
+
+    // Final fallback: random suffix based on current timestamp
+    const timestamp = Date.now();
+    const fallbackUsername = `${baseUsername}${timestamp}`;
+
+    // Ensure even the fallback is unique (very unlikely it wouldn't be)
+    const existingFallback = await client.query(
+      'SELECT id FROM member_authentication WHERE username = $1',
+      [fallbackUsername]
+    );
+
+    if (existingFallback.rows.length === 0) {
+      return fallbackUsername;
+    }
+
+    // Ultimate fallback: add random numbers (should never reach here)
+    return `${baseUsername}${Math.random().toString(36).substring(2, 8)}`;
+  }
+
+  if (status === 'approved') {
       // Update member status to approved and set member as pending password setup (they need to set their password first)
       query = `UPDATE members SET application_status = $1, member_status = 'pending_password_setup', review_comment = $2 WHERE id = $3 RETURNING *`;
       queryParams = [status, reviewComment, id];
@@ -407,11 +513,11 @@ app.put('/api/applications/:id/status', async (req, res) => {
         [id]
       );
 
-      // Generate username (first initial + last name, lowercase)
+      // Generate unique username using the new collision-resistant function
       const firstName = member.first_name || '';
       const lastName = member.last_name || '';
       const fullName = `${firstName} ${lastName}`.trim();
-      const username = `${firstName[0].toLowerCase() || ''}${lastName.toLowerCase()}`;
+      const username = await generateUniqueUsername(client, firstName, lastName);
 
       if (existingAuth.rows.length === 0) {
         // Create new authentication record for new approvals
@@ -420,15 +526,15 @@ app.put('/api/applications/:id/status', async (req, res) => {
            VALUES ($1, $2, NULL, NULL)`,
           [id, username]
         );
-        console.log(`Created new authentication record for member ${fullName}`);
+        console.log(`Created new authentication record for member ${fullName} with username: ${username}`);
       } else {
-        // For re-approvals, just update username if it changed and clear any old password
+        // For re-approvals, update username if it changed and clear any old password
         await client.query(
           `UPDATE member_authentication SET username = $1, password_hash = NULL, salt = NULL
            WHERE member_id = $2`,
           [username, id]
         );
-        console.log(`Updated authentication record for re-approved member ${fullName}`);
+        console.log(`Updated authentication record for re-approved member ${fullName} with username: ${username}`);
       }
 
       // Get member's email
@@ -1108,6 +1214,123 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+app.post('/api/check-email', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email || !email.trim()) {
+    return res.status(400).json({ error: 'Email is required for validation' });
+  }
+
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Check if email exists in member_contact_details table (case-insensitive search)
+    const result = await client.query(
+      'SELECT id FROM member_contact_details WHERE LOWER(email) = LOWER($1)',
+      [email.trim()]
+    );
+
+    client.release();
+
+    const available = result.rows.length === 0;
+
+    res.json({
+      available,
+      message: available ?
+        'Email is available for use' :
+        'An account with this email already exists. Please use a different email or login if you already have an account.'
+    });
+
+  } catch (error) {
+    console.error('Error checking email availability:', error);
+    res.status(500).json({ error: 'Failed to validate email availability' });
+  }
+});
+
+// New API endpoint to check ID number availability for membership applications
+app.post('/api/check-id-number', async (req, res) => {
+  const { idNumber } = req.body;
+
+  if (!idNumber || !idNumber.trim()) {
+    return res.status(400).json({ error: 'ID number is required for validation' });
+  }
+
+  // Basic ID number validation - at least 5 characters as per schema
+  if (idNumber.trim().length < 5) {
+    return res.status(400).json({ error: 'ID/Passport number must be at least 5 characters' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Check if ID number exists in members table (case-insensitive search)
+    const result = await client.query(
+      'SELECT id FROM members WHERE LOWER(id_number) = LOWER($1)',
+      [idNumber.trim()]
+    );
+
+    client.release();
+
+    const available = result.rows.length === 0;
+
+    res.json({
+      available,
+      message: available ?
+        'ID number is available for use' :
+        'An application with this ID number already exists. Please verify your ID number or contact support if you believe this is an error.'
+    });
+
+  } catch (error) {
+    console.error('Error checking ID number availability:', error);
+    res.status(500).json({ error: 'Failed to validate ID number availability' });
+  }
+});
+
+// New API endpoint to check phone number availability for membership applications
+app.post('/api/check-phone', async (req, res) => {
+  const { phone } = req.body;
+
+  if (!phone || !phone.trim()) {
+    return res.status(400).json({ error: 'Phone number is required for validation' });
+  }
+
+  // Basic phone number validation - at least 8 characters as per schema
+  if (phone.trim().length < 8) {
+    return res.status(400).json({ error: 'Phone number must be at least 8 characters' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Check if phone number exists in member_contact_details table
+    const result = await client.query(
+      'SELECT member_id FROM member_contact_details WHERE phone = $1',
+      [phone.trim()]
+    );
+
+    client.release();
+
+    const available = result.rows.length === 0;
+
+    res.json({
+      available,
+      message: available ?
+        'Phone number is available for use' :
+        'A membership application with this phone number already exists. Please verify your phone number or contact support if you believe this is an error.'
+    });
+
+  } catch (error) {
+    console.error('Error checking phone number availability:', error);
+    res.status(500).json({ error: 'Failed to validate phone number availability' });
+  }
+});
 
 // New API endpoint to fetch logged-in member's profile data
 app.get('/api/member/profile', authenticateToken, async (req, res) => {

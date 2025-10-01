@@ -2,15 +2,15 @@ import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -36,9 +36,11 @@ import {
   Building,
   GraduationCap,
   Mail,
-  Trash2
+  Trash2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from "lucide-react";
-import LoadingSpinner from "@/components/ui/loading-spinner"; // Assuming you have a loading spinner component
 
 interface Application {
   id: number;
@@ -51,7 +53,8 @@ interface Application {
   organization: string;
   documents: { name: string; uploaded: boolean; url?: string }[];
   application_status: string;
-  submittedDate: string;
+ created_at: Date;
+  membershipType: string;
   personalInfo: {
     dateOfBirth: string;
     idNumber: string;
@@ -75,6 +78,13 @@ const Applications = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [applicationToDelete, setApplicationToDelete] = useState<Application | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [isReapproving, setIsReapproving] = useState(false);
+
+  // Sorting state
+  const [sortField, setSortField] = useState<'membershipType' | 'application_status' | 'created_at'>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc'); // Default to newest first
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -103,7 +113,8 @@ const Applications = () => {
     fetchApplications();
   }, [fetchApplications]);
 
-  const updateApplicationStatus = async (id: number, status: string, comment: string = "") => {
+  const updateApplicationStatus = async (id: number, status: string, comment: string = "", loadingSetter: (value: boolean) => void) => {
+    loadingSetter(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/applications/${id}/status`, {
         method: 'PUT',
@@ -131,11 +142,13 @@ const Applications = () => {
         description: `Failed to update application status: ${error.message}`,
         variant: "destructive",
       });
+    } finally {
+      loadingSetter(false);
     }
   };
 
   const handleApprove = (applicationId: number) => {
-    updateApplicationStatus(applicationId, "approved");
+    updateApplicationStatus(applicationId, "approved", "", setIsApproving);
   };
 
   const handleReject = (applicationId: number) => {
@@ -147,19 +160,24 @@ const Applications = () => {
       });
       return;
     }
-    updateApplicationStatus(applicationId, "rejected", reviewComment);
+    updateApplicationStatus(applicationId, "rejected", reviewComment, setIsRejecting);
   };
 
   const handleReApprove = (applicationId: number) => {
     const reason = reviewComment || `Re-approved application for ${selectedApplication?.name}. Previous concerns have been addressed.`;
-    updateApplicationStatus(applicationId, "approved", reason);
+    updateApplicationStatus(applicationId, "approved", reason, setIsReapproving);
   };
 
   const handleRequestMoreInfo = () => {
     if (!selectedApplication) return;
 
     setEmailSubject(`Regarding your Membership Application - ${selectedApplication.name}`);
-    setEmailBody(`Dear ${selectedApplication.name},\n\nThank you for your application to the Botswana Wellbeing Pathways. We are currently reviewing your application and require some additional information. Please provide further details regarding...\n\nSincerely,\nBotswana Wellbeing Pathways Admin Team`);
+    setEmailBody(`Dear ${selectedApplication.name},
+
+Thank you for your application to the Botswana Wellbeing Pathways. We are currently reviewing your application and require some additional information. Please provide further details regarding...
+
+Sincerely,
+Botswana Wellbeing Pathways Admin Team`);
     setShowEmailDialog(true);
   };
 
@@ -279,6 +297,69 @@ const Applications = () => {
     }
   };
 
+  // Sorting functionality
+  const handleSort = (field: 'membershipType' | 'application_status' | 'created_at') => {
+    if (sortField === field) {
+      // Toggle direction if clicking the same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to appropriate direction
+      setSortField(field);
+      setSortDirection(field === 'created_at' ? 'desc' : 'asc'); // Newest dates first, others ascending
+    }
+  };
+
+  // Sort applications based on current sort state
+  const sortedApplications = [...applications].sort((a, b) => {
+    let aValue: any;
+    let bValue: any;
+
+    switch (sortField) {
+      case 'membershipType':
+        aValue = a.membershipType;
+        bValue = b.membershipType;
+        break;
+      case 'application_status':
+        // Custom status ordering: pending -> under_review -> approved -> rejected
+        const statusOrder = { 'pending': 1, 'under_review': 2, 'approved': 3, 'rejected': 4 };
+        aValue = statusOrder[a.application_status as keyof typeof statusOrder] || 5;
+        bValue = statusOrder[b.application_status as keyof typeof statusOrder] || 5;
+        break;
+      case 'created_at':
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Get sort icon and aria label
+  const getSortIcon = (field: 'membershipType' | 'application_status' | 'created_at') => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1" />;
+    return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4 ml-1" /> : <ArrowDown className="w-4 h-4 ml-1" />;
+  };
+
+  const getSortAriaLabel = (field: 'membershipType' | 'application_status' | 'created_at') => {
+    const fieldName = field === 'membershipType' ? 'Application Type' :
+                     field === 'application_status' ? 'Status' : 'Application Date';
+    const direction = sortDirection === 'asc' ? 'ascending' : 'descending';
+    return sortField === field ? `Sort by ${fieldName} ${direction}` : `Sort by ${fieldName}`;
+  };
+
+  const formatDate = (dateString: Date) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   return (
     <AdminLayout>
       <div className="p-6">
@@ -302,15 +383,46 @@ const Applications = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Applicant Details</TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('membershipType')}
+                      className="h-auto p-0 font-semibold hover:bg-muted/50"
+                      aria-label={getSortAriaLabel('membershipType')}
+                    >
+                      Application Type
+                      {getSortIcon('membershipType')}
+                    </Button>
+                  </TableHead>
                   <TableHead>Qualification & Experience</TableHead>
                   <TableHead>Documents</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Submitted</TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('application_status')}
+                      className="h-auto p-0 font-semibold hover:bg-muted/50"
+                      aria-label={getSortAriaLabel('application_status')}
+                    >
+                      Status
+                      {getSortIcon('application_status')}
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleSort('created_at')}
+                      className="h-auto p-0 font-semibold hover:bg-muted/50"
+                      aria-label={getSortAriaLabel('created_at')}
+                    >
+                      Application Date
+                      {getSortIcon('created_at')}
+                    </Button>
+                  </TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {applications.map((application) => (
+                {sortedApplications.map((application) => (
                   <TableRow key={application.id}>
                     <TableCell>
                       <div>
@@ -320,6 +432,17 @@ const Applications = () => {
                           {application.occupation} • {application.nationality}
                         </p>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${
+                          application.membershipType === 'professional'
+                            ? 'bg-purple-100 text-purple-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {application.membershipType === 'professional' ? 'Professional' : 'Student'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div>
@@ -352,8 +475,10 @@ const Applications = () => {
                         {application.application_status.replace('_', ' ').charAt(0).toUpperCase() + application.application_status.replace('_', ' ').slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(application.submittedDate).toLocaleDateString()}
+                    <TableCell>
+                      <div className="text-sm">
+                        {formatDate(application.created_at)}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -389,6 +514,17 @@ const Applications = () => {
                                     <div><strong>Full Name:</strong> {selectedApplication.name}</div>
                                     <div><strong>Email:</strong> {selectedApplication.email}</div>
                                     <div><strong>Phone:</strong> {selectedApplication.phone}</div>
+                                    <div><strong>Application Type:</strong>
+                                      <Badge
+                                        className={`ml-2 ${
+                                          selectedApplication.membershipType === 'professional'
+                                            ? 'bg-purple-100 text-purple-800'
+                                            : 'bg-blue-100 text-blue-800'
+                                        }`}
+                                      >
+                                        {selectedApplication.membershipType === 'professional' ? 'Professional' : 'Student'}
+                                      </Badge>
+                                    </div>
                                     <div><strong>Nationality:</strong> {selectedApplication.nationality}</div>
                                     <div><strong>Date of Birth:</strong> {selectedApplication.personalInfo.dateOfBirth}</div>
                                     <div><strong>ID Number:</strong> {selectedApplication.personalInfo.idNumber}</div>
@@ -396,7 +532,6 @@ const Applications = () => {
                                       <div><strong>Membership Number:</strong> {selectedApplication.personalInfo.membershipNumber}</div>
                                     )}
                                     <div><strong>Physical Address:</strong> {selectedApplication.personalInfo.physicalAddress}</div>
-                                    <div><strong>Postal Address:</strong> {selectedApplication.personalInfo.postalAddress}</div>
                                   </CardContent>
                                 </Card>
 
@@ -497,26 +632,33 @@ const Applications = () => {
                                           <Button
                                             onClick={() => handleApprove(selectedApplication.id)}
                                             className="bg-green-600 hover:bg-green-700"
+                                            disabled={isApproving || isRejecting || isReapproving}
                                           >
-                                            <Check className="w-4 h-4 mr-2" />
-                                            Approve Application
+                                            {isApproving ? (
+                                              <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                              <Check className="w-4 h-4 mr-2" />
+                                            )}
+                                            {isApproving ? "Approving..." : "Approve Application"}
                                           </Button>
                                           <Button
                                             variant="destructive"
                                             onClick={() => handleReject(selectedApplication.id)}
+                                            disabled={isApproving || isRejecting || isReapproving}
                                           >
                                             <X className="w-4 h-4 mr-2" />
-                                            Reject Application
+                                            {isRejecting ? "Rejecting..." : "Reject Application"}
                                           </Button>
                                           <Button
                                             variant="outline"
                                             onClick={() => handleDeleteApplication(selectedApplication)}
                                             className="bg-red-600 hover:bg-red-700 text-white"
+                                            disabled={isApproving || isRejecting || isReapproving}
                                           >
                                             <Trash2 className="w-4 h-4 mr-2" />
                                             Delete Application
                                           </Button>
-                                          <Button variant="outline" onClick={handleRequestMoreInfo}>
+                                          <Button variant="outline" onClick={handleRequestMoreInfo} disabled={isApproving || isRejecting || isReapproving}>
                                             <Mail className="w-4 h-4 mr-2" />
                                             Request More Info
                                           </Button>
@@ -526,14 +668,20 @@ const Applications = () => {
                                           <Button
                                             onClick={() => handleReApprove(selectedApplication.id)}
                                             className="bg-green-600 hover:bg-green-700 text-white"
+                                            disabled={isApproving || isRejecting || isReapproving}
                                           >
-                                            <Check className="w-4 h-4 mr-2" />
-                                            Re-Approve Application
+                                            {isReapproving ? (
+                                              <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                              <Check className="w-4 h-4 mr-2" />
+                                            )}
+                                            {isReapproving ? "Re-Approving..." : "Re-Approve Application"}
                                           </Button>
                                           <Button
                                             variant="outline"
                                             onClick={() => handleDeleteApplication(selectedApplication)}
                                             className="bg-red-600 hover:bg-red-700 text-white"
+                                            disabled={isApproving || isRejecting || isReapproving}
                                           >
                                             <Trash2 className="w-4 h-4 mr-2" />
                                             Delete Application
@@ -541,6 +689,7 @@ const Applications = () => {
                                           <Button
                                             variant="outline"
                                             onClick={handleRequestMoreInfo}
+                                            disabled={isApproving || isRejecting || isReapproving}
                                           >
                                             <Mail className="w-4 h-4 mr-2" />
                                             Contact Applicant
@@ -601,7 +750,7 @@ const Applications = () => {
             </Table>
             {loading && (
               <div className="flex justify-center items-center p-4">
-                <LoadingSpinner />
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
                 <p className="ml-2">Loading applications...</p>
               </div>
             )}

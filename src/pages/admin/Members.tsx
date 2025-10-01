@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { 
@@ -30,7 +31,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Search, Eye, Edit, MoreVertical, Download, Mail, Loader2 } from "lucide-react";
+import { Search, Eye, Edit, MoreVertical, Download, Mail, Loader2, Clock } from "lucide-react";
 
 interface Member {
   id: number;
@@ -44,7 +45,8 @@ interface Member {
   experience: number;
   submittedDate: string;
   application_status: string;
-  member_status: "active" | "pending" | "suspended";
+  member_status: "active" | "pending" | "suspended" | "pending_password_setup";
+  membershipType: string;
   specializations: string[];
   languages: string[];
   session_types: string[];
@@ -126,6 +128,7 @@ const Members = () => {
         membershipId: app.bspcpMembershipNumber || `BSPCP-${app.id}`,
         application_status: app.application_status,
         member_status: app.member_status,
+        membershipType: app.membership_type,
         submittedDate: app.submittedDate,
         qualification: app.qualification,
         organization: app.organization,
@@ -324,12 +327,13 @@ const Members = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedMembers.length === filteredMembers.length && filteredMembers.length > 0}
                       onCheckedChange={handleSelectAllMembers}
                     />
                   </TableHead>
                   <TableHead>Member Details</TableHead>
+                  <TableHead>Memeber Type</TableHead>
                   <TableHead>Membership ID</TableHead>
                   <TableHead>Organization</TableHead>
                   <TableHead>Status</TableHead>
@@ -341,7 +345,7 @@ const Members = () => {
                 {filteredMembers.map((member) => (
                   <TableRow key={member.id}>
                     <TableCell>
-                      <Checkbox 
+                      <Checkbox
                         checked={selectedMembers.includes(member.id)}
                         onCheckedChange={() => handleSelectMember(member.id)}
                       />
@@ -352,6 +356,17 @@ const Members = () => {
                         <p className="text-sm text-muted-foreground">{member.email}</p>
                         <p className="text-xs text-muted-foreground">{member.phone}</p>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${
+                          member.membershipType === 'professional'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-purple-100 text-purple-800'
+                        }`}
+                      >
+                        {member.membershipType === 'professional' ? 'Professional' : 'Student'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <code className="text-xs bg-muted px-2 py-1 rounded">
@@ -365,21 +380,28 @@ const Members = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={member.member_status}
-                        onValueChange={(newStatus: "active" | "pending" | "suspended") =>
-                          handleStatusChange(member.id, newStatus)
-                        }
-                      >
-                        <SelectTrigger className="w-[140px] h-8">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="suspended">Suspended</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {member.member_status === "pending_password_setup" ? (
+                        <div className="flex items-center text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Pending Password Setup
+                        </div>
+                      ) : (
+                        <Select
+                          value={member.member_status}
+                          onValueChange={(newStatus: "active" | "pending" | "suspended") =>
+                            handleStatusChange(member.id, newStatus)
+                          }
+                        >
+                          <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="suspended">Suspended</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       {new Date(member.submittedDate).toLocaleDateString()}
