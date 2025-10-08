@@ -2,6 +2,9 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Users,
   FileText,
@@ -17,6 +20,7 @@ import {
   Shield,
   Lock,
   Bell,
+  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -26,17 +30,8 @@ interface AdminLayoutProps {
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const location = useLocation();
-
-  // Get current user role from localStorage
-  const [currentUserRole, setCurrentUserRole] = useState<string>('');
-
-  useEffect(() => {
-    const adminUser = localStorage.getItem('admin_user');
-    if (adminUser) {
-      const user = JSON.parse(adminUser);
-      setCurrentUserRole(user.role || '');
-    }
-  }, []);
+  const navigate = useNavigate();
+  const { user, logout, hasRole } = useAuth();
 
   const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: Home },
@@ -68,79 +63,112 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   // Filter navigation items based on user role
   const filteredNavigation = navigation.filter(item =>
-    !item.requiresRole || currentUserRole === item.requiresRole
+    !item.requiresRole || hasRole(item.requiresRole as 'admin' | 'super_admin')
+  );
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-6 border-b">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-primary">BSPCP Admin</h2>
+            <p className="text-sm text-muted-foreground">Administration Portal</p>
+          </div>
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(false)}
+              className="md:hidden"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            className="pl-10 h-9"
+          />
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-4 space-y-2">
+        {filteredNavigation.map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              onClick={isMobile ? () => setMobileMenuOpen(false) : undefined}
+              className={cn(
+                "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors hover:text-foreground",
+                isActive(item.href)
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+              <span className="truncate">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Footer */}
+      <div className="p-4 border-t space-y-2">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          onClick={logout}
+        >
+          <LogOut className="w-4 h-4 mr-3" />
+          Sign Out
+        </Button>
+
+        <div className="text-xs text-muted-foreground text-center">
+          <p>BSPCP Admin Portal</p>
+          <p>Version 1.0.0</p>
+        </div>
+      </div>
+    </div>
   );
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-card border-r">
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-primary">BSPCP Admin</h2>
-            <p className="text-sm text-muted-foreground">Administration Portal</p>
-          </div>
+      {/* Desktop Sidebar */}
+      <div className="hidden md:fixed md:inset-y-0 md:left-0 md:w-64 md:flex md:flex-col md:bg-card md:border-r">
+        <SidebarContent />
+      </div>
 
-          {/* Search */}
-          <div className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search..." 
-                className="pl-10 h-9"
-              />
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 space-y-2">
-            {filteredNavigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    isActive(item.href)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <Icon className="w-4 h-4 mr-3" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t space-y-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                localStorage.removeItem('admin_token');
-                localStorage.removeItem('admin_user');
-                window.location.href = '/admin/login';
-              }}
-            >
-              <LogOut className="w-4 h-4 mr-3" />
-              Sign Out
+      {/* Mobile Header with Menu Button */}
+      <div className="sticky top-0 z-40 flex items-center justify-between bg-card border-b px-4 py-2 md:hidden">
+        <h1 className="text-lg font-semibold text-primary">BSPCP Admin</h1>
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="w-5 h-5" />
             </Button>
-
-            <div className="text-xs text-muted-foreground">
-              <p>BSPCP Admin Portal</p>
-              <p>Version 1.0.0</p>
-            </div>
-          </div>
-        </div>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-80 p-0">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Main Content */}
-      <div className="ml-64">
-        <main className="min-h-screen">
+      <div className="md:ml-64">
+        <main className="min-h-screen p-4 md:p-6">
           {children}
         </main>
       </div>

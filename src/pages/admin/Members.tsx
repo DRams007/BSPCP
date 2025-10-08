@@ -31,6 +31,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { useToast } from "@/hooks/use-toast";
 import { Search, Eye, Edit, MoreVertical, Download, Mail, Loader2, Clock } from "lucide-react";
 
 interface Member {
@@ -50,7 +51,6 @@ interface Member {
   specializations: string[];
   languages: string[];
   session_types: string[];
-  fee_range: string;
   availability: string;
   dateOfBirth: string;
   idNumber: string;
@@ -93,7 +93,6 @@ interface Application {
   specializations: string[];
   languages: string[];
   session_types: string[];
-  fee_range: string;
   availability: string;
   dateOfBirth: string;
   idNumber: string;
@@ -102,6 +101,7 @@ interface Application {
 }
 
 const Members = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
@@ -111,6 +111,7 @@ const Members = () => {
   const [mailRecipients, setMailRecipients] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -139,12 +140,11 @@ const Members = () => {
         specializations: app.specializations,
         languages: app.languages,
         session_types: app.session_types,
-        fee_range: app.fee_range,
         availability: app.availability,
-        dateOfBirth: app.dateOfBirth,
-        idNumber: app.idNumber,
-        physicalAddress: app.physicalAddress,
-        postalAddress: app.postalAddress,
+        dateOfBirth: app.personalInfo.dateOfBirth,
+        idNumber: app.personalInfo.idNumber,
+        physicalAddress: app.personalInfo.physicalAddress,
+        postalAddress: app.personalInfo.postalAddress,
         memberDocuments: app.memberDocuments || {
           idDocument: null,
           certificates: [],
@@ -212,6 +212,7 @@ const Members = () => {
   };
 
   const sendEmail = async () => {
+    setSendingEmail(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/send-email`, {
         method: "POST",
@@ -229,14 +230,27 @@ const Members = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      console.log("Email sent successfully!");
+      toast({
+        title: "Success",
+        description: `Email sent successfully to ${mailRecipients.length} recipient${mailRecipients.length > 1 ? 's' : ''}.`,
+        variant: "default",
+      });
+
+      // Close the dialog and clear the form
       setIsMailDialogOpen(false);
-      // Optionally, show a success toast or message
+      setMailSubject("");
+      setMailBody("");
+
     } catch (err) {
       const error = err as Error;
-      setError(`Failed to send email: ${error.message}`);
+      toast({
+        title: "Error",
+        description: `Failed to send email: ${error.message}`,
+        variant: "destructive",
+      });
       console.error("Error sending email:", err);
-      // Optionally, show an error toast or message
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -278,7 +292,7 @@ const Members = () => {
             <h1 className="text-3xl font-bold">Members Management</h1>
             <p className="text-muted-foreground">Manage BSPCP member accounts and profiles</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => openMailDialog(members.map(m => m.email))}>
               <Mail className="w-4 h-4 mr-2" />
               Email All
@@ -323,239 +337,446 @@ const Members = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">
-                    <Checkbox
-                      checked={selectedMembers.length === filteredMembers.length && filteredMembers.length > 0}
-                      onCheckedChange={handleSelectAllMembers}
-                    />
-                  </TableHead>
-                  <TableHead>Member Details</TableHead>
-                  <TableHead>Memeber Type</TableHead>
-                  <TableHead>Membership ID</TableHead>
-                  <TableHead>Organization</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Join Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredMembers.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell>
+            {/* Desktop Table View */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">
                       <Checkbox
-                        checked={selectedMembers.includes(member.id)}
-                        onCheckedChange={() => handleSelectMember(member.id)}
+                        checked={selectedMembers.length === filteredMembers.length && filteredMembers.length > 0}
+                        onCheckedChange={handleSelectAllMembers}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{member.name}</p>
-                        <p className="text-sm text-muted-foreground">{member.email}</p>
-                        <p className="text-xs text-muted-foreground">{member.phone}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`${
-                          member.membershipType === 'professional'
-                            ? 'bg-purple-100 text-purple-800'
-                            : member.membershipType === 'student'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {member.membershipType === 'professional'
-                          ? 'Professional'
-                          : member.membershipType === 'student'
-                          ? 'Student'
-                          : member.membershipType || 'Unknown'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <code className="text-xs bg-muted px-2 py-1 rounded">
-                        {member.membershipId}
-                      </code>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="text-sm">{member.organization}</p>
-                        <p className="text-xs text-muted-foreground">{member.occupation}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {member.member_status === "pending_password_setup" ? (
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Pending Password Setup
+                    </TableHead>
+                    <TableHead>Member Details</TableHead>
+                    <TableHead>Memeber Type</TableHead>
+                    <TableHead>Membership ID</TableHead>
+                    <TableHead>Organization</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Join Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredMembers.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedMembers.includes(member.id)}
+                          onCheckedChange={() => handleSelectMember(member.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{member.name}</p>
+                          <p className="text-sm text-muted-foreground">{member.email}</p>
+                          <p className="text-xs text-muted-foreground">{member.phone}</p>
                         </div>
-                      ) : (
-                        <Select
-                          value={member.member_status}
-                          onValueChange={(newStatus: "active" | "pending" | "suspended") =>
-                            handleStatusChange(member.id, newStatus)
-                          }
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`${
+                            member.membershipType === 'professional'
+                              ? 'bg-purple-100 text-purple-800'
+                              : member.membershipType === 'student'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
                         >
-                          <SelectTrigger className="w-[140px] h-8">
-                            <SelectValue placeholder="Status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="suspended">Suspended</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(member.submittedDate).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                              <DialogTitle>Member Details</DialogTitle>
-                              <DialogDescription>
-                                Complete profile information for {member.name}
-                              </DialogDescription>
-                            </DialogHeader>
+                          {member.membershipType === 'professional'
+                            ? 'Professional'
+                            : member.membershipType === 'student'
+                            ? 'Student'
+                            : member.membershipType || 'Unknown'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-muted px-2 py-1 rounded">
+                          {member.membershipId}
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="text-sm">{member.organization}</p>
+                          <p className="text-xs text-muted-foreground">{member.occupation}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {member.member_status === "pending_password_setup" ? (
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending Password Setup
+                          </div>
+                        ) : (
+                          <Select
+                            value={member.member_status}
+                            onValueChange={(newStatus: "active" | "pending" | "suspended") =>
+                              handleStatusChange(member.id, newStatus)
+                            }
+                          >
+                            <SelectTrigger className="w-[140px] h-8">
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="suspended">Suspended</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {new Date(member.submittedDate).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>Member Details</DialogTitle>
+                                <DialogDescription>
+                                  Complete profile information for {member.name}
+                                </DialogDescription>
+                              </DialogHeader>
 
-                            <div className="space-y-4 py-4">
-                              {/* Basic Information */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <h4 className="font-semibold mb-3">Personal Information</h4>
-                                  <div className="space-y-2 text-sm">
-                                    <p><strong>Name:</strong> {member.name}</p>
-                                    <p><strong>Email:</strong> {member.email}</p>
-                                    <p><strong>Phone:</strong> {member.phone}</p>
-                                    <p><strong>Nationality:</strong> {member.nationality}</p>
-                                    <p><strong>ID Number:</strong> {member.idNumber}</p>
-                                    <p><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+                              <div className="space-y-4 py-4">
+                                {/* Basic Information */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                    <h4 className="font-semibold mb-3">Personal Information</h4>
+                                    <div className="space-y-2 text-sm">
+                                      <p><strong>Name:</strong> {member.name}</p>
+                                      <p><strong>Email:</strong> {member.email}</p>
+                                      <p><strong>Phone:</strong> {member.phone}</p>
+                                      <p><strong>Nationality:</strong> {member.nationality}</p>
+                                      <p><strong>ID Number:</strong> {member.idNumber}</p>
+                                      <p><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold mb-3">Professional Information</h4>
+                                    <div className="space-y-2 text-sm">
+                                      <p><strong>Highest Qualification:</strong> {member.qualification}</p>
+                                      <p><strong>Organization:</strong> {member.organization}</p>
+                                      <p><strong>Occupation:</strong> {member.occupation}</p>
+                                      <p><strong>Years Experience:</strong> {member.experience}</p>
+                                      <p><strong>Member ID:</strong> {member.membershipId}</p>
+                                    </div>
                                   </div>
                                 </div>
+
+                                {/* Member Documents */}
                                 <div>
-                                  <h4 className="font-semibold mb-3">Professional Information</h4>
-                                  <div className="space-y-2 text-sm">
-                                    <p><strong>Highest Qualification:</strong> {member.qualification}</p>
-                                    <p><strong>Organization:</strong> {member.organization}</p>
-                                    <p><strong>Occupation:</strong> {member.occupation}</p>
-                                    <p><strong>Years Experience:</strong> {member.experience}</p>
-                                    <p><strong>Member ID:</strong> {member.membershipId}</p>
+                                  <h4 className="font-semibold mb-3">Member Documents</h4>
+
+                                  {/* ID Document */}
+                                  {member.memberDocuments?.idDocument ? (
+                                    <div className="mb-4">
+                                      <h5 className="font-medium mb-2">ID Document</h5>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        asChild
+                                      >
+                                        <a href={member.memberDocuments.idDocument.url} target="_blank" rel="noopener noreferrer">
+                                          <Download className="mr-2 h-4 w-4" />
+                                          Download ID Document
+                                        </a>
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="mb-4">
+                                      <h5 className="font-medium mb-2">ID Document</h5>
+                                      <p className="text-sm text-muted-foreground">No ID document uploaded</p>
+                                    </div>
+                                  )}
+
+                                  {/* Certificates */}
+                                  <div className="mb-4">
+                                    <h5 className="font-medium mb-2">Certificates</h5>
+                                    {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 ? (
+                                      <div className="space-y-2">
+                                        {member.memberDocuments.certificates.map((cert, index) => (
+                                          <Button
+                                            key={index}
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
+                                            className="mr-2"
+                                          >
+                                            <a href={cert.url} target="_blank" rel="noopener noreferrer">
+                                              <Download className="mr-2 h-4 w-4" />
+                                              {cert.name}
+                                            </a>
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground">No certificates uploaded</p>
+                                    )}
+                                  </div>
+
+                                  {/* CPD Documents */}
+                                  <div className="mb-4">
+                                    <h5 className="font-medium mb-2">CPD Documents</h5>
+                                    {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 ? (
+                                      <div className="space-y-2">
+                                        {member.memberDocuments.cpdDocuments.map((cpd, index) => (
+                                          <div key={index} className="flex items-center justify-between p-2 border rounded">
+                                            <div className="text-sm">
+                                              <p className="font-medium">{cpd.title}</p>
+                                              <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString() : 'N/A'}</p>
+                                            </div>
+                                            {cpd.url ? (
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                              >
+                                                <a href={cpd.url} target="_blank" rel="noopener noreferrer">
+                                                  <Download className="mr-2 h-4 w-4" />
+                                                  Download
+                                                </a>
+                                              </Button>
+                                            ) : (
+                                              <span className="text-sm text-muted-foreground">No document file</span>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground">No CPD documents uploaded</p>
+                                    )}
                                   </div>
                                 </div>
                               </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button variant="outline" size="sm" onClick={() => openMailDialog([member.email])}>
+                            <Mail className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-                              {/* Member Documents */}
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {filteredMembers.map((member) => (
+                <Card key={member.id} className="p-4">
+                  <CardContent className="p-0">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          checked={selectedMembers.includes(member.id)}
+                          onCheckedChange={() => handleSelectMember(member.id)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <p className="font-medium">{member.name}</p>
+                            <Badge
+                              className={`${
+                                member.membershipType === 'professional'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : member.membershipType === 'student'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              } text-xs px-2 py-1`}
+                            >
+                              {member.membershipType === 'professional'
+                                ? 'Professional'
+                                : member.membershipType === 'student'
+                                ? 'Student'
+                                : member.membershipType || 'Unknown'}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p>{member.email}</p>
+                            <p>{member.phone}</p>
+                            <p className="text-xs">{member.organization} • {member.occupation}</p>
+                            <p className="text-xs font-mono">{member.membershipId}</p>
+                            <p className="text-xs">Joined: {new Date(member.submittedDate).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ml-2">
+                        {member.member_status === "pending_password_setup" ? (
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending Password Setup
+                          </div>
+                        ) : (
+                          <Select
+                            value={member.member_status}
+                            onValueChange={(newStatus: "active" | "pending" | "suspended") =>
+                              handleStatusChange(member.id, newStatus)
+                            }
+                          >
+                            <SelectTrigger className="w-28 h-8 text-xs">
+                              <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="suspended">Suspended</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 border-t pt-3">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="flex-1">
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl">
+                          <DialogHeader>
+                            <DialogTitle>Member Details</DialogTitle>
+                            <DialogDescription>
+                              Complete profile information for {member.name}
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          <div className="space-y-4 py-4">
+                            {/* Basic Information */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <h4 className="font-semibold mb-3">Member Documents</h4>
-
-                                {/* ID Document */}
-                                {member.memberDocuments?.idDocument ? (
-                                  <div className="mb-4">
-                                    <h5 className="font-medium mb-2">ID Document</h5>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      asChild
-                                    >
-                                      <a href={member.memberDocuments.idDocument.url} target="_blank" rel="noopener noreferrer">
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download ID Document
-                                      </a>
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <div className="mb-4">
-                                    <h5 className="font-medium mb-2">ID Document</h5>
-                                    <p className="text-sm text-muted-foreground">No ID document uploaded</p>
-                                  </div>
-                                )}
-
-                                {/* Certificates */}
-                                <div className="mb-4">
-                                  <h5 className="font-medium mb-2">Certificates</h5>
-                                  {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 ? (
-                                    <div className="space-y-2">
-                                      {member.memberDocuments.certificates.map((cert, index) => (
-                                        <Button
-                                          key={index}
-                                          variant="outline"
-                                          size="sm"
-                                          asChild
-                                          className="mr-2"
-                                        >
-                                          <a href={cert.url} target="_blank" rel="noopener noreferrer">
-                                            <Download className="mr-2 h-4 w-4" />
-                                            {cert.name}
-                                          </a>
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm text-muted-foreground">No certificates uploaded</p>
-                                  )}
+                                <h4 className="font-semibold mb-3">Personal Information</h4>
+                                <div className="space-y-2 text-sm">
+                                  <p><strong>Name:</strong> {member.name}</p>
+                                  <p><strong>Email:</strong> {member.email}</p>
+                                  <p><strong>Phone:</strong> {member.phone}</p>
+                                  <p><strong>Nationality:</strong> {member.nationality}</p>
+                                  <p><strong>ID Number:</strong> {member.idNumber}</p>
+                                  <p><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
                                 </div>
-
-                                {/* CPD Documents */}
-                                <div className="mb-4">
-                                  <h5 className="font-medium mb-2">CPD Documents</h5>
-                                  {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 ? (
-                                    <div className="space-y-2">
-                                      {member.memberDocuments.cpdDocuments.map((cpd, index) => (
-                                        <div key={index} className="flex items-center justify-between p-2 border rounded">
-                                          <div className="text-sm">
-                                            <p className="font-medium">{cpd.title}</p>
-                                            <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString() : 'N/A'}</p>
-                                          </div>
-                                          {cpd.url ? (
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              asChild
-                                            >
-                                              <a href={cpd.url} target="_blank" rel="noopener noreferrer">
-                                                <Download className="mr-2 h-4 w-4" />
-                                                Download
-                                              </a>
-                                            </Button>
-                                          ) : (
-                                            <span className="text-sm text-muted-foreground">No document file</span>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-sm text-muted-foreground">No CPD documents uploaded</p>
-                                  )}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold mb-3">Professional Information</h4>
+                                <div className="space-y-2 text-sm">
+                                  <p><strong>Highest Qualification:</strong> {member.qualification}</p>
+                                  <p><strong>Organization:</strong> {member.organization}</p>
+                                  <p><strong>Occupation:</strong> {member.occupation}</p>
+                                  <p><strong>Years Experience:</strong> {member.experience}</p>
+                                  <p><strong>Member ID:</strong> {member.membershipId}</p>
                                 </div>
                               </div>
                             </div>
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="outline" size="sm" onClick={() => openMailDialog([member.email])}>
-                          <Mail className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+
+                            {/* Member Documents */}
+                            <div>
+                              <h4 className="font-semibold mb-3">Member Documents</h4>
+
+                              {/* ID Document */}
+                              {member.memberDocuments?.idDocument ? (
+                                <div className="mb-4">
+                                  <h5 className="font-medium mb-2">ID Document</h5>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                  >
+                                    <a href={member.memberDocuments.idDocument.url} target="_blank" rel="noopener noreferrer">
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Download ID Document
+                                    </a>
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="mb-4">
+                                  <h5 className="font-medium mb-2">ID Document</h5>
+                                  <p className="text-sm text-muted-foreground">No ID document uploaded</p>
+                                </div>
+                              )}
+
+                              {/* Certificates */}
+                              <div className="mb-4">
+                                <h5 className="font-medium mb-2">Certificates</h5>
+                                {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {member.memberDocuments.certificates.map((cert, index) => (
+                                      <Button
+                                        key={index}
+                                        variant="outline"
+                                        size="sm"
+                                        asChild
+                                        className="mr-2"
+                                      >
+                                        <a href={cert.url} target="_blank" rel="noopener noreferrer">
+                                          <Download className="mr-2 h-4 w-4" />
+                                          {cert.name}
+                                        </a>
+                                      </Button>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">No certificates uploaded</p>
+                                  )}
+                              </div>
+
+                              {/* CPD Documents */}
+                              <div className="mb-4">
+                                <h5 className="font-medium mb-2">CPD Documents</h5>
+                                {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {member.memberDocuments.cpdDocuments.map((cpd, index) => (
+                                      <div key={index} className="flex items-center justify-between p-2 border rounded">
+                                        <div className="text-sm">
+                                          <p className="font-medium">{cpd.title}</p>
+                                          <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString() : 'N/A'}</p>
+                                        </div>
+                                        {cpd.url ? (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            asChild
+                                          >
+                                            <a href={cpd.url} target="_blank" rel="noopener noreferrer">
+                                              <Download className="mr-2 h-4 w-4" />
+                                              Download
+                                            </a>
+                                          </Button>
+                                        ) : (
+                                          <span className="text-sm text-muted-foreground">No document file</span>
+                                          )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">No CPD documents uploaded</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openMailDialog([member.email])}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Email
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -641,7 +862,16 @@ const Members = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" onClick={sendEmail}>Send Email</Button>
+              <Button type="submit" onClick={sendEmail} disabled={sendingEmail}>
+                {sendingEmail ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Email"
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

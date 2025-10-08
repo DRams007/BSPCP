@@ -25,8 +25,8 @@ async function initAdminUser() {
 
     // Create admin user
     const username = 'bsncp_admin';
-    const password = 'TempAdmin123!'; // Temporary password - should be changed immediately
-    const email = 'admin@bspcp.org.uk';
+    const password = 'Password123$'; // Temporary password - should be changed immediately
+    const email = 'bspcpemail@gmail.com';
 
     // Hash the password
     const saltRounds = 12;

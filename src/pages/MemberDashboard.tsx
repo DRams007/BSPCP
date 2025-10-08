@@ -12,7 +12,6 @@ import ProfileEditForm from '@/components/member/ProfileEditForm';
 import ContactEditForm from '@/components/member/ContactEditForm';
 import CPDUploadForm from '@/components/member/CPDUploadForm';
 import BookingManagement from '@/components/member/BookingManagement';
-import NotificationPreferences from '@/components/member/NotificationPreferences';
 import { Loader2 } from 'lucide-react'; // Import Loader2 for loading state
 import { IMemberProfile, IMemberContact } from '@/types/member';
 
@@ -147,13 +146,12 @@ const MemberDashboard = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="contact">Contact Info</TabsTrigger>
-            <TabsTrigger value="cpd">CPD Evidence</TabsTrigger>
-            <TabsTrigger value="bookings">Clients Bookings</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="settings">Account</TabsTrigger>
+          <TabsList className="flex w-full overflow-x-auto space-x-0 ml-[-20px] md:ml-0 md:grid md:grid-cols-5 md:overflow-visible">
+            <TabsTrigger value="profile" className="min-w-fit whitespace-nowrap">Profile</TabsTrigger>
+            <TabsTrigger value="contact" className="min-w-fit whitespace-nowrap">Contact Info</TabsTrigger>
+            <TabsTrigger value="cpd" className="min-w-fit whitespace-nowrap">CPD Evidence</TabsTrigger>
+            <TabsTrigger value="bookings" className="min-w-fit whitespace-nowrap">Clients Bookings</TabsTrigger>
+            <TabsTrigger value="settings" className="min-w-fit whitespace-nowrap">Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">
@@ -191,7 +189,6 @@ const MemberDashboard = () => {
                     title: member.title,
                     languages: member.languages,
                     session_types: member.session_types,
-                    fee_range: member.fee_range,
                     availability: member.availability,
                     profile_photo_url: member.profile_photo_url,
                   }}
@@ -250,10 +247,6 @@ const MemberDashboard = () => {
 
           <TabsContent value="bookings">
             <BookingManagement />
-          </TabsContent>
-
-          <TabsContent value="notifications">
-            <NotificationPreferences />
           </TabsContent>
 
           <TabsContent value="settings">

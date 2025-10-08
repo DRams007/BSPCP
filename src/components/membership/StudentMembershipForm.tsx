@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, User, GraduationCap, Users } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -69,8 +69,6 @@ const studentMembershipSchema = z.object({
   // Member Certificates Table Fields
   certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
 
-  // Member Payments Table Fields
-  proofOfPayment: z.any().refine((f) => f instanceof File, 'Proof of payment is required'),
 });
 
 type StudentMembershipFormData = z.infer<typeof studentMembershipSchema>;
@@ -78,7 +76,7 @@ type StudentMembershipFormData = z.infer<typeof studentMembershipSchema>;
 const StudentMembershipForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const totalSteps = 4;
+  const totalSteps = 3;
   const navigate = useNavigate();
 
   const form = useForm<StudentMembershipFormData>({
@@ -95,7 +93,7 @@ const StudentMembershipForm = () => {
       showAddress: false,
       idDocument: undefined,
       profileImage: undefined,
-      proofOfPayment: undefined,
+
       certificates: [],
       otherSpecialization: '',
       // Student-specific defaults
@@ -110,7 +108,7 @@ const StudentMembershipForm = () => {
 
     // Append all text fields
     for (const key in data) {
-      if (key === 'idDocument' || key === 'proofOfPayment' || key === 'certificates' || key === 'profileImage') {
+      if (key === 'idDocument' || key === 'certificates' || key === 'profileImage') {
         continue; // Skip file fields for now, handle separately
       }
 
@@ -135,9 +133,7 @@ const StudentMembershipForm = () => {
     if (data.profileImage) {
       formData.append('profileImage', data.profileImage);
     }
-    if (data.proofOfPayment) {
-      formData.append('proofOfPayment', data.proofOfPayment);
-    }
+
     if (data.certificates && data.certificates.length > 0) {
       data.certificates.forEach((file) => {
         formData.append('certificates', file);
@@ -330,33 +326,37 @@ const StudentMembershipForm = () => {
           {currentStep === 1 && 'Personal Information'}
           {currentStep === 2 && 'Educational Background'}
           {currentStep === 3 && 'Experience & Supervision'}
-          {currentStep === 4 && 'Documents & Payment'}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            {Array.from({ length: totalSteps }, (_, i) => (
-              <div key={i} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                  i + 1 <= currentStep ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {i + 1}
+            {Array.from({ length: totalSteps }, (_, i) => {
+              const isActive = i + 1 <= currentStep;
+              const stepIcons = [
+                { icon: User, number: 1 },
+                { icon: GraduationCap, number: 2 },
+                { icon: Users, number: 3 }
+              ];
+              const StepIcon = stepIcons[i].icon;
+
+              return (
+                <div key={i} className="flex items-center">
+                  <div className={`w-12 h-10 rounded-full flex items-center justify-center gap-2 text-sm font-semibold ${
+                    isActive ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    <StepIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+                    <span>{stepIcons[i].number}</span>
+                  </div>
                 </div>
-                {i < totalSteps - 1 && (
-                  <div className={`h-1 w-full mx-2 ${
-                    i + 1 < currentStep ? 'bg-blue-600' : 'bg-muted'
-                  }`} />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex justify-between text-xs text-muted-foreground mt-2">
             <span>Personal Info</span>
             <span>Educational</span>
             <span>Supervision</span>
-            <span>Documents</span>
           </div>
         </div>
 
@@ -936,48 +936,7 @@ const StudentMembershipForm = () => {
               </div>
             )}
 
-            {/* Step 4: Documents and Payment */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="proofOfPayment"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Attach Proof of Payment</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="file"
-                          accept="application/pdf,image/*"
-                          onChange={(e) => field.onChange(e.target.files?.[0])}
-                        />
-                      </FormControl>
-                      {field.value && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Selected: {field.value?.name}
-                        </p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-                <div className="bg-muted p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    Documents Collected
-                  </h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• <strong>ID Document</strong> - Copy of Omang/ID or Passport</li>
-                    <li>• <strong>Academic Certificates</strong> - Certificates and transcripts</li>
-                    <li>• <strong>Proof of Payment</strong> - Payment confirmation for membership fees</li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    <strong>Note:</strong> Ensure all documents are clear, legible PDFs or images under 5MB each.
-                  </p>
-                </div>
-              </div>
-            )}
 
             <div className="flex justify-between pt-6">
               {currentStep > 1 && (

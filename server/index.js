@@ -12,13 +12,75 @@ import crypto from 'crypto';
 import pool from './lib/db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { sendMemberPasswordResetEmail, sendMemberApprovalEmail, sendApplicationNotificationEmail, sendCounsellorBookingNotificationEmail, sendApplicantRequestMoreInfoEmail } from './lib/emailService.js';
+import { setupPaymentEndpoints } from './payment_endpoints.js';
+import { sendMemberPasswordResetEmail, sendMemberApprovalEmail, sendApplicationNotificationEmail, sendCounsellorBookingNotificationEmail, sendApplicantRequestMoreInfoEmail, sendPaymentRequestEmail, sendPaymentVerifiedEmail, sendPaymentRejectedEmail, sendAdminPasswordResetEmail, testEmailConnection } from './lib/emailService.js';
 
 // Load environment variables from .env file
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Database schema verification function
+async function verifyDatabaseSchema() {
+  let client;
+  try {
+    console.log('🔍 Verifying database schema...');
+    client = await pool.connect();
+
+    // Check if new payment tracking columns exist in members table
+    const paymentColumnsQuery = `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'members'
+      AND column_name IN (
+        'payment_status', 'payment_proof_url', 'payment_uploaded_at',
+        'payment_requested_at', 'payment_verified_at', 'payment_rejected_at',
+        'payment_request_count'
+      )
+    `;
+
+    const paymentColumnsResult = await client.query(paymentColumnsQuery);
+    const existingPaymentColumns = paymentColumnsResult.rows.map(row => row.column_name);
+    const requiredPaymentColumns = [
+      'payment_status', 'payment_proof_url', 'payment_uploaded_at',
+      'payment_requested_at', 'payment_verified_at', 'payment_rejected_at',
+      'payment_request_count'
+    ];
+
+    const missingPaymentColumns = requiredPaymentColumns.filter(
+      col => !existingPaymentColumns.includes(col)
+    );
+
+    if (missingPaymentColumns.length > 0) {
+      console.error('❌ Database schema verification failed!');
+      console.error('Missing payment tracking columns in members table:', missingPaymentColumns);
+      console.error('Please run the payment tracking system migration script.');
+      throw new Error('Database schema is outdated. Payment tracking system migration required.');
+    }
+
+    // Check if audit and upload log tables exist
+    const systemTables = ['payment_audit_log', 'payment_upload_logs'];
+    for (const tableName of systemTables) {
+      try {
+        await client.query(`SELECT 1 FROM ${tableName} LIMIT 1`);
+      } catch (tableError) {
+        console.error(`❌ System table '${tableName}' does not exist or is not accessible`);
+        throw new Error(`Missing system table: ${tableName}`);
+      }
+    }
+
+    console.log('✅ Database schema verification completed successfully');
+    client.release();
+
+  } catch (error) {
+    if (client) {
+      client.release();
+    }
+    console.error('❌ Database schema verification failed:', error.message);
+    throw error;
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +132,22 @@ const getFullUrl = (filePath, req) => {
   return `${baseUrl}/uploads/${filename}`;
 };
 
+// Helper to extract payment rejection reason from audit log details
+function extractPaymentRejectionReason(details) {
+  if (!details) return null;
+
+  // Log format: "Payment rejected by admin John Doe: Payment proof is unclear"
+  // We need to extract everything after ": "
+  const colonIndex = details.indexOf(': ');
+  if (colonIndex !== -1) {
+    const reason = details.substring(colonIndex + 2).trim();
+    return reason.length > 0 ? reason : null;
+  }
+
+  // Fallback for malformed entries
+  return null;
+}
+
 app.get('/api/db-test', async (req, res) => {
   try {
     const client = await pool.connect();
@@ -84,7 +162,6 @@ app.get('/api/db-test', async (req, res) => {
 
 app.post('/api/membership', upload.fields([
   { name: 'idDocument', maxCount: 1 },
-  { name: 'proofOfPayment', maxCount: 1 },
   { name: 'certificates', maxCount: 10 },
   { name: 'profileImage', maxCount: 1 } // Added for profile image upload
 ]), async (req, res) => {
@@ -107,7 +184,7 @@ app.post('/api/membership', upload.fields([
       // From member_professional_details table
       occupation, organizationName, highestQualification, otherQualifications,
       scholarlyPublications, specializations, employmentStatus, yearsExperience,
-      bio, title, languages, sessionTypes, feeRange, availability,
+      bio, title, languages, sessionTypes, availability,
 
     // From member_contact_details table
     phone, email, website, physicalAddress, city,
@@ -162,15 +239,15 @@ app.post('/api/membership', upload.fields([
       `INSERT INTO member_professional_details (
         member_id, occupation, organization_name, highest_qualification, other_qualifications,
         scholarly_publications, specializations, employment_status, years_experience,
-        bio, title, languages, session_types, fee_range, availability
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+        bio, title, languages, session_types, availability
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         memberId, effectiveOccupation, effectiveOrganizationName, highestQualification, otherQualifications,
         scholarlyPublications, specializations ? JSON.parse(specializations) : [], // Assuming specializations is sent as a JSON string array
         effectiveEmploymentStatus, effectiveYearsExperience, bio, title,
         languages ? JSON.parse(languages) : [], // Assuming languages is sent as a JSON string array
         sessionTypes ? JSON.parse(sessionTypes) : [], // Assuming sessionTypes is sent as a JSON string array
-        feeRange, availability
+        availability
       ]
     );
 
@@ -218,15 +295,6 @@ app.post('/api/membership', upload.fields([
       }
     }
 
-    // 6. Insert into member_payments table
-    if (uploadedFiles.proofOfPayment) {
-      await client.query(
-        `INSERT INTO member_payments (member_id, proof_of_payment_path)
-         VALUES ($1, $2)`,
-        [memberId, uploadedFiles.proofOfPayment[0].path]
-      );
-    }
-
     await client.query('COMMIT');
 
     // Send notification email to admin after successful submission
@@ -255,7 +323,7 @@ app.get('/api/applications', async (req, res) => {
   try {
     const client = await pool.connect();
     const { status } = req.query; // Get status from query parameters
-    let query = `
+  let query = `
       SELECT
         m.id,
         m.first_name,
@@ -272,15 +340,21 @@ app.get('/api/applications', async (req, res) => {
         m.created_at,
         m.application_status,
         m.member_status,
+        m.payment_status,
+        m.review_comment,
         mpd.specializations,
         mpd.languages,
         mpd.session_types,
-        mpd.fee_range,
+       
         mpd.availability,
-        m.date_of_birth AS "dateOfBirth",
+        CASE WHEN m.date_of_birth IS NOT NULL THEN to_char(m.date_of_birth, 'YYYY-MM-DD') ELSE NULL END AS "dateOfBirth",
         m.id_number AS "idNumber",
         mcd.physical_address AS "physicalAddress",
         mcd.postal_address AS "postalAddress",
+        m.payment_uploaded_at,
+        m.payment_verified_at,
+        m.payment_rejected_at,
+        m.payment_requested_at,
         (
           SELECT json_agg(json_build_object('name', mc.original_filename, 'uploaded', TRUE, 'url', mc.file_path))
           FROM member_certificates mc
@@ -296,14 +370,57 @@ app.get('/api/applications', async (req, res) => {
           FROM member_cpd mc
           WHERE mc.member_id = m.id
         ) AS cpd_documents,
+        m.payment_proof_url,
+        -- Get latest payment rejection reason from audit log
+        ra.details AS rejection_audit_details,
+        -- Aggregate payment history from audit log (all payment actions) with upload file info
         (
-          SELECT mp.proof_of_payment_path
-          FROM member_payments mp
-          WHERE mp.member_id = m.id
-        ) AS proof_of_payment_path
+          SELECT json_agg(
+            json_build_object(
+              'id', pal.id::text,
+              'action', pal.action,
+              'details', pal.details,
+              'timestamp', pal.created_at,
+              'adminName', COALESCE(admin_upload.first_name || ' ' || admin_upload.last_name, NULL),
+              'adminEmail', admin_upload.email,
+              'reason', CASE
+                WHEN pal.action = 'payment_rejected' AND pal.details LIKE 'Payment rejected by admin%:%'
+                THEN substring(pal.details from ': (.+)$')
+                ELSE NULL
+              END,
+              'uploadInfo', (
+                SELECT json_build_object(
+                  'originalFilename', pul.original_filename,
+                  'storedFilename', pul.stored_filename,
+                  'fileSize', pul.file_size,
+                  'fileType', pul.file_type,
+                  'storedFilePath', pul.stored_filename
+                )
+                FROM payment_upload_logs pul
+                WHERE pul.member_id = pal.member_id
+                  AND pul.uploaded_at <= pal.created_at
+                ORDER BY pul.uploaded_at DESC
+                LIMIT 1
+              )
+            )
+            ORDER BY pal.created_at DESC
+          )
+          FROM payment_audit_log pal
+          LEFT JOIN admins admin_upload ON pal.admin_id = admin_upload.id
+          WHERE pal.member_id = m.id
+            AND pal.action LIKE 'payment_%'
+        ) AS payment_history
       FROM members m
       JOIN member_professional_details mpd ON m.id = mpd.member_id
       JOIN member_contact_details mcd ON m.id = mcd.member_id
+      LEFT JOIN LATERAL (
+        SELECT pal.details
+        FROM payment_audit_log pal
+        WHERE pal.member_id = m.id
+          AND pal.action = 'payment_rejected'
+        ORDER BY pal.created_at DESC
+        LIMIT 1
+      ) ra ON true
     `;
     const queryParams = [];
 
@@ -326,8 +443,8 @@ app.get('/api/applications', async (req, res) => {
       // if (row.personal_documents && row.personal_documents.profileImagePath) {
       //   documents.push({ name: "Profile Image", uploaded: true, url: getFullUrl(row.personal_documents.profileImagePath, req) });
       // }
-      if (row.proof_of_payment_path) {
-        documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.proof_of_payment_path, req) });
+      if (row.payment_proof_url) {
+        documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
       }
       if (row.certificates) {
         const certificateDocs = row.certificates.map(cert => ({
@@ -338,7 +455,7 @@ app.get('/api/applications', async (req, res) => {
         documents.push(...certificateDocs);
       }
 
-      return {
+    return {
         id: row.id,
         name: row.name,
         email: row.email,
@@ -352,6 +469,7 @@ app.get('/api/applications', async (req, res) => {
         created_at: row.created_at,
         application_status: row.application_status,
         member_status: row.member_status,
+        payment_status: row.payment_status,
         personalInfo: {
           dateOfBirth: row.dateOfBirth,
           idNumber: row.idNumber,
@@ -360,6 +478,35 @@ app.get('/api/applications', async (req, res) => {
           membershipNumber: row.bspcp_membership_number,
         },
         documents: documents,
+        // Add Payment verification data
+        paymentInfo: {
+          uploadDate: row.payment_uploaded_at,
+          verifiedAt: row.payment_verified_at,
+          rejectedAt: row.payment_rejected_at,
+          requestedAt: row.payment_requested_at,
+          rejectionReason: extractPaymentRejectionReason(row.payment_status === 'rejected' ? row.rejection_audit_details : null)
+        },
+
+          // Add comprehensive payment history
+        paymentHistory: row.payment_history ? row.payment_history.map(entry => ({
+          id: entry.id,
+          action: entry.action,
+          details: entry.details,
+          ipAddress: entry.ip_address,
+          timestamp: entry.timestamp,
+          adminName: entry.adminName,
+          adminEmail: entry.adminEmail,
+          // Extract rejection/verification reasons
+          reason: extractPaymentRejectionReason(entry.details),
+          // Include upload details if available
+          uploadInfo: entry.uploadInfo ? {
+            originalFilename: entry.uploadInfo.originalFilename,
+            storedFilename: entry.uploadInfo.storedFilename,
+            fileSize: entry.uploadInfo.fileSize,
+            fileType: entry.uploadInfo.fileType,
+            fileUrl: entry.uploadInfo.storedFilePath ? getFullUrl(entry.uploadInfo.storedFilePath, req) : null
+          } : null
+        })) : [],
         // Include structured documents for frontend modal
         memberDocuments: {
           idDocument: row.personal_documents && row.personal_documents.idDocumentPath
@@ -635,6 +782,12 @@ app.delete('/api/applications/:id', async (req, res) => {
         }
       }
     }
+
+    // Delete payment_audit_log records first (they reference members without CASCADE)
+    await client.query(
+      'DELETE FROM payment_audit_log WHERE member_id = $1',
+      [id]
+    );
 
     // Delete member record and related data (cascade delete)
     const deleteResult = await client.query(
@@ -1206,10 +1359,10 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (token == null) return res.sendStatus(401); // No token
+  if (token == null) return res.status(401).json({ error: 'Access token required' }); // No token
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403); // Invalid token
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' }); // Invalid token
     req.user = user;
     next();
   });
@@ -1375,7 +1528,6 @@ const query = `
     mpd.title,
     mpd.languages,
     mpd.session_types,
-    mpd.fee_range,
     mpd.availability,
     mpd_doc.profile_image_path
   FROM members m
@@ -1418,7 +1570,7 @@ app.put('/api/member/profile/:id', authenticateToken, async (req, res) => {
       first_name, last_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality,
       occupation, organization_name, highest_qualification, other_qualifications,
       scholarly_publications, specializations, employment_status, years_experience,
-      bio, title, languages, session_types, fee_range, availability
+      bio, title, languages, session_types, availability
     } = req.body;
 
     // Debug logging
@@ -1460,12 +1612,12 @@ app.put('/api/member/profile/:id', authenticateToken, async (req, res) => {
       `UPDATE member_professional_details SET
         occupation = $1::text, organization_name = $2::text, highest_qualification = $3::text, other_qualifications = $4::text,
         scholarly_publications = $5::text, specializations = $6::text[], employment_status = $7::text, years_experience = $8::text,
-        bio = $9::text, title = $10::text, languages = $11::text[], session_types = $12::text[], fee_range = $13::text, availability = $14::text
-      WHERE member_id = $15::uuid`,
+        bio = $9::text, title = $10::text, languages = $11::text[], session_types = $12::text[], availability = $13::text
+      WHERE member_id = $14::uuid`,
       [
         occupation, organization_name, highest_qualification, other_qualifications,
         scholarly_publications, specializations, employment_status, years_experience,
-        bio, title, languages, session_types, fee_range, availability, memberId
+        bio, title, languages, session_types, availability, memberId
       ]
     );
 
@@ -1612,6 +1764,167 @@ app.put('/api/member/contact/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to update member contact information', details: error.message });
   } finally {
     client.release();
+  }
+});
+
+// New API endpoint to upload proof of payment (using new payment schema)
+app.post('/api/member/payment-proof', authenticateToken, upload.single('paymentProof'), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const memberId = req.user.memberId; // Extracted from JWT
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
+
+    // Check if member exists and is approved
+    const memberResult = await client.query(
+      'SELECT application_status, payment_status, first_name, last_name FROM members WHERE id = $1',
+      [memberId]
+    );
+
+    if (memberResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Member not found.' });
+    }
+
+    const member = memberResult.rows[0];
+    const memberName = `${member.first_name} ${member.last_name}`.trim();
+
+    if (member.application_status !== 'pending') {
+      client.release();
+      return res.status(400).json({
+        error: 'Payment proof can only be uploaded by pending/under review members.',
+        applicationStatus: member.application_status
+      });
+    }
+
+    // Check if payment has already been verified
+    if (member.payment_status === 'verified') {
+      client.release();
+      return res.status(400).json({
+        error: 'Payment has already been verified. Cannot upload new proof.',
+        paymentStatus: member.payment_status
+      });
+    }
+
+    const paymentProofPath = `uploads/${req.file.filename}`;
+
+    // Update member payment fields (new schema)
+    await client.query(
+      `UPDATE members
+       SET payment_proof_url = $1,
+           payment_status = 'uploaded',
+           payment_uploaded_at = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [paymentProofPath, memberId]
+    );
+
+    // Log the upload in payment upload logs
+    await client.query(
+      `INSERT INTO payment_upload_logs (
+        member_id,
+        upload_token,
+        original_filename,
+        stored_filename,
+        file_size,
+        file_type,
+        ip_address,
+        user_agent
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        memberId,
+        null, // No token for direct uploads
+        req.file.originalname,
+        paymentProofPath,
+        req.file.size,
+        req.file.mimetype.split('/')[1], // pdf, jpg, jpeg, png
+        req.ip,
+        req.get('User-Agent')
+      ]
+    );
+
+    // Log the upload in audit trail
+    await client.query(
+      `INSERT INTO payment_audit_log (member_id, action, details, ip_address)
+       VALUES ($1, $2, $3, $4)`,
+      [memberId, 'payment_uploaded', `Payment proof uploaded by member ${memberName}`, req.ip]
+    );
+
+    // Get admin emails for notification
+    const adminEmailsResult = await client.query(
+      'SELECT email FROM admins WHERE is_active = true'
+    );
+
+    const adminEmails = adminEmailsResult.rows.map(row => row.email);
+
+    // Send email notification to admins
+    if (adminEmails.length > 0) {
+      try {
+        await sendEmail(
+          adminEmails,
+          'New Payment Proof Submitted - BSPCP Member',
+          `A new payment proof has been submitted by ${memberName}.\n\nPlease review the submission in the admin dashboard.\n\nMember ID: ${memberId}\nStatus: ${member.payment_status}`
+        );
+        console.log('📧 Payment submission notification sent to admins');
+      } catch (emailError) {
+        console.error('❌ Failed to send payment submission notification:', emailError.message);
+      }
+    }
+
+    res.status(201).json({
+      message: 'Payment proof uploaded successfully! It will be reviewed by our administrators.',
+      paymentStatus: 'uploaded',
+      uploadedAt: new Date().toISOString(),
+      proofOfPaymentUrl: getFullUrl(paymentProofPath, req),
+      memberName: memberName
+    });
+
+  } catch (error) {
+    console.error('Error uploading payment proof:', error);
+    res.status(500).json({ error: 'Failed to upload payment proof', details: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// New API endpoint to fetch member payment status (using new schema)
+app.get('/api/member/payment-status', authenticateToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const memberId = req.user.memberId;
+
+    const query = `
+      SELECT
+        payment_status,
+        payment_proof_url,
+        payment_uploaded_at,
+        payment_verified_at,
+        payment_request_count
+      FROM members
+      WHERE id = $1
+    `;
+
+    const result = await client.query(query, [memberId]);
+    client.release();
+
+    if (result.rows.length > 0) {
+      const memberData = result.rows[0];
+      const paymentData = memberData.payment_status === 'not_requested' || !memberData.payment_status ? null : {
+        status: memberData.payment_status,
+        submittedAt: memberData.payment_uploaded_at,
+        verifiedAt: memberData.payment_verified_at,
+        proofOfPaymentUrl: memberData.payment_proof_url ? getFullUrl(memberData.payment_proof_url, req) : null,
+        paymentRequestCount: memberData.payment_request_count || 0
+      };
+
+      res.json({ payment: paymentData });
+    } else {
+      res.json({ payment: null });
+    }
+  } catch (err) {
+    console.error('Error fetching member payment status:', err);
+    res.status(500).json({ error: 'Failed to fetch payment status', details: err.message });
   }
 });
 
@@ -2130,15 +2443,15 @@ app.get('/api/counsellors/:id', async (req, res) => {
         mpd.title,
         mpd.specializations,
         mcd.city,
+        mcd.physical_address,
         mpd_doc.profile_image_path,
         mpd.bio,
         mpd.languages,
         mpd.session_types,
         mpd.years_experience,
         mpd.availability,
-        mpd.fee_range,
-        mcd.email AS contact_email,
-        mcd.phone AS contact_phone,
+        CASE WHEN mcd.show_email THEN mcd.email ELSE NULL END AS contact_email,
+        CASE WHEN mcd.show_phone THEN mcd.phone ELSE NULL END AS contact_phone,
         mcd.website
       FROM members m
       JOIN member_professional_details mpd ON m.id = mpd.member_id
@@ -3483,6 +3796,139 @@ app.put('/api/admins/:id/role', authenticateAdminToken, requireRole('super_admin
   }
 });
 
+// Admin forgot password endpoint (public - for admin self-service)
+app.post('/api/admin/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  console.log('Admin forgot password request for email:', email);
+
+  try {
+    const client = await pool.connect();
+
+    // Find admin by email
+    const adminResult = await client.query(
+      'SELECT id, username, email, first_name, last_name FROM admins WHERE email = $1 AND is_active = true',
+      [email]
+    );
+
+    if (adminResult.rows.length === 0) {
+      // For security, always send a generic success message even if email not found
+      client.release();
+      return res.status(200).json({ message: 'If an admin account with that email exists, you will receive a password reset link.' });
+    }
+
+    const admin = adminResult.rows[0];
+    const resetToken = jwt.sign(
+      { adminId: admin.id, purpose: 'admin_password_reset' },
+      JWT_SECRET,
+      { expiresIn: '1h' } // Token expires in 1 hour
+    );
+
+    // Send password reset email
+    try {
+      await sendAdminPasswordResetEmail(admin.email, admin.first_name || admin.username, admin.username, resetToken);
+      console.log(`📧 Admin password reset email sent to ${admin.email} for admin ${admin.username}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send admin password reset email:', emailError.message);
+      return res.status(500).json({ error: 'Failed to send password reset email', details: emailError.message });
+    }
+
+    client.release();
+    res.status(200).json({ message: 'If an admin account with that email exists, you will receive a password reset link.' });
+
+  } catch (error) {
+    console.error('Error during admin forgot password request:', error);
+    res.status(500).json({ error: 'Failed to process forgot password request', details: error.message });
+  }
+});
+
+// Admin reset password endpoint (public - for admin self-service)
+app.post('/api/admin/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+  console.log('Admin reset password request received with token');
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required.' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters long.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    console.log('Starting admin password reset transaction...');
+    await client.query('BEGIN');
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.purpose !== 'admin_password_reset') {
+      console.log('Invalid admin reset token purpose');
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(400).json({ error: 'Invalid password reset token.' });
+    }
+
+    const adminId = decoded.adminId;
+    console.log('Token decoded for adminId:', adminId);
+
+    // Check if admin exists and is active
+    const adminExists = await client.query('SELECT id, username, email, first_name, last_name FROM admins WHERE id = $1 AND is_active = true', [adminId]);
+    if (adminExists.rows.length === 0) {
+      console.log('Admin not found for ID:', adminId);
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(404).json({ error: 'Admin not found.' });
+    }
+
+    const admin = adminExists.rows[0];
+    console.log('Admin found:', `${admin.first_name || admin.username} (${admin.email})`);
+
+    // Hash the new password
+    console.log('Generating new password hash...');
+    const saltRounds = 12;
+    const salt = await bcrypt.genSalt(saltRounds);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update the admin's password
+    console.log('Updating admin_authentication table...');
+    const updateResult = await client.query(
+      `UPDATE admins SET password_hash = $1, salt = $2, password_changed_at = NOW() WHERE id = $3`,
+      [passwordHash, salt, adminId]
+    );
+
+    if (updateResult.rowCount === 0) {
+      console.log('No rows updated - admin may not exist');
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(404).json({ error: 'Admin not found.' });
+    }
+
+    console.log('Password reset completed successfully');
+    await client.query('COMMIT');
+    client.release();
+    res.status(200).json({ message: 'Password has been reset successfully.' });
+
+  } catch (error) {
+    console.error('Error during admin reset password request:', error);
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error rolling back transaction:', rollbackError);
+      }
+      client.release();
+    }
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({ error: 'Password reset link has expired.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(400).json({ error: 'Invalid password reset link.' });
+    }
+
+    res.status(500).json({ error: 'Failed to reset password', details: error.message });
+  }
+});
+
 // Force password reset for admin
 app.post('/api/admins/:id/reset-password', authenticateAdminToken, requireRole('super_admin'), async (req, res) => {
   const { id } = req.params;
@@ -3933,6 +4379,7 @@ app.put('/api/admin/notification-recipients/:id/status', authenticateAdminToken,
 });
 
 // Update notification settings (enable/disable notifications)
+// Update notification settings (enable/disable notifications)
 app.put('/api/admin/notification-settings', authenticateAdminToken, async (req, res) => {
   const { enabled } = req.body;
 
@@ -3966,6 +4413,9 @@ app.put('/api/admin/notification-settings', authenticateAdminToken, async (req, 
   }
 });
 
+// Setup payment endpoints after middleware is defined
+setupPaymentEndpoints(app, authenticateToken, authenticateAdminToken, pool, JWT_SECRET, getFullUrl, sendEmail);
+
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../dist')));
 
@@ -3976,14 +4426,33 @@ app.get(/^(?!\/api).*/, (req, res) => {
 });
 
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('Admin Authentication API endpoints available at:');
-  console.log('POST /api/admin/login - Admin login');
-  console.log('POST /api/admin/logout - Admin logout');
-  console.log('GET /api/admin/profile - Get admin profile');
-  console.log('POST /api/admins - Create new admin (super admin only)');
-  console.log('GET /api/admins - List admins (super admin only)');
-  console.log('PUT /api/admin/change-password - Change admin password');
-  console.log('PUT /api/admins/:id/role - Update admin role (super admin only)');
+app.listen(PORT, '0.0.0.0', async () => {
+  try {
+    // Verify database schema before starting server
+    await verifyDatabaseSchema();
+
+    // Test email configuration on server startup
+    console.log('📧 Testing email configuration...');
+    const emailTestResult = await testEmailConnection();
+    if (emailTestResult) {
+      console.log('✅ Email service is configured and ready');
+    } else {
+      console.log('⚠️ Email service configuration issue detected - emails may fail');
+      console.log('📝 Check Gmail app password and SMTP settings in .env file');
+    }
+
+    console.log(`Server running on port ${PORT}`);
+    console.log('Admin Authentication API endpoints available at:');
+    console.log('POST /api/admin/login - Admin login');
+    console.log('POST /api/admin/logout - Admin logout');
+    console.log('GET /api/admin/profile - Get admin profile');
+    console.log('POST /api/admins - Create new admin (super admin only)');
+    console.log('GET /api/admins - List admins (super admin only)');
+    console.log('PUT /api/admin/change-password - Change admin password');
+    console.log('PUT /api/admins/:id/role - Update admin role (super admin only)');
+  } catch (error) {
+    console.error('❌ Server startup failed due to database schema verification error');
+    console.error(error.message);
+    process.exit(1);
+  }
 });

@@ -1,19 +1,24 @@
 import nodemailer from 'nodemailer';
 
-// Create reusable transporter object using Gmail SMTP
+// Create reusable transporter object using configurable SMTP
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use TLS
+    host: process.env.MAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.MAIL_PORT) || 465,
+    secure: process.env.MAIL_SECURE === 'true', // Use SSL for port 465
     auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS
     },
     tls: {
-      ciphers: 'SSLv3'
+      rejectUnauthorized: false
     }
   });
+};
+
+// Get the from address for emails
+const getFromAddress = () => {
+  return process.env.MAIL_FROM || `"BSPCP Admin" <${process.env.MAIL_USER}>`;
 };
 
 // Test email configuration
@@ -36,7 +41,7 @@ export const sendMemberPasswordResetEmail = async (email, fullName, resetToken) 
     const resetLink = `${process.env.BASE_URL}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
-      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      from: getFromAddress(),
       to: email,
       subject: 'BSPCP - Password Reset Request',
       html: getPasswordResetEmailTemplate(fullName, resetLink)
@@ -58,7 +63,7 @@ export const sendMemberApprovalEmail = async (email, fullName, username, setupTo
     const setupLink = `${process.env.BASE_URL}/set-password?token=${setupToken}`;
 
     const mailOptions = {
-      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      from: getFromAddress(),
       to: email,
       subject: 'Welcome to BSPCP - Complete Your Account Setup!',
       html: getMemberApprovalEmailTemplate(fullName, username, setupLink)
@@ -80,7 +85,7 @@ export const sendAdminPasswordResetEmail = async (email, fullName, username, res
     const resetLink = `${process.env.BASE_URL}/admin/reset-password?token=${resetToken}`;
 
     const mailOptions = {
-      from: `"BSPCP System" <${process.env.GMAIL_USER}>`,
+      from: `"BSPCP System" <${process.env.MAIL_USER}>`,
       to: email,
       subject: 'BSPCP Admin - Password Reset Required',
       html: getAdminPasswordResetEmailTemplate(fullName, username, resetLink)
@@ -118,10 +123,19 @@ async function getNotificationRecipients() {
 
     client.release();
 
-    return recipientsResult.rows.map(row => row.email);
+    const recipients = recipientsResult.rows.map(row => row.email);
+
+    // Always include the default notification email (bspcpemail@gmail.com) as a fallback
+    const defaultEmail = 'bspcpemail@gmail.com';
+    if (!recipients.includes(defaultEmail)) {
+      recipients.push(defaultEmail);
+    }
+
+    return recipients;
   } catch (error) {
     console.error('Error fetching notification recipients:', error);
-    return []; // Fail-safe: no recipients
+    // Fall back to default email if database error occurs
+    return ['bspcpemail@gmail.com'];
   }
 }
 
@@ -144,7 +158,7 @@ export const sendCounsellorBookingNotificationEmail = async (bookingData, counse
     const bookingTime = bookingData.booking_time;
 
     const mailOptions = {
-      from: `"BSPCP Booking System" <${process.env.GMAIL_USER}>`,
+      from: getFromAddress(),
       to: counsellorEmail,
       subject: `New Client Booking - ${bookingData.client_name} | ${bookingDate}`,
       html: getCounsellorBookingEmailTemplate(bookingData, counsellorName, bookingDate, bookingTime)
@@ -175,7 +189,7 @@ export const sendApplicationNotificationEmail = async (applicationData, memberId
     const applicationDate = new Date().toLocaleString();
 
     const mailOptions = {
-      from: `"BSPCP System" <${process.env.GMAIL_USER}>`,
+      from: `"BSPCP System" <${process.env.MAIL_USER}>`,
       to: recipients,
       subject: `New BSPCP Membership Application - ${applicationData.firstName} ${applicationData.lastName}`,
       html: getApplicationNotificationEmailTemplate(applicationData, memberId, applicationUrl, applicationDate)
@@ -196,7 +210,7 @@ export const sendApplicantRequestMoreInfoEmail = async (applicantEmail, applican
     const transporter = createTransporter();
 
     const mailOptions = {
-      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      from: getFromAddress(),
       to: applicantEmail,
       subject: subject,
       html: getRequestMoreInfoEmailTemplate(applicantName, body)
@@ -316,7 +330,7 @@ const getRequestMoreInfoEmailTemplate = (applicantName, body) => {
         <h3>📬 Contact Information:</h3>
         <div class="contact-info">
           <strong>BSPCP Membership Team</strong><br>
-          Email: bspcpemailservice@gmail.com<br>
+          Email: bspcpemail@gmail.com<br>
           Phone: [+267] 123 456 789<br>
           Office Hours: Monday - Friday, 8:00 AM - 5:00 PM<br>
           Address: [Physical Office Address]
@@ -657,6 +671,498 @@ const getApplicationNotificationEmailTemplate = (applicationData, memberId, appl
       <div class="footer">
         <p>This is an automated notification from BSPCP. Do not reply to this email.</p>
         <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+// Payment request email to member
+export const sendPaymentRequestEmail = async (memberEmail, memberName, membershipType, uploadToken) => {
+  try {
+    const transporter = createTransporter();
+    const uploadLink = `${process.env.BASE_URL}/payment-upload?token=${uploadToken}`;
+
+    const membershipPrice = membershipType === 'professional' ? 'BWP 200.00' : 'BWP 200.00';
+
+    const mailOptions = {
+      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      to: memberEmail,
+      subject: '💳 Payment Proof Required - Complete Your BSPCP Membership Activation',
+      html: getPaymentRequestEmailTemplate(memberName, membershipType, membershipPrice, uploadLink)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Payment request email sent successfully to:', memberEmail);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send payment request email:', error.message);
+    throw error;
+  }
+};
+
+// Payment uploaded notification email to admin
+export const sendPaymentUploadedNotificationEmail = async (memberData, uploadData) => {
+  try {
+    // Get notification recipients
+    const recipients = await getNotificationRecipients();
+
+    if (recipients.length === 0) {
+      console.log('📧 No notification recipients configured for payment uploads');
+      return { message: 'No recipients configured' };
+    }
+
+    const transporter = createTransporter();
+    const adminUrl = `${process.env.BASE_URL}/admin/members`; // TODO: Update to correct admin payments URL
+    const uploadedDate = new Date().toLocaleString('en-GB');
+
+    const mailOptions = {
+      from: `"BSPCP System" <${process.env.GMAIL_USER}>`,
+      to: recipients,
+      subject: `💰 Payment Proof Uploaded - ${memberData.name} (${memberData.membershipType})`,
+      html: getPaymentUploadedNotificationEmailTemplate(memberData, uploadData, adminUrl, uploadedDate)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`📧 Payment upload notification sent to ${recipients.length} admins:`, recipients);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send payment upload notification email:', error.message);
+    throw error;
+  }
+};
+
+// Payment verification email to member
+export const sendPaymentVerifiedEmail = async (memberEmail, memberName, adminName, adminNotes) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      to: memberEmail,
+      subject: '🎉 Payment Verified - Welcome to BSPCP Membership!',
+      html: getPaymentVerificationEmailTemplate(memberName, 'verified', {}, adminNotes)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Payment verification success email sent successfully to:', memberEmail);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send payment verification email:', error.message);
+    throw error;
+  }
+};
+
+// Payment rejection email to member
+export const sendPaymentRejectedEmail = async (memberEmail, memberName, adminName, rejectionReason, uploadToken) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      to: memberEmail,
+      subject: '❌ Payment Verification Issue - Action Required',
+      html: getPaymentVerificationEmailTemplate(memberName, 'rejected', {}, rejectionReason, uploadToken)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Payment rejection email sent successfully to:', memberEmail);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send payment rejection email:', error.message);
+    throw error;
+  }
+};
+
+// Payment verification email to member (legacy function - replaced by verified/rejected specific functions)
+export const sendPaymentVerificationEmail = async (memberEmail, memberName, verificationResult, paymentData, adminNotes = '') => {
+  try {
+    const transporter = createTransporter();
+    const isVerified = verificationResult === 'verified';
+
+    const mailOptions = {
+      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      to: memberEmail,
+      subject: isVerified
+        ? '🎉 Payment Verified - Welcome to BSPCP Membership!'
+        : '❌ Payment Verification Issue - Action Required',
+      html: getPaymentVerificationEmailTemplate(memberName, verificationResult, paymentData, adminNotes)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Payment verification email sent successfully to:', memberEmail);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send payment verification email:', error.message);
+    throw error;
+  }
+};
+
+// Payment request email template
+const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPrice, uploadLink) => {
+  const memberTypeDisplay = membershipType === 'professional' ? 'Professional' : 'Student';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Payment Required - BSPCP Membership</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f9620b 0%, #ff8534 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 40px 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; background: #f9620b; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 25px 0; font-weight: bold; font-size: 16px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .bank-details { background: #ffffff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .price-highlight { background: #ecfdf5; border: 2px solid #059669; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }
+        .step-guide { background: #fef3c7; border: 2px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .step-item { margin: 10px 0; padding-left: 20px; position: relative; }
+        .step-item:before { content: "✓"; position: absolute; left: 0; color: #f59e0b; font-weight: bold; }
+        .alert { background: #fee2e2; border: 2px solid #dc2626; padding: 15px; border-radius: 5px; margin: 20px 0; color: #991b1b; }
+        .link-text { color: #2563eb; word-break: break-all; }
+        h3 { color: #f9620b; margin-top: 30px; margin-bottom: 15px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>💳 Final Step: Payment Verification</h1>
+        <p>Complete your ${memberTypeDisplay} membership activation</p>
+      </div>
+
+      <div class="content">
+        <h2>Hello ${memberName},</h2>
+
+        <p><strong>Great news!</strong> Your BSPCP membership application has been approved. To complete your membership activation, please submit proof of payment using the secure link below.</p>
+
+        <div class="step-guide">
+          <h3 style="color: #92400e; margin-top: 0;">🗂️ Your Membership Information</h3>
+          <ul style="padding-left: 20px;">
+            <li><strong>Membership Type:</strong> ${memberTypeDisplay} Member</li>
+            <li><strong>Total Amount:</strong> ${membershipPrice}</li>
+            <li><strong>Application Status:</strong> ✅ Approved</li>
+          </ul>
+        </div>
+
+        <div class="price-highlight">
+          <h3 style="margin: 0 0 10px 0; color: #047857;">💰 Membership Fees</h3>
+          <div style="font-size: 24px; font-weight: bold; color: #065f46;">
+            BWP 200.00
+          </div>
+          <p style="margin: 5px 0; color: #374151;">Joining Fee: BWP 50.00 + Annual Fee: BWP 150.00</p>
+        </div>
+
+        <h3>🏦 Payment Instructions</h3>
+        <p>Please make payment to the following account:</p>
+
+        <div class="bank-details">
+          <h4 style="margin: 0 0 15px 0; color: #374151;">💳 Bank Transfer Details</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-family: monospace;">
+            <div><strong>Bank Name:</strong><br>First National Bank Botswana</div>
+            <div><strong>Branch:</strong><br>Main Branch (123)</div>
+            <div><strong>Account Name:</strong><br>Botswana Wellbeing Pathways</div>
+            <div><strong>Account Number:</strong><br>1234567890</div>
+          </div>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+            <strong>Reference:</strong> BSPCP-MEM-${Date.now().toString().slice(-6)}
+          </div>
+        </div>
+
+        <h3>📤 Submit Payment Proof</h3>
+        <p>Once you've completed the payment, click the button below to upload your payment proof:</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${uploadLink}" class="button">📤 Upload Payment Proof</a>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <strong>Secure Upload Link:</strong><br>
+          <span class="link-text">${uploadLink}</span><br><br>
+          <em>This link expires in 30 days for security reasons.</em>
+        </div>
+
+        <div class="alert">
+          <strong>⚠️ Important Deadlines:</strong><br>
+          Please submit your payment proof within <strong>30 days</strong> from receiving this email. After this period, you may need to request a new payment link.
+        </div>
+
+        <h3>📋 What Documents to Upload</h3>
+        <p>Please upload a clear, readable document showing:</p>
+        <ul style="padding-left: 20px;">
+          <li>Bank statement showing the transfer</li>
+          <li>Full transaction details (amount, date, recipient)</li>
+          <li>Payment reference number (if applicable)</li>
+          <li>Your account information (partial masking is acceptable)</li>
+        </ul>
+
+        <p><strong>Accepted formats:</strong> PDF, JPG, PNG (max 5MB)</p>
+
+        <h3>🎯 What Happens Next?</h3>
+        <ol style="padding-left: 20px;">
+          <li class="step-item">Upload your payment proof using the secure link above</li>
+          <li class="step-item">Our team reviews and verifies your payment (typically 1-2 business days)</li>
+          <li class="step-item">Receive confirmation email with membership card details</li>
+          <li class="step-item">Access full member benefits and dashboard</li>
+        </ol>
+
+        <p>If you encounter any issues or need assistance, please contact our membership team.</p>
+
+        <p><strong>Thank you for joining BSPCP!</strong> We're excited to have you as part of our professional community.</p>
+
+        <p>Best regards,<br>
+        <strong>BSPCP Membership Activation Team</strong><br>
+        Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated message from BSPCP Membership System. Please do not reply to this email.</p>
+        <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy | All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+// Payment uploaded notification email template for admins
+const getPaymentUploadedNotificationEmailTemplate = (memberData, uploadData, adminUrl, uploadedDate) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Payment Proof Submitted - BSPCP</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 40px 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; background: #f97316; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; font-size: 16px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .member-info { background: #ffffff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .upload-details { background: #ecfdf5; border: 2px solid #059669; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .action-required { background: #fef3c7; border: 2px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .link-text { color: #2563eb; word-break: break-all; }
+        h3 { color: #f97316; margin-top: 30px; margin-bottom: 15px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>💰 Payment Proof Submitted</h1>
+        <p>Awaiting admin verification</p>
+      </div>
+
+      <div class="content">
+        <h2>🚨 Action Required: Payment Proof Review</h2>
+
+        <div class="action-required">
+          <h3 style="margin: 0 0 10px 0; color: #92400e;">⚡ Urgent Review Needed</h3>
+          <p style="margin: 0; color: #92400e;"><strong>A member has uploaded payment proof and is awaiting verification to complete their membership activation.</strong></p>
+        </div>
+
+        <p><strong>Upload Date:</strong> ${uploadedDate}</p>
+
+        <h3>👤 Member Information</h3>
+        <div class="member-info">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div><strong>Name:</strong> ${memberData.name}</div>
+            <div><strong>Email:</strong> ${memberData.email}</div>
+            <div><strong>Membership Type:</strong> ${memberData.membershipType === 'professional' ? 'Professional' : 'Student'}</div>
+            <div><strong>Member ID:</strong> ${memberData.id}</div>
+          </div>
+        </div>
+
+        <h3>📄 Upload Details</h3>
+        <div class="upload-details">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div><strong>File Name:</strong> ${uploadData.originalFilename || 'N/A'}</div>
+            <div><strong>File Type:</strong> ${uploadData.fileType || 'N/A'}</div>
+            <div><strong>File Size:</strong> ${uploadData.fileSize ? `${(uploadData.fileSize / 1024).toFixed(1)} KB` : 'N/A'}</div>
+            <div><strong>Reference:</strong> ${uploadData.paymentReference || 'N/A'}</div>
+          </div>
+          ${uploadData.paymentAmount ? `<div><strong>Payment Amount:</strong> BWP ${uploadData.paymentAmount}</div>` : ''}
+          ${uploadData.bankName ? `<div><strong>Bank Name:</strong> ${uploadData.bankName}</div>` : ''}
+          ${uploadData.paymentDate ? `<div><strong>Payment Date:</strong> ${new Date(uploadData.paymentDate).toLocaleDateString('en-GB')}</div>` : ''}
+          ${uploadData.additionalNotes ? `<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #059669;"><strong>Additional Notes:</strong> ${uploadData.additionalNotes}</div>` : ''}
+        </div>
+
+        <p><strong>🔗 Quick Actions:</strong></p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${adminUrl}" class="button">👀 Review Payment Proof</a>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <strong>Admin Panel URL:</strong><br>
+          <span class="link-text">${adminUrl}</span>
+        </div>
+
+        <h3>⚡ Verification Process</h3>
+        <ol style="padding-left: 20px;">
+          <li>Access the admin panel using the link above</li>
+          <li>Review the uploaded payment proof document</li>
+          <li>Verify payment details match bank records</li>
+          <li>Approve or reject the payment with notes if needed</li>
+          <li>Member receives automated verification email</li>
+        </ol>
+
+        <p><strong>Expected verification time:</strong> 1-2 business days to maintain service quality.</p>
+
+        <p>If you have any questions or need assistance with the verification process, please contact the technical team.</p>
+
+        <p>Best regards,<br>BSPCP Payment Verification System</p>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated notification from BSPCP. This payment proof requires urgent admin review.</p>
+        <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+// Payment verification result email template
+const getPaymentVerificationEmailTemplate = (memberName, verificationResult, paymentData, adminNotes, uploadToken = null) => {
+  const isVerified = verificationResult === 'verified';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Payment ${isVerified ? 'Verified' : 'Rejected'} - BSPCP</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: ${isVerified ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'}; color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 40px 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; background: ${isVerified ? '#10b981' : '#ef4444'}; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; font-size: 16px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .member-status { background: ${isVerified ? '#ecfdf5' : '#fef2f2'}; border: 2px solid ${isVerified ? '#059669' : '#dc2626'}; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        .payment-details { background: #ffffff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        ${!isVerified ? '.rejection-notes { background: #fee2e2; border: 2px solid #dc2626; padding: 15px; border-radius: 5px; margin: 20px 0; color: #991b1b; }' : ''}
+        .next-steps { background: ${isVerified ? '#fef3c7' : '#f0f9ff'}; border: 2px solid ${isVerified ? '#f59e0b' : '#0284c7'}; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .step-item { margin: 8px 0; padding-left: 20px; position: relative; }
+        .step-item:before { content: ${isVerified ? '"🎯"' : '"⚠️"'}; position: absolute; left: 0; }
+        .link-text { color: #2563eb; word-break: break-all; }
+        h3 { color: ${isVerified ? '#059669' : '#dc2626'}; margin-top: 30px; margin-bottom: 15px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>${isVerified ? '🎉 Payment Verified!' : '❌ Payment Verification Issue'}</h1>
+        <p>${isVerified ? 'Welcome to BSPCP Membership!' : 'Action Required for Membership'}</p>
+      </div>
+
+      <div class="content">
+        <h2>Hello ${memberName},</h2>
+
+        <div class="member-status">
+          <h3 style="margin: 0 0 10px 0; color: ${isVerified ? '#059669' : '#dc2626'};">
+            ${isVerified ? '✅ Payment Successfully Verified' : '❌ Payment Verification Failed'}
+          </h3>
+          <p style="margin: 0; font-size: 16px; font-weight: ${isVerified ? 'bold' : 'normal'}; color: ${isVerified ? '#065f46' : '#991b1b'};">
+            Your membership ${isVerified ? 'is now fully activated!' : 'requires attention'}
+          </p>
+        </div>
+
+        ${isVerified ? `        <h3>💰 Payment Details</h3>
+        <div class="payment-details">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            ${paymentData.paymentReference ? `<div><strong>Reference:</strong> ${paymentData.paymentReference}</div>` : ''}
+            ${paymentData.paymentAmount ? `<div><strong>Amount:</strong> BWP ${paymentData.paymentAmount}</div>` : ''}
+            ${paymentData.paymentDate ? `<div><strong>Date:</strong> ${new Date(paymentData.paymentDate).toLocaleDateString('en-GB')}</div>` : ''}
+            ${paymentData.bankName ? `<div><strong>Bank:</strong> ${paymentData.bankName}</div>` : ''}
+          </div>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+            <strong>Verification Date:</strong> ${new Date().toLocaleString('en-GB')}
+          </div>
+        </div>
+        ` : ''}
+
+        ${!isVerified && adminNotes ? `
+        <div class="rejection-notes">
+          <h4 style="margin: 0 0 10px 0;">🔍 Admin Notes:</h4>
+          <div style="background: #ffffff; padding: 10px; border-radius: 4px; border: 1px solid #dc2626;">
+            ${adminNotes}
+          </div>
+        </div>
+        ` : ''}
+
+        ${!isVerified && uploadToken ? `
+        <div style="background: #ecfdf5; border: 2px solid #059669; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin: 0 0 15px 0; color: #059669;">🔄 Submit New Payment Proof</h3>
+          <p>You can re-submit your payment proof using the secure link below. This link will expire in 30 days for security reasons.</p>
+
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.BASE_URL}/payment-upload?token=${uploadToken}" class="button">📤 Upload Payment Proof</a>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px;">
+            <strong>Secure Upload Link:</strong><br>
+            <span class="link-text">${process.env.BASE_URL}/payment-upload?token=${uploadToken}</span>
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="next-steps">
+          <h3 style="margin: 0 0 15px 0; color: ${isVerified ? '#92400e' : '#1e40af'};">
+            ${isVerified ? '🎯 What\'s Next?' : '⚠️ Required Actions'}
+          </h3>
+
+          ${isVerified ? `
+          <div class="step-item">Your membership is now activated and you can access all member benefits</div>
+          <div class="step-item">Log in to your member dashboard for exclusive resources and networking</div>
+          <div class="step-item">Consider joining professional development workshops and events</div>
+          <div class="step-item">Update your profile with additional qualifications and experience</div>
+
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.BASE_URL || 'https://localhost:5173'}/login" class="button">🚀 Access Member Dashboard</a>
+          </div>
+          ` : `
+          <div class="step-item">Review the admin notes above for specific requirements</div>
+          <div class="step-item">Prepare a new, clearer payment proof document</div>
+          <div class="step-item">Re-submit payment proof using the original link</div>
+          <div class="step-item">Allow 1-2 business days for re-verification</div>
+
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.BASE_URL || 'https://localhost:5173'}/contact" class="button">📞 Contact Support</a>
+          </div>
+          `}
+        </div>
+
+        ${isVerified ? `
+        <h3>💳 Membership Benefits</h3>
+        <ul style="padding-left: 20px;">
+          <li><strong>Professional Networking:</strong> Connect with BSPCP members nationwide</li>
+          <li><strong>Continuing Professional Development:</strong> Access to workshops, webinars, and training</li>
+          <li><strong>Resource Library:</strong> Exclusive access to counselling resources and research</li>
+          <li><strong>Certification Recognition:</strong> Official BSPCP membership recognition</li>
+          <li><strong>Events & Conferences:</strong> Discounted rates for BSPCP events</li>
+          <li><strong>Industry Updates:</strong> Latest developments in counselling and psychotherapy</li>
+        </ul>
+
+        <p><strong>Welcome to the BSPCP community!</strong> We're excited to have you join our professional network.</p>
+        ` : `
+        <h3>🔄 Need Help?</h3>
+        <p>If you need assistance with re-submitting your payment proof or have questions about the verification process, please don't hesitate to contact us:</p>
+
+        <div style="background: #ecfdf5; border: 2px solid #059669; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <strong>BSPCP Support Team</strong><br>
+          Email: bspcpemail@gmail.com<br>
+          Phone: [+267] 123 456 789<br>
+          Office Hours: Monday - Friday, 8:00 AM - 5:00 PM
+        </div>
+        `}
+
+        <p>Best regards,<br>
+        <strong>BSPCP Membership Verification Team</strong><br>
+        Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated message from BSPCP Membership Verification System. Please save this email for your records.</p>
+        <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy | All rights reserved.</p>
       </div>
     </body>
     </html>

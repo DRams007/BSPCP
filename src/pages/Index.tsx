@@ -1,6 +1,7 @@
 import Navigation from '@/components/Navigation';
 import HeroSection from '@/components/HeroSection';
 import ServiceCategories from '@/components/ServiceCategories';
+import MandateObjectivesSection from '@/components/MandateObjectivesSection';
 // import HowItWorks from '@/components/HowItWorks';
 import Testimonials from '@/components/Testimonials';
 import TestimonialForm from '@/components/TestimonialForm';
@@ -13,6 +14,7 @@ const Index = () => {
       <Navigation />
       <HeroSection />
       <ServiceCategories />
+      <MandateObjectivesSection />
       {/* <HowItWorks /> */}
       <Testimonials />
       <TestimonialForm />

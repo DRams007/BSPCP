@@ -3,11 +3,7 @@ import pool from './lib/db.js';
 async function setupDatabase() {
   try {
     // Drop existing tables if they exist to apply new schema cleanly
-    // Drop admin tables first (to avoid dependency issues)
-    await pool.query(`DROP TABLE IF EXISTS admin_audit_log CASCADE;`);
-    await pool.query(`DROP TABLE IF EXISTS admin_sessions CASCADE;`);
-    await pool.query(`DROP TABLE IF EXISTS admin_permissions CASCADE;`);
-    await pool.query(`DROP TABLE IF EXISTS admins CASCADE;`);
+    // Drop in reverse dependency order to avoid foreign key constraint issues
 
     await pool.query(`DROP TABLE IF EXISTS backup_records CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_authentication CASCADE;`);
@@ -23,9 +19,81 @@ async function setupDatabase() {
     await pool.query(`DROP TABLE IF EXISTS bookings CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS testimonials CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_cpd CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS payment_upload_logs CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS payment_audit_log CASCADE;`);
+
+    // Drop admin tables (in reverse dependency order)
+    await pool.query(`DROP TABLE IF EXISTS admin_audit_log CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS admin_sessions CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS admin_permissions CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS admins CASCADE;`);
+
     await pool.query(`DROP TABLE IF EXISTS notification_recipients CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS notification_settings CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS counsellor_notification_preferences CASCADE;`);
+
+    // Admin authentication tables (create BEFORE members table to satisfy foreign key constraint)
+    await pool.query(`
+      CREATE TABLE admins (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          username VARCHAR(255) NOT NULL UNIQUE,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          salt VARCHAR(255) NOT NULL,
+          role VARCHAR(50) DEFAULT 'admin',
+          first_name VARCHAR(100),
+          last_name VARCHAR(100),
+          phone VARCHAR(30),
+          is_active BOOLEAN DEFAULT true,
+          last_login TIMESTAMP WITH TIME ZONE,
+          password_changed_at TIMESTAMP WITH TIME ZONE,
+          login_attempts INTEGER DEFAULT 0,
+          locked_until TIMESTAMP WITH TIME ZONE,
+          created_by UUID,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE admin_permissions (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          admin_id UUID NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+          resource VARCHAR(100) NOT NULL, -- e.g., 'members', 'applications', 'content'
+          action VARCHAR(100) NOT NULL, -- e.g., 'read', 'write', 'delete', 'manage'
+          allowed BOOLEAN DEFAULT true,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE admin_sessions (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          admin_id UUID NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
+          token_hash VARCHAR(255) NOT NULL UNIQUE,
+          ip_address VARCHAR(45),
+          user_agent TEXT,
+          expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE admin_audit_log (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          admin_id UUID REFERENCES admins(id) ON DELETE SET NULL,
+          action VARCHAR(100) NOT NULL, -- e.g., 'login', 'update_member', 'delete_application'
+          resource_type VARCHAR(50) NOT NULL, -- e.g., 'member', 'application', 'content'
+          resource_id VARCHAR(255), -- ID or identifier of the affected resource
+          old_values JSONB, -- Previous state for change tracking
+          new_values JSONB, -- New state for change tracking
+          ip_address VARCHAR(45),
+          user_agent TEXT,
+          status VARCHAR(20) DEFAULT 'success', -- success, failed, warning
+          details TEXT, -- Additional context/details
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
     await pool.query(`
       CREATE TABLE members (
@@ -52,6 +120,16 @@ async function setupDatabase() {
           review_comment TEXT,
           cpd_document TEXT,
           cpd_points INTEGER DEFAULT 0,
+          -- Payment tracking fields (advanced system)
+          payment_proof_url VARCHAR(500),
+          payment_upload_token VARCHAR(255) UNIQUE,
+          payment_status VARCHAR(50) DEFAULT 'not_requested' CHECK (payment_status IN ('not_requested', 'requested', 'uploaded', 'verified', 'rejected')),
+          payment_requested_at TIMESTAMP WITH TIME ZONE,
+          payment_uploaded_at TIMESTAMP WITH TIME ZONE,
+          payment_verified_at TIMESTAMP WITH TIME ZONE,
+          payment_rejected_at TIMESTAMP WITH TIME ZONE,
+          payment_verified_by UUID REFERENCES admins(id),
+          payment_request_count INTEGER DEFAULT 0,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -105,7 +183,6 @@ async function setupDatabase() {
           title VARCHAR(255),
           languages TEXT[],
           session_types TEXT[],
-          fee_range VARCHAR(100),
           availability VARCHAR(100)
       );
     `);
@@ -216,68 +293,49 @@ async function setupDatabase() {
       );
     `);
 
-    // Admin authentication tables
+    // Payment tracking system tables (audit and logging)
     await pool.query(`
-      CREATE TABLE admins (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          username VARCHAR(255) NOT NULL UNIQUE,
-          email VARCHAR(255) UNIQUE NOT NULL,
-          password_hash VARCHAR(255) NOT NULL,
-          salt VARCHAR(255) NOT NULL,
-          role VARCHAR(50) DEFAULT 'admin',
-          first_name VARCHAR(100),
-          last_name VARCHAR(100),
-          phone VARCHAR(30),
-          is_active BOOLEAN DEFAULT true,
-          last_login TIMESTAMP WITH TIME ZONE,
-          password_changed_at TIMESTAMP WITH TIME ZONE,
-          login_attempts INTEGER DEFAULT 0,
-          locked_until TIMESTAMP WITH TIME ZONE,
-          created_by UUID,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      CREATE TABLE payment_upload_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        upload_token VARCHAR(255),
+        original_filename VARCHAR(255),
+        stored_filename VARCHAR(255),
+        file_size INTEGER,
+        file_type VARCHAR(100),
+        ip_address INET,
+        user_agent TEXT,
+        uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+        -- Add validation constraints
+        CONSTRAINT valid_filename CHECK (length(coalesce(original_filename, '')) > 0),
+        CONSTRAINT valid_file_size CHECK (file_size IS NULL OR file_size > 0),
+        CONSTRAINT valid_file_type CHECK (file_type IN ('pdf', 'jpg', 'jpeg', 'png'))
       );
     `);
 
     await pool.query(`
-      CREATE TABLE admin_permissions (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          admin_id UUID NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
-          resource VARCHAR(100) NOT NULL, -- e.g., 'members', 'applications', 'content'
-          action VARCHAR(100) NOT NULL, -- e.g., 'read', 'write', 'delete', 'manage'
-          allowed BOOLEAN DEFAULT true,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      CREATE TABLE payment_audit_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        member_id UUID NOT NULL REFERENCES members(id),
+        admin_id UUID REFERENCES admins(id),
+        action VARCHAR(100) NOT NULL,
+        details TEXT,
+        ip_address INET,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
-    await pool.query(`
-      CREATE TABLE admin_sessions (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          admin_id UUID NOT NULL REFERENCES admins(id) ON DELETE CASCADE,
-          token_hash VARCHAR(255) NOT NULL UNIQUE,
-          ip_address VARCHAR(45),
-          user_agent TEXT,
-          expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    await pool.query(`
-      CREATE TABLE admin_audit_log (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          admin_id UUID REFERENCES admins(id) ON DELETE SET NULL,
-          action VARCHAR(100) NOT NULL, -- e.g., 'login', 'update_member', 'delete_application'
-          resource_type VARCHAR(50) NOT NULL, -- e.g., 'member', 'application', 'content'
-          resource_id VARCHAR(255), -- ID or identifier of the affected resource
-          old_values JSONB, -- Previous state for change tracking
-          new_values JSONB, -- New state for change tracking
-          ip_address VARCHAR(45),
-          user_agent TEXT,
-          status VARCHAR(20) DEFAULT 'success', -- success, failed, warning
-          details TEXT, -- Additional context/details
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+    // Create indexes for performance optimization on payment tracking system
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_payment_status ON members(payment_status);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_payment_token ON members(payment_upload_token);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_payment_verified_by ON members(payment_verified_by);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_upload_logs_member_id ON payment_upload_logs(member_id);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_upload_logs_upload_token ON payment_upload_logs(upload_token);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_audit_log_member_id ON payment_audit_log(member_id);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_audit_log_admin_id ON payment_audit_log(admin_id);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_audit_log_action ON payment_audit_log(action);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_payment_status_requested ON members(payment_status) WHERE payment_status = 'uploaded';`);
 
     // Counselling notification preferences table (for counsellors to manage booking notifications)
     await pool.query(`
@@ -314,7 +372,7 @@ async function setupDatabase() {
 
     // Insert default notification settings
     await pool.query(`
-      INSERT INTO notification_recipients (email) VALUES ('bspcpemailservice@gmail.com');
+      INSERT INTO notification_recipients (email) VALUES ('bspcpemail@gmail.com');
     `);
 
     await pool.query(`

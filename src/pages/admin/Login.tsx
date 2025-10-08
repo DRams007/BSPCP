@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,7 @@ const AdminLogin = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const handleInputChange = (field: keyof AdminLoginForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
@@ -46,16 +48,22 @@ const AdminLogin = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Store authentication data
-        localStorage.setItem('admin_token', data.token);
-        localStorage.setItem('admin_user', JSON.stringify(data.admin));
+        // Use auth context login method
+        login(data.token, data.admin);
 
         toast({
           title: "Login Successful",
           description: `Welcome back, ${data.admin.firstName || data.admin.username}!`,
         });
 
-        navigate("/admin/dashboard");
+        // Check for return URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnUrl = urlParams.get('returnUrl');
+        if (returnUrl) {
+          navigate(decodeURIComponent(returnUrl));
+        } else {
+          navigate("/admin/dashboard");
+        }
       } else {
         // Handle different error types
         if (response.status === 429) {
@@ -139,17 +147,16 @@ const AdminLogin = () => {
               {loading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
-          
-          <div className="mt-4 p-3 bg-muted rounded-md">
-            <p className="text-sm text-muted-foreground">
-              Default admin credentials:<br />
-              Email/Username: admin@bspcp.org.uk<br />
-              Password: TempAdmin123!
-            </p>
-            <p className="text-xs text-amber-600 mt-2">
-              <strong>⚠️ Important:</strong> Change your password immediately after first login!
-            </p>
+
+          <div className="mt-6 text-center">
+            <a
+              href="/admin/forgot-password"
+              className="text-primary hover:underline text-sm"
+            >
+              Forgot your password?
+            </a>
           </div>
+
         </CardContent>
       </Card>
     </div>

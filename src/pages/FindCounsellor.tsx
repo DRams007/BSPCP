@@ -19,12 +19,12 @@ interface Counsellor {
   title: string;
   specializations: string[];
   city: string;
+  physical_address?: string;
   profile_photo_url: string;
   years_experience: string;
   availability: string;
   session_types: string[];
   languages: string[];
-  fee_range?: string;
   bio?: string;
   contact_email?: string;
   contact_phone?: string;
@@ -531,9 +531,16 @@ const FindCounsellor = () => {
                 </DialogHeader>
 
                 <div className="space-y-4 text-muted-foreground font-source text-sm">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    <span>{selectedCounsellor.city}</span>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div>{selectedCounsellor.city}</div>
+                      {selectedCounsellor.physical_address && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {selectedCounsellor.physical_address}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <p className="leading-relaxed">
                     {selectedCounsellor.bio || "No biography available."}
@@ -559,26 +566,25 @@ const FindCounsellor = () => {
                     <h4 className="font-semibold text-foreground mb-1">Languages:</h4>
                     <span>{selectedCounsellor.languages && selectedCounsellor.languages.join(', ')}</span>
                   </div>
-                  {selectedCounsellor.fee_range && (
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-1">Fee Range:</h4>
-                      <span>{selectedCounsellor.fee_range}</span>
-                    </div>
-                  )}
-                  {selectedCounsellor.contact_email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      <a href={`mailto:${selectedCounsellor.contact_email}`} className="hover:underline">
-                        {selectedCounsellor.contact_email}
-                      </a>
-                    </div>
-                  )}
-                  {selectedCounsellor.contact_phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      <a href={`tel:${selectedCounsellor.contact_phone}`} className="hover:underline">
-                        {selectedCounsellor.contact_phone}
-                      </a>
+
+                  {(selectedCounsellor.contact_email || selectedCounsellor.contact_phone) && (
+                    <div className="flex items-center gap-4">
+                      {selectedCounsellor.contact_email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4" />
+                          <a href={`mailto:${selectedCounsellor.contact_email}`} className="hover:underline">
+                            {selectedCounsellor.contact_email}
+                          </a>
+                        </div>
+                      )}
+                      {selectedCounsellor.contact_phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          <a href={`tel:${selectedCounsellor.contact_phone}`} className="hover:underline">
+                            {selectedCounsellor.contact_phone}
+                          </a>
+                        </div>
+                      )}
                     </div>
                   )}
                   {selectedCounsellor.website && (

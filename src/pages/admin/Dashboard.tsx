@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { token, logout } = useAuth();
   const [stats, setStats] = useState({
     totalMembers: 0,
     pendingApplications: 0,
@@ -29,7 +31,6 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const token = localStorage.getItem("admin_token");
       if (!token) {
         navigate("/admin/login");
         return;
@@ -50,42 +51,28 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
 
-      // Check if it's a network/db error vs JSON parsing error
-      if (error.message && error.message.includes('SyntaxError: Unexpected token')) {
-        toast({
-          title: "Authentication Error",
-          description: "Please login again to refresh your session",
-          variant: "destructive",
-        });
-        navigate("/admin/login");
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to load dashboard statistics",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard statistics",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) {
-      navigate("/admin/login");
-    } else {
+    if (token) {
       fetchStats();
     }
-  }, [navigate]);
+  }, [token, navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_token");
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out",
     });
-    navigate("/admin/login");
+    logout();
   };
 
   const recentActivities = [
@@ -104,83 +91,80 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
+        {/* Mobile Header */}
+        <div className="flex flex-col space-y-4 mb-6 md:flex-row md:items-center md:justify-between md:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">Overview of your BSPCP administration</p>
+            <h1 className="text-2xl font-bold md:text-3xl">Dashboard</h1>
+            <p className="text-muted-foreground text-sm md:text-base">Overview of your BSPCP administration</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="flex items-center gap-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className="flex items-center gap-1 text-xs">
               <Bell className="w-3 h-3" />
               3 notifications
             </Badge>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
+            <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs md:text-sm">
+              <LogOut className="w-3 h-3 md:w-4 md:h-4 mr-2" />
               Logout
             </Button>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+        {/* Stats Grid - Responsive */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+          <Card className="p-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+              <CardTitle className="text-xs md:text-sm font-medium">Total Members</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalMembers}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-xl md:text-2xl font-bold">{stats.totalMembers}</div>
               <p className="text-xs text-muted-foreground">
                 +12% from last month
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Applications</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+              <CardTitle className="text-xs md:text-sm font-medium">Pending Applications</CardTitle>
+              <AlertCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingApplications}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-xl md:text-2xl font-bold">{stats.pendingApplications}</div>
               <p className="text-xs text-muted-foreground">
                 Require review
               </p>
             </CardContent>
           </Card>
 
-
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active News</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-4">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+              <CardTitle className="text-xs md:text-sm font-medium">Active News</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeNews}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-xl md:text-2xl font-bold">{stats.activeNews}</div>
               <p className="text-xs text-muted-foreground">
                 Published articles
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+          <Card className="p-4 md:col-span-1 col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+              <CardTitle className="text-xs md:text-sm font-medium">Upcoming Events</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.upcomingEvents}</div>
+            <CardContent className="p-0 pt-2">
+              <div className="text-xl md:text-2xl font-bold">{stats.upcomingEvents}</div>
               <p className="text-xs text-muted-foreground">
                 Next 30 days
               </p>
             </CardContent>
           </Card>
-
-
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           {/* Pending Tasks */}
           <Card>
             <CardHeader>
@@ -235,43 +219,43 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+        <Card className="mt-4 md:mt-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
             <CardDescription>Frequently used administrative tasks</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col"
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+              <Button
+                variant="outline"
+                className="h-16 md:h-20 flex-col p-3 text-xs md:text-sm"
                 onClick={() => navigate("/admin/members")}
               >
-                <Users className="w-6 h-6 mb-2" />
+                <Users className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2" />
                 Manage Members
               </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col"
+              <Button
+                variant="outline"
+                className="h-16 md:h-20 flex-col p-3 text-xs md:text-sm"
                 onClick={() => navigate("/admin/applications")}
               >
-                <FileText className="w-6 h-6 mb-2" />
+                <FileText className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2" />
                 Review Applications
               </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col"
+              <Button
+                variant="outline"
+                className="h-16 md:h-20 flex-col p-3 text-xs md:text-sm"
                 onClick={() => navigate("/admin/content")}
               >
-                <Calendar className="w-6 h-6 mb-2" />
+                <Calendar className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2" />
                 Content Management
               </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex-col"
+              <Button
+                variant="outline"
+                className="h-16 md:h-20 flex-col p-3 text-xs md:text-sm"
                 onClick={() => navigate("/admin/settings")}
               >
-                <Settings className="w-6 h-6 mb-2" />
+                <Settings className="w-5 h-5 md:w-6 md:h-6 mb-1 md:mb-2" />
                 System Settings
               </Button>
             </div>

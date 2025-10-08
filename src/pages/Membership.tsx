@@ -28,7 +28,7 @@ const Membership = () => {
     },
     {
       icon: BookOpen,
-      title: 'Continuing Education',
+      title: 'Professional Development',
       description: 'Access to workshops, conferences, and CPD programs'
     },
     {
@@ -99,7 +99,7 @@ const Membership = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-6">Already a Member?</h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Access your member dashboard to manage your profile, track CPD hours, and update your information.
+              Access your member dashboard to manage your profile, track Continuing Professional Development hours, and update your information.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card>
@@ -131,7 +131,7 @@ const Membership = () => {
                 <CardContent>
                   <ul className="text-left space-y-2 text-muted-foreground">
                     <li>• Update your public profile</li>
-                    <li>• Upload CPD evidence</li>
+                    <li>• Upload Continuing Professional Development evidence</li>
                     <li>• Manage contact information</li>
                     <li>• Access member resources</li>
                   </ul>
@@ -162,17 +162,9 @@ const Membership = () => {
                   <CardHeader className="text-center">
                     <CheckCircle className="h-16 w-16 mx-auto mb-4 text-primary" />
                     <CardTitle className="text-xl">Professional Counsellor</CardTitle>
-                    <CardDescription className="mt-2">
-                      For qualified counsellors and psychotherapists with Bachelor's degree minimum
-                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="text-left space-y-2 text-sm text-muted-foreground">
-                      <li>• Must have Bachelor's degree or higher</li>
-                      <li>• Professional qualifications required</li>
-                      <li>• Professional practice experience</li>
-                      <li>• Full membership benefits</li>
-                    </ul>
+                  <CardContent className="text-center">
+                    Minimum of a Bachelor's Degree in Counselling or Psychotherapy
                   </CardContent>
                 </Card>
 
@@ -183,17 +175,9 @@ const Membership = () => {
                   <CardHeader className="text-center">
                     <Users className="h-16 w-16 mx-auto mb-4 text-blue-600" />
                     <CardTitle className="text-xl">Student Counsellor/Trainee</CardTitle>
-                    <CardDescription className="mt-2">
-                      For counselling students in training programs with supervised practice
-                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="text-left space-y-2 text-sm text-muted-foreground">
-                      <li>• Currently enrolled in counselling program</li>
-                      <li>• Supervision requirements apply</li>
-                      <li>• Reduced membership fees</li>
-                      <li>• Academic and student-focused benefits</li>
-                    </ul>
+                  <CardContent className="text-center">
+                    Must be enrolled in an accredited Counselling or Psychotherapy program at Bachelor's or Master's Degree level
                   </CardContent>
                 </Card>
               </div>

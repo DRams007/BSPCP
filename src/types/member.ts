@@ -26,7 +26,6 @@ export interface IMemberProfile {
   title?: string;
   languages?: string[];
   session_types?: string[];
-  fee_range?: string;
   availability?: string;
   profile_photo_url?: string;
 }

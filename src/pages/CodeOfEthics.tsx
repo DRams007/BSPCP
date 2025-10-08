@@ -164,18 +164,7 @@ const CodeOfEthics = () => {
             </div>
           </section>
 
-          {/* Contact Information */}
-          <section className="bg-primary/5 rounded-lg p-8 border border-primary/20">
-            <h2 className="text-2xl font-semibold text-foreground mb-4">Ethics Inquiries</h2>
-            <p className="text-muted-foreground mb-4">
-              For questions about ethical guidelines or to report ethical concerns, please contact the BSPCP Ethics Committee.
-            </p>
-            <div className="space-y-2 text-muted-foreground">
-              <p><strong>Email:</strong> ethics@bspcp.org.bw</p>
-              <p><strong>Phone:</strong> +267 123 4567</p>
-              <p><strong>Address:</strong> BSPCP Ethics Committee, P.O. Box 1234, Gaborone, Botswana</p>
-            </div>
-          </section>
+
         </div>
       </main>
       

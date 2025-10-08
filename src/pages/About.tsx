@@ -69,7 +69,7 @@ const About = () => {
     description: 'We believe that quality mental health care should be accessible to all Batswana, regardless of economic status, geographic location, or background.'
   }, {
     icon: BookOpen,
-    title: 'Continuous Learning',
+    title: 'Professional Development',
     description: 'We promote lifelong learning and professional development, ensuring that our members stay current with evolving best practices and research.'
   }, {
     icon: Users,
@@ -331,7 +331,7 @@ const About = () => {
                 </h2>
                 <p className="font-source text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   The Botswana Society of Professional Counsellors and Psychotherapists (BSPCP) plans to
-                  become a member of the International Association for Counselling (IAC) and Bocongo as part of its efforts
+                  become a member of the International Association for Counselling (IAC) and BOCONGO as part of its efforts
                   to strengthen global linkages and align with international best practices in counselling.
                   Through this planned membership, BSPCP aims to enhance professional collaboration and
                   create opportunities for capacity building that will benefit both its members and the broader
@@ -425,44 +425,7 @@ const About = () => {
             <CarouselNext />
           </Carousel>
 
-          {/* Board & Advisory Members */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <Card>
-              <CardContent className="p-8">
-                <h3 className="font-poppins font-bold text-xl text-foreground mb-6">Board of Directors</h3>
-                <div className="space-y-4">
-                  {['Prof. Michael Setlhare - University of Botswana, Department of Psychology', 'Dr. Mpho Kgalemang - Former Director, Mental Health Services, Ministry of Health', 'Mrs. Boitumelo Mokgosi - CEO, Botswana Red Cross Society', 'Dr. James Moffat - Consultant Psychiatrist, Princess Marina Hospital'].map((member, index) => <div key={index} className="flex items-start gap-3">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
-                      <p className="font-source text-sm text-muted-foreground">{member}</p>
-                    </div>)}
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="p-8">
-                <h3 className="font-poppins font-bold text-xl text-foreground mb-6">Regional Representatives</h3>
-                <div className="space-y-4">
-                  {[{
-                  region: 'Northern Region',
-                  areas: 'Maun, Kasane, Shakawe'
-                }, {
-                  region: 'Eastern Region',
-                  areas: 'Francistown, Selebi-Phikwe, Sowa'
-                }, {
-                  region: 'Central Region',
-                  areas: 'Gaborone, Molepolole, Mochudi'
-                }, {
-                  region: 'Southern Region',
-                  areas: 'Kanye, Jwaneng, Tsabong'
-                }].map((rep, index) => <div key={index}>
-                      <p className="font-source font-semibold text-foreground">{rep.region}</p>
-                      <p className="font-source text-sm text-muted-foreground">{rep.areas}</p>
-                    </div>)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </section>
 
@@ -543,7 +506,7 @@ const About = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card className="text-center">
               <CardContent className="p-8">
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -551,7 +514,7 @@ const About = () => {
                 </div>
                 <h3 className="font-poppins font-semibold text-xl mb-4">Code of Ethics</h3>
                 <p className="font-source text-muted-foreground mb-6">
-                  Comprehensive ethical guidelines covering professional conduct, client relationships, 
+                  Comprehensive ethical guidelines covering professional conduct, client relationships,
                   and social responsibility.
                 </p>
                 <Button variant="outline" className="group" asChild>
@@ -570,29 +533,12 @@ const About = () => {
                 </div>
                 <h3 className="font-poppins font-semibold text-xl mb-4">CPD Program</h3>
                 <p className="font-source text-muted-foreground mb-6">
-                  40 hours annual requirement through workshops, conferences, supervision, 
+                  40 hours annual requirement through workshops, conferences, supervision,
                   and professional development activities.
                 </p>
                 <Button variant="outline" className="group">
                   <ExternalLink className="w-4 h-4 mr-2 group-hover:translate-x-0.5 transition-transform" />
                   Learn More
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center">
-              <CardContent className="p-8">
-                <div className="w-16 h-16 bg-dusty/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Scale className="w-8 h-8 text-dusty" />
-                </div>
-                <h3 className="font-poppins font-semibold text-xl mb-4">Quality Assurance</h3>
-                <p className="font-source text-muted-foreground mb-6">
-                  Annual membership review, peer evaluation systems, client feedback mechanisms, 
-                  and ethical compliance monitoring.
-                </p>
-                <Button variant="outline" className="group">
-                  <FileText className="w-4 h-4 mr-2 group-hover:scale-105 transition-transform" />
-                  View Process
                 </Button>
               </CardContent>
             </Card>

@@ -579,43 +579,7 @@ const BookingManagement = () => {
           </Card>
         </div>
 
-        {/* Notifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Recent Notifications
-            </CardTitle>
-            <CardDescription>
-              Stay updated with the latest booking activities
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-yellow-800">2 New Booking Requests</p>
-                  <p className="text-sm text-yellow-700">You have pending requests that need your attention.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-blue-800">Session Complete</p>
-                  <p className="text-sm text-blue-700">Alice Smith's Individual Therapy session was marked as completed.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-green-800">Reminder Set</p>
-                  <p className="text-sm text-green-700">Reminder sent to all clients for upcoming sessions.</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
       </TabsContent>
 
       

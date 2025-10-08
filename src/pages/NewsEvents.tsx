@@ -321,7 +321,7 @@ const NewsEvents = () => {
 
       {/* Content Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-poppins text-2xl">{selectedContent?.title}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
@@ -354,7 +354,7 @@ const NewsEvents = () => {
                 <img
                   src={getFullImageUrl(selectedContent.featured_image_path)}
                   alt={selectedContent.title}
-                  className="w-full h-64 object-cover rounded-lg"
+                  className="w-full h-auto object-contain rounded-lg"
                 />
               ) : null}
 

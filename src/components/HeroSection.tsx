@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, Users, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import heroImage from '@/assets/62e60043-5351-4cad-b6c4-92743d7c0bc8.png';
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -27,8 +28,8 @@ const HeroSection = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
-              <Button size="lg" className="bg-cream text-primary hover:bg-cream/90 font-source font-semibold text-lg px-8 py-6 rounded-2xl shadow-warm">
-                Start Your Journey
+              <Button size="lg" className="bg-cream text-primary hover:bg-cream/90 font-source font-semibold text-lg px-8 py-6 rounded-2xl shadow-warm" onClick={() => navigate('/membership')}>
+                Join Membership
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               
@@ -62,7 +63,7 @@ const HeroSection = () => {
           {/* Image Section */}
           <div className="relative lg:block hidden">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-              <img src="/uploads/62e60043-5351-4cad-b6c4-92743d7c0bc8.png" alt="Counseling therapy session" className="w-full h-auto object-cover" />
+              <img src={heroImage} alt="Counseling therapy session" className="w-full h-auto object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
           </div>

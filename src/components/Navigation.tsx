@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Phone, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import bspcpLogo from '@/assets/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -66,7 +67,7 @@ const Navigation = () => {
           <div className="flex items-center mr-12">
             <Link to="/" className="flex items-center space-x-2">
               <img
-                src="/uploads/d33be909-25aa-4725-8b88-0ed0fa9a41d5.png"
+                src={bspcpLogo}
                 alt="BSPCP Logo"
                 className="h-10 right-5"
               />
