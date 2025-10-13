@@ -21,6 +21,7 @@ async function setupDatabase() {
     await pool.query(`DROP TABLE IF EXISTS member_cpd CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS payment_upload_logs CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS payment_audit_log CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS contact_messages CASCADE;`);
 
     // Drop admin tables (in reverse dependency order)
     await pool.query(`DROP TABLE IF EXISTS admin_audit_log CASCADE;`);
@@ -377,6 +378,22 @@ async function setupDatabase() {
 
     await pool.query(`
       INSERT INTO notification_settings (setting_name, setting_value) VALUES ('notifications_enabled', true);
+    `);
+
+    await pool.query(`
+      CREATE TABLE contact_messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        first_name VARCHAR(100) NOT NULL,
+        last_name VARCHAR(100) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(30),
+        inquiry_type VARCHAR(50) NOT NULL CHECK (inquiry_type IN ('general', 'membership', 'professional', 'complaint', 'media', 'partnership')),
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'replied', 'archived')),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Membership categories for different fee structures

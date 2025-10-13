@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users, Award, BookOpen, Network, LogIn } from 'lucide-react';
+import { CheckCircle, Users, Award, BookOpen, Network, LogIn, Shield, Clock, UserCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ProfessionalMembershipForm from '@/components/membership/ProfessionalMembershipForm';
 import StudentMembershipForm from '@/components/membership/StudentMembershipForm';
@@ -49,21 +49,60 @@ const Membership = () => {
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Join BSPCP Membership
             </h1>
-            <p className="text-xl mb-8 opacity-90">
-              Advance your professional career with Botswana's premier counselling and psychotherapy association
-            </p>
-            <div className="max-w-2xl mx-auto mt-12">
-              <Card className="bg-primary-foreground text-primary">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    Requirements
+          
+            <div className="max-w-4xl mx-auto mt-12">
+              <Card className="bg-primary-foreground text-primary shadow-xl">
+                <CardHeader className="pb-6">
+                  <CardTitle className="flex items-center gap-3 text-2xl mb-2">
+                    <Award className="h-6 w-6" />
+                    General Membership Requirements
                   </CardTitle>
+                  <p className="text-primary/80 text-base">
+                    All individuals seeking membership in any category must meet the following criteria:
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-lg">
-                    Open to professionally trained counsellors and psychotherapists with a minimum qualification of a <span className="font-semibold">Bachelor's Degree</span>. Student counsellors in accredited training programs are also welcome to join.
-                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg bg-primary/5 border-l-4 border-primary flex items-start gap-3">
+                      <Shield className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-base mb-1">Police Clearance</h4>
+                        <p className="text-primary/90 text-sm leading-relaxed">
+                          All applicants must submit an up-to-date police clearance certificate for safety and integrity.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-primary/5 border-l-4 border-primary flex items-start gap-3">
+                      <BookOpen className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-base mb-1">Code of Ethics</h4>
+                        <p className="text-primary/90 text-sm leading-relaxed">
+                          Members must agree to adhere to BSPCP's Code of Ethics and Professional Conduct.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-primary/5 border-l-4 border-primary flex items-start gap-3">
+                      <Clock className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-base mb-1">Continuing Professional Development</h4>
+                        <p className="text-primary/90 text-sm leading-relaxed">
+                          All practicing members participate in ongoing CPD activities as outlined.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-primary/5 border-l-4 border-primary flex items-start gap-3">
+                      <UserCheck className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-base mb-1">Professional References</h4>
+                        <p className="text-primary/90 text-sm leading-relaxed">
+                          Two professional references required for Registered and above categories.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -156,7 +195,7 @@ const Membership = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
                 <Card
-                  className="cursor-pointer transition-all hover:shadow-lg border-primary/20"
+                  className="cursor-pointer transition-all hover:shadow-lg border-primary/20 min-h-[300px]"
                   onClick={() => setSelectedMembershipType('professional')}
                 >
                   <CardHeader className="text-center">
@@ -164,12 +203,21 @@ const Membership = () => {
                     <CardTitle className="text-xl">Professional Counsellor</CardTitle>
                   </CardHeader>
                   <CardContent className="text-center">
-                    Minimum of a Bachelor's Degree in Counselling or Psychotherapy
+                    <p className="mb-4">Minimum of a Bachelor's Degree in Counselling or Psychotherapy</p><br/>
+                    <Button
+                      className="w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedMembershipType('professional');
+                      }}
+                    >
+                      Apply Now
+                    </Button>
                   </CardContent>
                 </Card>
 
                 <Card
-                  className="cursor-pointer transition-all hover:shadow-lg border-blue-200"
+                  className="cursor-pointer transition-all hover:shadow-lg border-blue-200 min-h-[300px]"
                   onClick={() => setSelectedMembershipType('student')}
                 >
                   <CardHeader className="text-center">
@@ -177,7 +225,17 @@ const Membership = () => {
                     <CardTitle className="text-xl">Student Counsellor/Trainee</CardTitle>
                   </CardHeader>
                   <CardContent className="text-center">
-                    Must be enrolled in an accredited Counselling or Psychotherapy program at Bachelor's or Master's Degree level
+                    <p className="mb-4">Must be enrolled in an accredited Counselling or Psychotherapy program at Bachelor's or Master's Degree level</p>
+                    <Button
+                      className="w-full"
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedMembershipType('student');
+                      }}
+                    >
+                      Apply Now
+                    </Button>
                   </CardContent>
                 </Card>
               </div>

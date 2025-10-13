@@ -25,7 +25,7 @@ const Navigation = () => {
     // name: 'Resources',
     // href: '/resources'
   /*}, {*/ // Commented out Resources link as per user request
-    name: 'News & Events',
+    name: 'News,Resources & Events',
     href: '/news-events'
   }, {
     name: 'Contact',

@@ -7,9 +7,9 @@ const HeroSection = () => {
   const navigate = useNavigate();
 
   return <section className="relative bg-gradient-warm text-white py-10 lg:py-16 overflow-hidden">
-           <h3 className="font-poppins font-semibold text-3xl md:text-4xl lg:text-5xl mb-6 leading-tight text-center tracking-tight capitalize">
+            <h1 className="font-poppins font-semibold text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight text-center tracking-tight capitalize">
               <span className="block text-cream">Botswana Society of Professional Counsellors and Psychotherapists</span>
-            </h3>
+            </h1>
     
       <div className="absolute inset-0 bg-black/20"></div>
       
@@ -17,10 +17,10 @@ const HeroSection = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Content Section */}
           <div className="text-center lg:text-left">
-            <h1 className="font-poppins font-bold text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight">
-              Find Your Path to 
-              <span className="block text-cream">Better Mental Health</span>
-            </h1>
+            <h3 className="font-poppins font-bold text-2xl md:text-3xl lg:text-5xl mb-6 leading-tight">
+              Shaping Professional Counselling,
+              <span className="block text-cream">Raising Standards, Restoring Lives</span>
+            </h3>
             
             <p className="font-source text-xl md:text-2xl mb-8 text-cream/90">
               We're here to support you on your wellness journey. Connect with qualified counsellors 
@@ -30,7 +30,6 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
               <Button size="lg" className="bg-cream text-primary hover:bg-cream/90 font-source font-semibold text-lg px-8 py-6 rounded-2xl shadow-warm" onClick={() => navigate('/membership')}>
                 Join Membership
-                <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               
              <Button 

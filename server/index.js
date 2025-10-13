@@ -4413,6 +4413,91 @@ app.put('/api/admin/notification-settings', authenticateAdminToken, async (req, 
   }
 });
 
+app.post('/api/contact', async (req, res) => {
+  const { firstName, lastName, email, phone, inquiryType, subject, message } = req.body;
+
+  // Validation
+  if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !inquiryType || !subject?.trim() || !message?.trim()) {
+    return res.status(400).json({
+      error: 'Missing required fields',
+      details: 'First name, last name, email, inquiry type, subject, and message are all required'
+    });
+  }
+
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  // Inquiry type validation
+  const validInquiryTypes = ['general', 'membership', 'professional', 'complaint', 'media', 'partnership'];
+  if (!validInquiryTypes.includes(inquiryType)) {
+    return res.status(400).json({ error: 'Invalid inquiry type' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Insert contact message
+    const result = await client.query(
+      `INSERT INTO contact_messages (
+        first_name, last_name, email, phone, inquiry_type, subject, message
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, created_at`,
+      [firstName.trim(), lastName.trim(), email.trim(), phone?.trim(), inquiryType, subject.trim(), message.trim()]
+    );
+
+    client.release();
+
+    // Optional: Send email notification to admin
+    try {
+      const adminEmailsResult = await pool.query(
+        'SELECT email FROM notification_recipients WHERE is_active = true'
+      );
+
+      const adminEmails = adminEmailsResult.rows.map(row => row.email);
+
+      if (adminEmails.length > 0) {
+        const notificationSettings = await pool.query(
+          `SELECT setting_value FROM notification_settings WHERE setting_name = 'notifications_enabled'`
+        );
+
+        const notificationsEnabled = notificationSettings.rows.length > 0 ? notificationSettings.rows[0].setting_value : true;
+
+        if (notificationsEnabled) {
+          // Import the contact message email template
+          const { getContactMessageEmailTemplate } = await import('./lib/emailService.js');
+          const emailTemplate = getContactMessageEmailTemplate(req.body, result.rows[0].id);
+
+          await sendEmail(
+            adminEmails,
+            `New Contact Message - ${req.body.firstName} ${req.body.lastName} | ${req.body.inquiryType}`,
+            emailTemplate
+          );
+          console.log('📧 Contact form notification sent to admins');
+        }
+      }
+    } catch (emailError) {
+      console.error('❌ Failed to send contact form notification email:', emailError.message);
+      // Don't fail the contact submission if email fails
+    }
+
+    res.status(201).json({
+      message: 'Contact message submitted successfully! We will get back to you soon.',
+      contactId: result.rows[0].id,
+      submittedAt: result.rows[0].created_at
+    });
+
+  } catch (error) {
+    console.error('Error submitting contact message:', error);
+    res.status(500).json({
+      error: 'Failed to submit contact message',
+      details: error.message
+    });
+  }
+});
+
 // Setup payment endpoints after middleware is defined
 setupPaymentEndpoints(app, authenticateToken, authenticateAdminToken, pool, JWT_SECRET, getFullUrl, sendEmail);
 

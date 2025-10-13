@@ -1169,6 +1169,135 @@ const getPaymentVerificationEmailTemplate = (memberName, verificationResult, pay
   `;
 };
 
+// Contact message email template
+export const getContactMessageEmailTemplate = (contactData, messageId) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>New Contact Message - BSPCP</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f9620b 0%, #ff8534 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 40px 30px; border-radius: 0 0 10px 10px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .contact-details { background: #ffffff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .message-content { background: #ffffff; border: 2px solid #2665a8; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .inquiry-badge { display: inline-block; background: #f9620b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .action-button { display: inline-block; background: #f9620b; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+        .priority { background: #fef3c7; border: 2px solid #f59e0b; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .contact-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .contact-info-item { background: #f0f9ff; padding: 10px; border-radius: 4px; border: 1px solid #0284c7; }
+        h3 { color: #f9620b; margin-top: 30px; margin-bottom: 15px; }
+        .message-quote { font-style: italic; color: #374151; background: #f9fafb; padding: 15px; border-left: 4px solid #f9620b; margin: 15px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>💬 New Contact Message</h1>
+        <p>Inquiry from BSPCP website visitor</p>
+      </div>
+
+      <div class="content">
+        <div class="priority">
+          <h3 style="margin: 0 0 10px 0; color: #92400e;">📬 New Customer Inquiry</h3>
+          <p style="margin: 0; color: #92400e;"><strong>A visitor has submitted a message from the contact form on the BSPCP website and is awaiting a response.</strong></p>
+        </div>
+
+        <p><strong>Received:</strong> ${new Date().toLocaleString('en-GB')}</p>
+
+        <h3>👤 Contact & Message Details</h3>
+        <div class="contact-details">
+          <div class="contact-info-grid">
+            <div class="contact-info-item">
+              <strong>Name:</strong>
+              ${contactData.firstName} ${contactData.lastName}
+            </div>
+            <div class="contact-info-item">
+              <strong>Email:</strong>
+              <a href="mailto:${contactData.email}" style="color: #0369a1; text-decoration: none;">${contactData.email}</a>
+            </div>
+            ${contactData.phone ? `
+            <div class="contact-info-item">
+              <strong>Phone:</strong>
+              <a href="tel:${contactData.phone}" style="color: #0369a1; text-decoration: none;">${contactData.phone}</a>
+            </div>
+            ` : ''}
+            <div class="contact-info-item">
+              <strong>Inquiry Type:</strong>
+              <span class="inquiry-badge">${contactData.inquiryType}</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+            <strong>Subject:</strong> ${contactData.subject}
+            ${contactData.needs ? `<strong>Category/Service Needed:</strong> ${contactData.needs}<br>` : ''}
+          </div>
+
+          <div style="margin-top: 20px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 10px 0; color: #1f2937; font-size: 14px;">💬 Message Content</h4>
+            <div class="message-quote" style="margin: 0;">
+              ${contactData.message.replace(/\n/g, '<br>')}
+            </div>
+          </div>
+        </div>
+
+        <h3>🎯 Recommended Actions</h3>
+        <div style="background: #ecfdf5; border: 2px solid #059669; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="margin: 0 0 15px 0; color: #065f46;">📋 Quick Response Guide</h4>
+          <ol style="padding-left: 20px; color: #065f46;">
+            <li><strong>Review the message content above</strong></li>
+            <li><strong>Classify the inquiry priority:</strong> ${contactData.inquiryType === 'complaint' ? 'High Priority ⚡' : contactData.inquiryType === 'professional' ? 'Medium Priority 📊' : 'Normal Priority 💬'}</li>
+            <li><strong>Draft a personalized response</strong> addressing their specific concerns</li>
+            <li><strong>Reference their message ID (${messageId})</strong> in your reply</li>
+            <li><strong>Respond within ${contactData.inquiryType === 'complaint' ? '24 hours' : '48 hours'}</strong> for best customer service</li>
+          </ol>
+        </div>
+
+        <h3>🚀 Quick Actions</h3>
+        <p>Use these buttons to respond quickly:</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="mailto:${contactData.email}?subject=Re: ${contactData.subject} (ID: ${messageId})" class="action-button">
+            ✉️ Reply by Email
+          </a><br><br>
+          <a href="https://wa.me/${contactData.phone?.replace(/[^0-9]/g, '')}" target="_blank" class="action-button" style="background: #25d366;">
+            📞 Contact via WhatsApp
+          </a><br><br>
+          <span style="display: block; font-size: 12px; color: #666; margin-top: 10px;">
+            These links will automatically include the message subject and ID for easy reference
+          </span>
+        </div>
+
+
+
+        <p><strong>📊 Inquiry Statistics:</strong></p>
+        <div style="background: #f0f9ff; border: 1px solid #0284c7; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <strong>Inquiry Type:</strong> ${contactData.inquiryType}<br>
+          <strong>Priority Level:</strong> ${contactData.inquiryType === 'complaint' ? 'High (Immediate Response)' : contactData.inquiryType === 'professional' ? 'Medium (Business Day)' : 'Normal (2-3 Days)'}<br>
+          <strong>Department:</strong> ${contactData.inquiryType === 'membership' ? 'Membership Team' : contactData.inquiryType === 'professional' ? 'Professional Services' : contactData.inquiryType === 'complaint' ? 'Quality Assurance' : 'General Inquiry'}
+        </div>
+
+        <p>This message was submitted through the BSPCP website contact form. Please provide a professional and timely response to maintain our commitment to excellent customer service.</p>
+
+        <p><strong>For urgent complaints or critical matters,</strong> please escalate to the senior management team immediately.</p>
+
+        <p>Best regards,<br>
+        <strong>BSPCP Automatic Notification System</strong><br>
+        Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated notification from BSPCP Contact Form System. All contact form submissions are monitored and require timely responses.</p>
+        <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy | Website: www.bspcp.org.bw</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 // Send general email to multiple recipients
 export const sendEmail = async (recipients, subject, body) => {
   try {
