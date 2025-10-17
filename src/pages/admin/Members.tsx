@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Edit, MoreVertical, Download, Mail, Loader2, Clock } from "lucide-react";
+import { Search, Eye, Download, Mail, Loader2, Clock } from "lucide-react";
 
 interface Member {
   id: number;
@@ -45,6 +45,8 @@ interface Member {
   qualification: string;
   experience: number;
   submittedDate: string;
+  updated_at: string;
+  created_at: string;
   application_status: string;
   member_status: "active" | "pending" | "suspended" | "pending_password_setup";
   membershipType: string;
@@ -80,7 +82,7 @@ interface Application {
   id: number;
   name: string;
   email: string;
-  bspcpMembershipNumber: string;
+  bspcp_membership_number: string;
   application_status: string;
   member_status: "active" | "pending" | "suspended";
   submittedDate: string;
@@ -126,11 +128,13 @@ const Members = () => {
         id: app.id,
         name: app.name,
         email: app.email,
-        membershipId: app.bspcpMembershipNumber || `BSPCP-${app.id}`,
+        membershipId: app.personalInfo.membershipNumber,
         application_status: app.application_status,
         member_status: app.member_status,
         membershipType: app.membershipType,
         submittedDate: app.submittedDate,
+        updated_at: app.updated_at,
+        created_at: app.created_at,
         qualification: app.qualification,
         organization: app.organization,
         nationality: app.nationality,
@@ -353,7 +357,7 @@ const Members = () => {
                     <TableHead>Membership ID</TableHead>
                     <TableHead>Organization</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Join Date</TableHead>
+                    <TableHead>Approval Date</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -426,7 +430,7 @@ const Members = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {new Date(member.submittedDate).toLocaleDateString()}
+                        {new Date(member.updated_at || member.created_at).toLocaleDateString('en-GB')}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -455,7 +459,7 @@ const Members = () => {
                                       <p><strong>Phone:</strong> {member.phone}</p>
                                       <p><strong>Nationality:</strong> {member.nationality}</p>
                                       <p><strong>ID Number:</strong> {member.idNumber}</p>
-                                      <p><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+                                      <p><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}</p>
                                     </div>
                                   </div>
                                   <div>
@@ -530,7 +534,7 @@ const Members = () => {
                                           <div key={index} className="flex items-center justify-between p-2 border rounded">
                                             <div className="text-sm">
                                               <p className="font-medium">{cpd.title}</p>
-                                              <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString() : 'N/A'}</p>
+                                              <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString('en-GB') : 'N/A'}</p>
                                             </div>
                                             {cpd.url ? (
                                               <Button
@@ -559,12 +563,6 @@ const Members = () => {
                           </Dialog>
                           <Button variant="outline" size="sm" onClick={() => openMailDialog([member.email])}>
                             <Mail className="w-4 h-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <MoreVertical className="w-4 h-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -610,7 +608,7 @@ const Members = () => {
                             <p>{member.phone}</p>
                             <p className="text-xs">{member.organization} • {member.occupation}</p>
                             <p className="text-xs font-mono">{member.membershipId}</p>
-                            <p className="text-xs">Joined: {new Date(member.submittedDate).toLocaleDateString()}</p>
+                            <p className="text-xs">Approved: {new Date(member.updated_at || member.created_at).toLocaleDateString('en-GB')}</p>
                           </div>
                         </div>
                       </div>

@@ -22,7 +22,7 @@ const studentMembershipSchema = z.object({
   // Members Table Fields
   firstName: z.string().min(2, 'First name is required'),
   lastName: z.string().min(2, 'Last name is required'),
-  bspcpMembershipNumber: z.string().optional(),
+  bspcp_membership_number: z.string().optional(),
   idNumber: z.string().min(5, 'ID/Passport number is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['male', 'female']),
@@ -404,7 +404,7 @@ const StudentMembershipForm = () => {
 
                 <FormField
                   control={form.control}
-                  name="bspcpMembershipNumber"
+                  name="bspcp_membership_number"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>BSPCP Membership Number (if any)</FormLabel>

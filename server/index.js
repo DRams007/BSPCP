@@ -13,7 +13,7 @@ import pool from './lib/db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { setupPaymentEndpoints } from './payment_endpoints.js';
-import { sendMemberPasswordResetEmail, sendMemberApprovalEmail, sendApplicationNotificationEmail, sendCounsellorBookingNotificationEmail, sendApplicantRequestMoreInfoEmail, sendPaymentRequestEmail, sendPaymentVerifiedEmail, sendPaymentRejectedEmail, sendAdminPasswordResetEmail, testEmailConnection } from './lib/emailService.js';
+import { sendMemberPasswordResetEmail, sendMemberApprovalEmail, sendApplicationNotificationEmail, sendCounsellorBookingNotificationEmail, sendApplicantRequestMoreInfoEmail, sendPaymentRequestEmail, sendPaymentVerifiedEmail, sendPaymentRejectedEmail, sendAdminPasswordResetEmail, testEmailConnection, sendApplicationRejectedEmail } from './lib/emailService.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -169,12 +169,28 @@ app.post('/api/membership', upload.fields([
   try {
     await client.query('BEGIN');
 
+    // Validate required fields first
+    const requiredFields = ['firstName', 'lastName', 'email', 'phone'];
+    const missingFields = requiredFields.filter(field => !req.body[field]);
+
+    if (missingFields.length > 0) {
+      console.error('Missing required fields:', missingFields);
+      console.error('Request body keys:', Object.keys(req.body));
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: `The following required fields are missing: ${missingFields.join(', ')}`
+      });
+    }
+
     const {
       // Membership type
       membershipType = 'professional',
 
       // From members table
-      firstName, lastName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality,
+      firstName, lastName, bspcp_membership_number, idNumber, dateOfBirth, gender, nationality,
+
+      // CPD fields (used by both types)
+      cpdDocument, cpdPoints,
 
       // Student-specific fields
       institutionName, studyYear, counsellingCoursework,
@@ -191,11 +207,25 @@ app.post('/api/membership', upload.fields([
     emergencyContact, emergencyPhone, showEmail, showPhone, showAddress
     } = req.body;
 
-    console.log('Received gender:', gender);
-    console.log('Received dateOfBirth:', dateOfBirth);
+    console.log('=== MEMBERSHIP APPLICATION RECEIVED ===');
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('Required fields check passed');
+    console.log('firstName:', firstName);
+    console.log('lastName:', lastName);
+    console.log('email:', email);
+    console.log('phone:', phone);
+    console.log('membershipType:', membershipType);
+    console.log('gender:', gender);
+    console.log('dateOfBirth:', dateOfBirth);
 
-    // Calculate full_name for storage
-    const calculatedFullName = `${firstName} ${lastName}`.trim();
+    // Calculate full_name for storage with defensive checks
+    const calculatedFullName = `${firstName || ''} ${lastName || ''}`.trim();
+    if (!calculatedFullName) {
+      return res.status(400).json({
+        error: 'Invalid name data',
+        details: 'First name and last name are required and cannot be empty'
+      });
+    }
 
     // 1. Insert into members table (ALL types get created_at timestamp)
     const memberQuery = membershipType === 'student' ?
@@ -211,12 +241,11 @@ app.post('/api/membership', upload.fields([
       RETURNING id`;
 
     const memberParams = membershipType === 'student' ?
-      [firstName, lastName, calculatedFullName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality,
-       institutionName || null, studyYear || null, counsellingCoursework || null,
-       internshipSupervisorName || null, internshipSupervisorContact || null,
-       req.body.cpdDocument || null, parseInt(req.body.cpdPoints, 10) || 0, membershipType] :
-      [firstName, lastName, calculatedFullName, bspcpMembershipNumber, idNumber, dateOfBirth, gender, nationality,
-       req.body.cpdDocument || null, parseInt(req.body.cpdPoints, 10) || 0, membershipType];
+      [firstName, lastName, calculatedFullName, bspcp_membership_number || null, idNumber, dateOfBirth, gender, nationality,
+       institutionName, studyYear, counsellingCoursework, internshipSupervisorName, internshipSupervisorContact,
+       cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType] :
+      [firstName, lastName, calculatedFullName, bspcp_membership_number, idNumber, dateOfBirth, gender, nationality,
+       cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType];
 
     const memberResult = await client.query(memberQuery, memberParams);
     const memberId = memberResult.rows[0].id;
@@ -328,6 +357,7 @@ app.get('/api/applications', async (req, res) => {
         m.id,
         m.first_name,
         m.last_name,
+        m.bspcp_membership_number,
         CONCAT(m.first_name, ' ', m.last_name) AS name,
         mcd.email,
         mcd.phone,
@@ -639,11 +669,10 @@ app.put('/api/applications/:id/status', async (req, res) => {
       // Generate membership number if not already present
       let membershipNumber = member.bspcp_membership_number;
       if (!membershipNumber) {
-        // Generate membership number: BSPCP + current year + sequential number
-        const currentYear = new Date().getFullYear() % 100; // Get last 2 digits of year
-        const memberIdForNumber = String(id).padStart(4, '0'); // Pad member ID to 4 digits
-
-        membershipNumber = `BSPCP${currentYear}${memberIdForNumber}`;
+        // Generate membership number: "BSPCP 0175" format with sequential numbering starting from 175
+        const nextNumResult = await client.query('SELECT nextval(\'bspcp_membership_number_seq\') AS next_num');
+        const nextNum = nextNumResult.rows[0].next_num;
+        membershipNumber = `BSPCP ${String(nextNum).padStart(4, '0')}`;
 
         // Update the membership number in the database
         await client.query(
@@ -705,6 +734,24 @@ app.put('/api/applications/:id/status', async (req, res) => {
         } catch (emailError) {
           console.error('❌ Failed to send member approval email:', emailError.message);
           // Don't fail the approval process if email fails, but log it
+        }
+      }
+    } else if (status === 'rejected') {
+      // Send rejection email
+      const emailResult = await client.query(
+        `SELECT email FROM member_contact_details WHERE member_id = $1`,
+        [id]
+      );
+
+      if (emailResult.rows.length > 0) {
+        const memberEmail = emailResult.rows[0].email;
+        const fullName = `${member.first_name} ${member.last_name}`.trim();
+
+        try {
+          await sendApplicationRejectedEmail(memberEmail, fullName, reviewComment);
+          console.log(`📧 Application rejection email sent to ${memberEmail} for member ${id}`);
+        } catch (emailError) {
+          console.error('❌ Failed to send application rejection email:', emailError.message);
         }
       }
     }
@@ -1485,6 +1532,33 @@ app.post('/api/check-phone', async (req, res) => {
   }
 });
 
+// New API endpoint to update member's counsellor visibility
+app.put('/api/member/visibility', authenticateToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const memberId = req.user.memberId;
+    const { counsellor_visible } = req.body;
+
+    if (typeof counsellor_visible !== 'boolean') {
+      return res.status(400).json({ error: 'counsellor_visible must be a boolean value' });
+    }
+
+    await client.query(
+      'UPDATE members SET counsellor_visible = $1 WHERE id = $2',
+      [counsellor_visible, memberId]
+    );
+
+    client.release();
+
+    res.json({
+      message: `Counsellor visibility updated to ${counsellor_visible ? 'visible' : 'hidden'}`
+    });
+  } catch (err) {
+    console.error('Error updating counsellor visibility:', err);
+    res.status(500).json({ error: 'Failed to update counsellor visibility', details: err.message });
+  }
+});
+
 // New API endpoint to fetch logged-in member's profile data
 app.get('/api/member/profile', authenticateToken, async (req, res) => {
   try {
@@ -1501,6 +1575,7 @@ const query = `
     m.id_number,
     m.application_status,
     m.member_status,
+    m.counsellor_visible,
     m.created_at,
     m.date_of_birth,
     m.gender,
@@ -2396,7 +2471,7 @@ app.get('/api/counsellors', async (req, res) => {
       JOIN member_professional_details mpd ON m.id = mpd.member_id
       JOIN member_contact_details mcd ON m.id = mcd.member_id
       LEFT JOIN member_personal_documents mpd_doc ON m.id = mpd_doc.member_id
-      WHERE m.application_status = 'approved' AND m.member_status = 'active'
+      WHERE m.application_status = 'approved' AND m.member_status = 'active' AND m.membership_type = 'professional' AND m.counsellor_visible = true
     `;
     const queryParams = [];
 

@@ -10,6 +10,7 @@ export interface IMemberProfile {
   nationality: string;
   application_status: string;
   member_status: "active" | "pending" | "suspended";
+  counsellor_visible: boolean;
   review_comment?: string;
   created_at?: string; // TIMESTAMP WITH TIME ZONE
 

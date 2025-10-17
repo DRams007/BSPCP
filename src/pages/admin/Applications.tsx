@@ -668,7 +668,7 @@ Botswana Wellbeing Pathways Admin Team`);
                       </div>
                       <div>
                         <p className="font-medium text-muted-foreground">Date Applied</p>
-                        <p>{formatDate(application.created_at)}</p>
+                        <p>{new Date(application.created_at).toLocaleDateString('en-GB')}</p>
                       </div>
                       <div>
                         <p className="font-medium text-muted-foreground">Payment Status</p>
@@ -742,7 +742,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                     </Badge>
                                   </div>
                                   <div><strong>Nationality:</strong> {selectedApplication.nationality}</div>
-                                  <div><strong>Date of Birth:</strong> {selectedApplication.personalInfo.dateOfBirth}</div>
+                                  <div><strong>Date of Birth:</strong> {new Date(selectedApplication.personalInfo.dateOfBirth).toLocaleDateString('en-GB')}</div>
                                   <div><strong>ID Number:</strong> {selectedApplication.personalInfo.idNumber}</div>
                                   {selectedApplication.personalInfo.membershipNumber && (
                                     <div><strong>Membership Number:</strong> {selectedApplication.personalInfo.membershipNumber}</div>
@@ -880,7 +880,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                             <div className="flex-1">
                                               <p className="font-medium">Payment Proof Document</p>
                                               <p className="text-sm text-muted-foreground">
-                                                Uploaded {selectedApplication.paymentInfo?.uploadDate ? new Date(selectedApplication.paymentInfo.uploadDate).toLocaleDateString() : 'recently'}
+                                                  Uploaded {selectedApplication.paymentInfo?.uploadDate ? new Date(selectedApplication.paymentInfo.uploadDate).toLocaleDateString('en-GB') : 'recently'}
                                               </p>
                                             </div>
                                             <Button
@@ -905,7 +905,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                           <div><strong>Amount:</strong> BWP {selectedApplication.paymentInfo.amount}</div>
                                         )}
                                         {selectedApplication.paymentInfo?.paymentDate && (
-                                          <div><strong>Payment Date:</strong> {new Date(selectedApplication.paymentInfo.paymentDate).toLocaleDateString()}</div>
+                                          <div><strong>Payment Date:</strong> {new Date(selectedApplication.paymentInfo.paymentDate).toLocaleDateString('en-GB')}</div>
                                         )}
                                         {selectedApplication.paymentInfo?.bankName && (
                                           <div><strong>Bank:</strong> {selectedApplication.paymentInfo.bankName}</div>
@@ -1264,7 +1264,7 @@ Botswana Wellbeing Pathways Admin Team`);
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {formatDate(application.created_at)}
+                        {new Date(application.created_at).toLocaleDateString('en-GB')}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -1461,7 +1461,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                               <div className="flex-1">
                                                 <p className="font-medium">Payment Proof Document</p>
                                                 <p className="text-sm text-muted-foreground">
-                                                  Uploaded {selectedApplication.paymentInfo?.uploadDate ? new Date(selectedApplication.paymentInfo.uploadDate).toLocaleDateString() : 'recently'}
+                                                  Uploaded {selectedApplication.paymentInfo?.uploadDate ? new Date(selectedApplication.paymentInfo.uploadDate).toLocaleDateString('en-GB') : 'recently'}
                                                 </p>
                                               </div>
                                               <Button
@@ -1490,7 +1490,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                             <div><strong>Amount:</strong> BWP {selectedApplication.paymentInfo.amount}</div>
                                           )}
                                           {selectedApplication.paymentInfo?.paymentDate && (
-                                            <div><strong>Payment Date:</strong> {new Date(selectedApplication.paymentInfo.paymentDate).toLocaleDateString()}</div>
+          <div><strong>Payment Date:</strong> {new Date(selectedApplication.paymentInfo.paymentDate).toLocaleDateString('en-GB')}</div>
                                           )}
                                           {selectedApplication.paymentInfo?.bankName && (
                                             <div><strong>Bank:</strong> {selectedApplication.paymentInfo.bankName}</div>

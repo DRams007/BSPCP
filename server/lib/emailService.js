@@ -1298,6 +1298,70 @@ export const getContactMessageEmailTemplate = (contactData, messageId) => {
   `;
 };
 
+
+// application rejection email to member
+export const sendApplicationRejectedEmail = async (email, fullName, rejectionReason) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: getFromAddress(),
+      to: email,
+      subject: 'Update on Your BSPCP Membership Application',
+      html: getApplicationRejectedEmailTemplate(fullName, rejectionReason)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Application rejection email sent successfully to:', email);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send application rejection email:', error.message);
+    throw error;
+  }
+};
+
+const getApplicationRejectedEmailTemplate = (fullName, rejectionReason) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>BSPCP Membership Application Update</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #dc2626; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+        .rejection-reason { background: #fee2e2; border: 1px solid #dc2626; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Membership Application Update</h1>
+      </div>
+      <div class="content">
+        <h2>Dear ${fullName},</h2>
+        <p>Thank you for your interest in joining the Botswana Society of Patient Counselling and Psychotherapy (BSPCP). We appreciate you taking the time to submit your application.</p>
+        <p>After careful review, we regret to inform you that your application for membership has not been approved at this time. </p>
+        <div class="rejection-reason">
+          <h3>Reason for Decision</h3>
+          <p>${rejectionReason}</p>
+        </div>
+        <h3>What's Next?</h3>
+        <p>We understand this may be disappointing. If you believe there has been a misunderstanding, or if you have new information to provide that addresses the reason for rejection, you are welcome to re-apply in the future.</p>
+        <p>If you have any questions, please do not hesitate to contact our membership team at <a href="mailto:bspcpemail@gmail.com">bspcpemail@gmail.com</a>.</p>
+        <p>We wish you the best in your professional endeavors.</p>
+        <p>Sincerely,<br>The BSPCP Membership Committee</p>
+      </div>
+      <div class="footer">
+        <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
 // Send general email to multiple recipients
 export const sendEmail = async (recipients, subject, body) => {
   try {

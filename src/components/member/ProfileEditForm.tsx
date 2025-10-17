@@ -667,29 +667,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
           <FormMessage>{form.formState.errors.session_types?.message}</FormMessage>
         </div>
 
-        <FormField
-          control={form.control}
-          name="availability"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Current Availability</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select availability status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Available">Available for new clients</SelectItem>
-                  <SelectItem value="Limited">Limited availability</SelectItem>
-                  <SelectItem value="Waitlist">Waitlist only</SelectItem>
-                  <SelectItem value="Unavailable">Currently unavailable</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
 
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? 'Updating Profile...' : 'Update Profile'}

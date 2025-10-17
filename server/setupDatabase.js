@@ -131,6 +131,7 @@ async function setupDatabase() {
           payment_rejected_at TIMESTAMP WITH TIME ZONE,
           payment_verified_by UUID REFERENCES admins(id),
           payment_request_count INTEGER DEFAULT 0,
+          counsellor_visible BOOLEAN DEFAULT true,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -417,6 +418,10 @@ async function setupDatabase() {
       ('professional', 50.00, 150.00, 'Full professional membership for qualified counsellors with Bachelor''s degree minimum', FALSE),
       ('student', 25.00, 75.00, 'Student membership for counselling trainees still in training programs', TRUE);
     `);
+
+    // Create sequence for BSPCP membership numbering starting at 175
+    await pool.query(`DROP SEQUENCE IF EXISTS bspcp_membership_number_seq;`);
+    await pool.query(`CREATE SEQUENCE bspcp_membership_number_seq START WITH 175 INCREMENT BY 1;`);
 
     console.log('Database tables created or updated successfully.');
   } catch (error) {

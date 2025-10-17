@@ -136,10 +136,70 @@ const MemberDashboard = () => {
                   </p>
                 )}
             </div>
-          <Button variant="outline" onClick={handleLogout} className="mt-1">
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-4 mt-1">
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-medium">Available for booking</span>
+                <span className="text-xs text-muted-foreground">
+                  {member.counsellor_visible !== false ? 'Available' : 'Unavailable'}
+                </span>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                      throw new Error('No authentication token found.');
+                    }
+
+                    const newVisibility = !member.counsellor_visible;
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/visibility`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ counsellor_visible: newVisibility }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    toast({
+                      title: "Visibility Updated",
+                      description: `Your counsellor profile is now ${newVisibility ? 'visible' : 'hidden'} to potential clients.`,
+                      variant: "default",
+                    });
+
+                    // Refresh member data to reflect changes
+                    fetchMemberProfile();
+                  } catch (error) {
+                    console.error('Error updating visibility:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to update profile visibility. Please try again.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                  member.counsellor_visible !== false ? 'bg-primary' : 'bg-gray-200'
+                }`}
+              >
+                <span className="sr-only">Toggle counsellor visibility</span>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    member.counsellor_visible !== false ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
 
@@ -176,6 +236,7 @@ const MemberDashboard = () => {
                     nationality: member.nationality,
                     application_status: member.application_status,
                     member_status: member.member_status,
+                    counsellor_visible: member.counsellor_visible,
                     review_comment: member.review_comment,
                     occupation: member.occupation,
                     organization_name: member.organization_name,
@@ -258,11 +319,22 @@ const MemberDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reset-password')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Change Password
-                  </Button>
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Account Information</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your counsellor availability status is controlled directly from the header area above.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Security</h3>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/reset-password')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Change Password
+                    </Button>
+                  </div>
+
                   {/* <Button variant="outline" className="w-full justify-start" onClick={() => toast({ title: "Privacy Settings", description: "Privacy settings functionality is not yet implemented." })}>
                     <User className="mr-2 h-4 w-4" />
                     Privacy Settings
