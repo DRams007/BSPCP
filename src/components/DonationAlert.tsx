@@ -9,11 +9,11 @@ const DonationAlert = () => {
   const { toast } = useToast();
 
   const bankDetails = {
-    bankName: "First National Bank (FNB)",
-    accountName: "Botswana Society of Professional Clinical Psychologists",
-    accountNumber: "12345678901",
-    branchCode: "280172",
-    swiftCode: "FIRNBWGX"
+    bankName: "Stanbic Bank of Botswana",
+    accountName: "Botswana Society of Professional Counsellors and Psychotherapists",
+    accountNumber: "906 000 5981 641",
+    branchCode: "064 967",
+    swiftCode: "" // SWIFT code not provided in requirements
   };
 
   const copyToClipboard = async (text: string, field: string) => {

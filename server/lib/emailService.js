@@ -859,10 +859,11 @@ const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPr
         <div class="bank-details">
           <h4 style="margin: 0 0 15px 0; color: #374151;">💳 Bank Transfer Details</h4>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-family: monospace;">
-            <div><strong>Bank Name:</strong><br>First National Bank Botswana</div>
-            <div><strong>Branch:</strong><br>Main Branch (123)</div>
-            <div><strong>Account Name:</strong><br>Botswana Wellbeing Pathways</div>
-            <div><strong>Account Number:</strong><br>1234567890</div>
+            <div><strong>Bank Name:</strong>Stanbic Bank of Botswana</div>
+            <div><strong>Branch:</strong>Fairground Branch (Branch No: 1011)</div>
+            <div><strong>Account Name:</strong>Botswana Society of Professional Counsellors and Psychotherapists</div>
+            <div><strong>Account Number:</strong>906 000 5981 641</div>
+            <div><strong>Branch Code:</strong> 064 967</div>
           </div>
           <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
             <strong>Reference:</strong> BSPCP-MEM-${Date.now().toString().slice(-6)}

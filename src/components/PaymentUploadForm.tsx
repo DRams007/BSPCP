@@ -181,19 +181,22 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded-lg border">
+            <div className="bg-gray-50 p-4 rounded-lg border">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <strong>Bank:</strong> First National Bank Botswana
+                <strong>Bank:</strong> Stanbic Bank of Botswana
               </div>
               <div>
-                <strong>Account Name:</strong> Botswana Wellbeing Pathways
+                <strong>Account Name:</strong> Botswana Society of Professional Counsellors and Psychotherapists
               </div>
               <div>
-                <strong>Account Number:</strong> 1234567890
+                <strong>Account Number:</strong> 906 000 5981 641
               </div>
               <div>
-                <strong>Branch:</strong> Main Branch (123)
+                <strong>Branch:</strong> Fairground Branch (Branch No: 1011)
+              </div>
+                            <div>
+               <strong>Branch Code:</strong> 064 967
               </div>
             </div>
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
