@@ -6,22 +6,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Download, Mail, Loader2, Clock } from "lucide-react";
+import { Search, Eye, Download, Mail, Loader2, Clock, User, GraduationCap, FileText, Check, X } from "lucide-react";
 
 interface Member {
   id: number;
@@ -440,124 +440,204 @@ const Members = () => {
                                 <Eye className="w-4 h-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-3xl">
+                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                               <DialogHeader>
-                                <DialogTitle>Member Details</DialogTitle>
+                                <DialogTitle>Member Details - {member.name}</DialogTitle>
                                 <DialogDescription>
                                   Complete profile information for {member.name}
                                 </DialogDescription>
                               </DialogHeader>
 
-                              <div className="space-y-4 py-4">
-                                {/* Basic Information */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
-                                    <h4 className="font-semibold mb-3">Personal Information</h4>
-                                    <div className="space-y-2 text-sm">
-                                      <p><strong>Name:</strong> {member.name}</p>
-                                      <p><strong>Email:</strong> {member.email}</p>
-                                      <p><strong>Phone:</strong> {member.phone}</p>
-                                      <p><strong>Nationality:</strong> {member.nationality}</p>
-                                      <p><strong>ID Number:</strong> {member.idNumber}</p>
-                                      <p><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}</p>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                                {/* Personal Information */}
+                                <Card>
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center">
+                                      <User className="w-5 h-5 mr-2" />
+                                      Personal Information
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="space-y-2 text-sm">
+                                    <div><strong>Full Name:</strong> {member.name}</div>
+                                    <div><strong>Email:</strong> {member.email}</div>
+                                    <div><strong>Phone:</strong> {member.phone}</div>
+                                    <div><strong>Membership Type:</strong>
+                                      <Badge
+                                        className={`ml-2 ${
+                                          member.membershipType === 'professional'
+                                            ? 'bg-purple-100 text-purple-800'
+                                            : 'bg-blue-100 text-blue-800'
+                                        }`}
+                                      >
+                                        {member.membershipType === 'professional' ? 'Professional' : 'Student'}
+                                      </Badge>
                                     </div>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold mb-3">Professional Information</h4>
-                                    <div className="space-y-2 text-sm">
-                                      <p><strong>Highest Qualification:</strong> {member.qualification}</p>
-                                      <p><strong>Organization:</strong> {member.organization}</p>
-                                      <p><strong>Occupation:</strong> {member.occupation}</p>
-                                      <p><strong>Years Experience:</strong> {member.experience}</p>
-                                      <p><strong>Member ID:</strong> {member.membershipId}</p>
-                                    </div>
-                                  </div>
-                                </div>
+                                    <div><strong>Nationality:</strong> {member.nationality}</div>
+                                    <div><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}</div>
+                                    <div><strong>ID Number:</strong> {member.idNumber}</div>
+                                    <div><strong>Membership ID:</strong> {member.membershipId}</div>
+                                    <div><strong>Physical Address:</strong> {member.physicalAddress}</div>
+                                    <div><strong>Postal Address:</strong> {member.postalAddress}</div>
+                                  </CardContent>
+                                </Card>
+
+                                {/* Professional Information */}
+                                <Card>
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center">
+                                      <GraduationCap className="w-5 h-5 mr-2" />
+                                      Professional Details
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="space-y-2 text-sm">
+                                    <div><strong>Occupation:</strong> {member.occupation}</div>
+                                    <div><strong>Organization:</strong> {member.organization}</div>
+                                    <div><strong>Highest Qualification:</strong> {member.qualification}</div>
+                                    <div><strong>Years Experience:</strong> {member.experience}</div>
+                                    <div><strong>Specializations:</strong> {member.specializations?.join(', ') || 'N/A'}</div>
+                                    <div><strong>Languages:</strong> {member.languages?.join(', ') || 'N/A'}</div>
+                                    <div><strong>Session Types:</strong> {member.session_types?.join(', ') || 'N/A'}</div>
+                                    <div><strong>Availability:</strong> {member.availability || 'N/A'}</div>
+                                  </CardContent>
+                                </Card>
 
                                 {/* Member Documents */}
-                                <div>
-                                  <h4 className="font-semibold mb-3">Member Documents</h4>
-
-                                  {/* ID Document */}
-                                  {member.memberDocuments?.idDocument ? (
-                                    <div className="mb-4">
-                                      <h5 className="font-medium mb-2">ID Document</h5>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        asChild
-                                      >
-                                        <a href={member.memberDocuments.idDocument.url} target="_blank" rel="noopener noreferrer">
-                                          <Download className="mr-2 h-4 w-4" />
-                                          Download ID Document
-                                        </a>
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <div className="mb-4">
-                                      <h5 className="font-medium mb-2">ID Document</h5>
-                                      <p className="text-sm text-muted-foreground">No ID document uploaded</p>
-                                    </div>
-                                  )}
-
-                                  {/* Certificates */}
-                                  <div className="mb-4">
-                                    <h5 className="font-medium mb-2">Certificates</h5>
-                                    {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 ? (
-                                      <div className="space-y-2">
-                                        {member.memberDocuments.certificates.map((cert, index) => (
+                                <Card className="md:col-span-2">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center">
+                                      <FileText className="w-5 h-5 mr-2" />
+                                      Member Documents
+                                    </CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {/* ID Document */}
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center">
+                                          {member.memberDocuments?.idDocument ? (
+                                            <>
+                                              <Check className="w-4 h-4 text-green-500 mr-2" />
+                                              <span className="text-sm">ID Document</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <X className="w-4 h-4 text-red-500 mr-2" />
+                                              <span className="text-sm">ID Document</span>
+                                            </>
+                                          )}
+                                        </div>
+                                        {member.memberDocuments?.idDocument && (
                                           <Button
-                                            key={index}
                                             variant="outline"
                                             size="sm"
-                                            asChild
-                                            className="mr-2"
+                                            onClick={() => {
+                                              window.open(member.memberDocuments.idDocument.url, "_blank");
+                                            }}
                                           >
-                                            <a href={cert.url} target="_blank" rel="noopener noreferrer">
-                                              <Download className="mr-2 h-4 w-4" />
-                                              {cert.name}
-                                            </a>
+                                            <Download className="w-3 h-3" />
                                           </Button>
-                                        ))}
+                                        )}
                                       </div>
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">No certificates uploaded</p>
-                                    )}
-                                  </div>
 
-                                  {/* CPD Documents */}
-                                  <div className="mb-4">
-                                    <h5 className="font-medium mb-2">CPD Documents</h5>
-                                    {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 ? (
-                                      <div className="space-y-2">
-                                        {member.memberDocuments.cpdDocuments.map((cpd, index) => (
-                                          <div key={index} className="flex items-center justify-between p-2 border rounded">
-                                            <div className="text-sm">
-                                              <p className="font-medium">{cpd.title}</p>
-                                              <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString('en-GB') : 'N/A'}</p>
-                                            </div>
-                                            {cpd.url ? (
+                                      {/* Certificates */}
+                                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center">
+                                          {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 ? (
+                                            <>
+                                              <Check className="w-4 h-4 text-green-500 mr-2" />
+                                              <span className="text-sm">Certificates ({member.memberDocuments.certificates.length})</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <X className="w-4 h-4 text-red-500 mr-2" />
+                                              <span className="text-sm">Certificates</span>
+                                            </>
+                                          )}
+                                        </div>
+                                        {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 && (
+                                          <div className="flex gap-1">
+                                            {member.memberDocuments.certificates.slice(0, 2).map((cert, index) => (
                                               <Button
+                                                key={index}
                                                 variant="outline"
                                                 size="sm"
-                                                asChild
+                                                onClick={() => {
+                                                  window.open(cert.url, "_blank");
+                                                }}
                                               >
-                                                <a href={cpd.url} target="_blank" rel="noopener noreferrer">
-                                                  <Download className="mr-2 h-4 w-4" />
-                                                  Download
-                                                </a>
+                                                <Download className="w-3 h-3" />
                                               </Button>
-                                            ) : (
-                                              <span className="text-sm text-muted-foreground">No document file</span>
-                                            )}
+                                            ))}
                                           </div>
-                                        ))}
+                                        )}
                                       </div>
-                                    ) : (
-                                      <p className="text-sm text-muted-foreground">No CPD documents uploaded</p>
+
+                                      {/* CPD Documents */}
+                                      <div className="flex items-center justify-between p-3 border rounded-lg md:col-span-2">
+                                        <div className="flex items-center">
+                                          {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 ? (
+                                            <>
+                                              <Check className="w-4 h-4 text-green-500 mr-2" />
+                                              <span className="text-sm">CPD Documents ({member.memberDocuments.cpdDocuments.length})</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <X className="w-4 h-4 text-red-500 mr-2" />
+                                              <span className="text-sm">CPD Documents</span>
+                                            </>
+                                          )}
+                                        </div>
+                                        {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 && (
+                                          <div className="flex gap-1">
+                                            {member.memberDocuments.cpdDocuments.slice(0, 2).map((cpd, index) => (
+                                              <Button
+                                                key={index}
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                  if (cpd.url) {
+                                                    window.open(cpd.url, "_blank");
+                                                  }
+                                                }}
+                                                disabled={!cpd.url}
+                                              >
+                                                <Download className="w-3 h-3" />
+                                              </Button>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Detailed CPD Documents */}
+                                    {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 && (
+                                      <div className="mt-4">
+                                        <h5 className="font-medium mb-3">CPD Details</h5>
+                                        <div className="space-y-2">
+                                          {member.memberDocuments.cpdDocuments.map((cpd, index) => (
+                                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                              <div className="text-sm">
+                                                <p className="font-medium">{cpd.title}</p>
+                                                <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString('en-GB') : 'N/A'}</p>
+                                              </div>
+                                              {cpd.url && (
+                                                <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => {
+                                                    window.open(cpd.url, "_blank");
+                                                  }}
+                                                >
+                                                  <Download className="w-3 h-3" />
+                                                </Button>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
                                     )}
-                                  </div>
-                                </div>
+                                  </CardContent>
+                                </Card>
                               </div>
                             </DialogContent>
                           </Dialog>
@@ -645,124 +725,204 @@ const Members = () => {
                             View Details
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-3xl">
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Member Details</DialogTitle>
+                            <DialogTitle>Member Details - {member.name}</DialogTitle>
                             <DialogDescription>
                               Complete profile information for {member.name}
                             </DialogDescription>
                           </DialogHeader>
 
-                          <div className="space-y-4 py-4">
-                            {/* Basic Information */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="font-semibold mb-3">Personal Information</h4>
-                                <div className="space-y-2 text-sm">
-                                  <p><strong>Name:</strong> {member.name}</p>
-                                  <p><strong>Email:</strong> {member.email}</p>
-                                  <p><strong>Phone:</strong> {member.phone}</p>
-                                  <p><strong>Nationality:</strong> {member.nationality}</p>
-                                  <p><strong>ID Number:</strong> {member.idNumber}</p>
-                                  <p><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                            {/* Personal Information */}
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-lg flex items-center">
+                                  <User className="w-5 h-5 mr-2" />
+                                  Personal Information
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-2 text-sm">
+                                <div><strong>Full Name:</strong> {member.name}</div>
+                                <div><strong>Email:</strong> {member.email}</div>
+                                <div><strong>Phone:</strong> {member.phone}</div>
+                                <div><strong>Membership Type:</strong>
+                                  <Badge
+                                    className={`ml-2 ${
+                                      member.membershipType === 'professional'
+                                        ? 'bg-purple-100 text-purple-800'
+                                        : 'bg-blue-100 text-blue-800'
+                                    }`}
+                                  >
+                                    {member.membershipType === 'professional' ? 'Professional' : 'Student'}
+                                  </Badge>
                                 </div>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold mb-3">Professional Information</h4>
-                                <div className="space-y-2 text-sm">
-                                  <p><strong>Highest Qualification:</strong> {member.qualification}</p>
-                                  <p><strong>Organization:</strong> {member.organization}</p>
-                                  <p><strong>Occupation:</strong> {member.occupation}</p>
-                                  <p><strong>Years Experience:</strong> {member.experience}</p>
-                                  <p><strong>Member ID:</strong> {member.membershipId}</p>
-                                </div>
-                              </div>
-                            </div>
+                                <div><strong>Nationality:</strong> {member.nationality}</div>
+                                <div><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}</div>
+                                <div><strong>ID Number:</strong> {member.idNumber}</div>
+                                <div><strong>Membership ID:</strong> {member.membershipId}</div>
+                                <div><strong>Physical Address:</strong> {member.physicalAddress}</div>
+                                <div><strong>Postal Address:</strong> {member.postalAddress}</div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Professional Information */}
+                            <Card>
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-lg flex items-center">
+                                  <GraduationCap className="w-5 h-5 mr-2" />
+                                  Professional Details
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-2 text-sm">
+                                <div><strong>Occupation:</strong> {member.occupation}</div>
+                                <div><strong>Organization:</strong> {member.organization}</div>
+                                <div><strong>Highest Qualification:</strong> {member.qualification}</div>
+                                <div><strong>Years Experience:</strong> {member.experience}</div>
+                                <div><strong>Specializations:</strong> {member.specializations?.join(', ') || 'N/A'}</div>
+                                <div><strong>Languages:</strong> {member.languages?.join(', ') || 'N/A'}</div>
+                                <div><strong>Session Types:</strong> {member.session_types?.join(', ') || 'N/A'}</div>
+                                <div><strong>Availability:</strong> {member.availability || 'N/A'}</div>
+                              </CardContent>
+                            </Card>
 
                             {/* Member Documents */}
-                            <div>
-                              <h4 className="font-semibold mb-3">Member Documents</h4>
-
-                              {/* ID Document */}
-                              {member.memberDocuments?.idDocument ? (
-                                <div className="mb-4">
-                                  <h5 className="font-medium mb-2">ID Document</h5>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    asChild
-                                  >
-                                    <a href={member.memberDocuments.idDocument.url} target="_blank" rel="noopener noreferrer">
-                                      <Download className="mr-2 h-4 w-4" />
-                                      Download ID Document
-                                    </a>
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="mb-4">
-                                  <h5 className="font-medium mb-2">ID Document</h5>
-                                  <p className="text-sm text-muted-foreground">No ID document uploaded</p>
-                                </div>
-                              )}
-
-                              {/* Certificates */}
-                              <div className="mb-4">
-                                <h5 className="font-medium mb-2">Certificates</h5>
-                                {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 ? (
-                                  <div className="space-y-2">
-                                    {member.memberDocuments.certificates.map((cert, index) => (
+                            <Card className="md:col-span-2">
+                              <CardHeader className="pb-3">
+                                <CardTitle className="text-lg flex items-center">
+                                  <FileText className="w-5 h-5 mr-2" />
+                                  Member Documents
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* ID Document */}
+                                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div className="flex items-center">
+                                      {member.memberDocuments?.idDocument ? (
+                                        <>
+                                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                                          <span className="text-sm">ID Document</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <X className="w-4 h-4 text-red-500 mr-2" />
+                                          <span className="text-sm">ID Document</span>
+                                        </>
+                                      )}
+                                    </div>
+                                    {member.memberDocuments?.idDocument && (
                                       <Button
-                                        key={index}
                                         variant="outline"
                                         size="sm"
-                                        asChild
-                                        className="mr-2"
+                                        onClick={() => {
+                                          window.open(member.memberDocuments.idDocument.url, "_blank");
+                                        }}
                                       >
-                                        <a href={cert.url} target="_blank" rel="noopener noreferrer">
-                                          <Download className="mr-2 h-4 w-4" />
-                                          {cert.name}
-                                        </a>
+                                        <Download className="w-3 h-3" />
                                       </Button>
-                                    ))}
+                                    )}
                                   </div>
-                                ) : (
-                                  <p className="text-sm text-muted-foreground">No certificates uploaded</p>
-                                  )}
-                              </div>
 
-                              {/* CPD Documents */}
-                              <div className="mb-4">
-                                <h5 className="font-medium mb-2">CPD Documents</h5>
-                                {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 ? (
-                                  <div className="space-y-2">
-                                    {member.memberDocuments.cpdDocuments.map((cpd, index) => (
-                                      <div key={index} className="flex items-center justify-between p-2 border rounded">
-                                        <div className="text-sm">
-                                          <p className="font-medium">{cpd.title}</p>
-                                          <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString() : 'N/A'}</p>
-                                        </div>
-                                        {cpd.url ? (
+                                  {/* Certificates */}
+                                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div className="flex items-center">
+                                      {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 ? (
+                                        <>
+                                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                                          <span className="text-sm">Certificates ({member.memberDocuments.certificates.length})</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <X className="w-4 h-4 text-red-500 mr-2" />
+                                          <span className="text-sm">Certificates</span>
+                                        </>
+                                      )}
+                                    </div>
+                                    {member.memberDocuments?.certificates && member.memberDocuments.certificates.length > 0 && (
+                                      <div className="flex gap-1">
+                                        {member.memberDocuments.certificates.slice(0, 2).map((cert, index) => (
                                           <Button
+                                            key={index}
                                             variant="outline"
                                             size="sm"
-                                            asChild
+                                            onClick={() => {
+                                              window.open(cert.url, "_blank");
+                                            }}
                                           >
-                                            <a href={cpd.url} target="_blank" rel="noopener noreferrer">
-                                              <Download className="mr-2 h-4 w-4" />
-                                              Download
-                                            </a>
+                                            <Download className="w-3 h-3" />
                                           </Button>
-                                        ) : (
-                                          <span className="text-sm text-muted-foreground">No document file</span>
-                                          )}
+                                        ))}
                                       </div>
-                                    ))}
+                                    )}
                                   </div>
-                                ) : (
-                                  <p className="text-sm text-muted-foreground">No CPD documents uploaded</p>
+
+                                  {/* CPD Documents */}
+                                  <div className="flex items-center justify-between p-3 border rounded-lg md:col-span-2">
+                                    <div className="flex items-center">
+                                      {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 ? (
+                                        <>
+                                          <Check className="w-4 h-4 text-green-500 mr-2" />
+                                          <span className="text-sm">CPD Documents ({member.memberDocuments.cpdDocuments.length})</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <X className="w-4 h-4 text-red-500 mr-2" />
+                                          <span className="text-sm">CPD Documents</span>
+                                        </>
+                                      )}
+                                    </div>
+                                    {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 && (
+                                      <div className="flex gap-1">
+                                        {member.memberDocuments.cpdDocuments.slice(0, 2).map((cpd, index) => (
+                                          <Button
+                                            key={index}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                              if (cpd.url) {
+                                                window.open(cpd.url, "_blank");
+                                              }
+                                            }}
+                                            disabled={!cpd.url}
+                                          >
+                                            <Download className="w-3 h-3" />
+                                          </Button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Detailed CPD Documents */}
+                                {member.memberDocuments?.cpdDocuments && member.memberDocuments.cpdDocuments.length > 0 && (
+                                  <div className="mt-4">
+                                    <h5 className="font-medium mb-3">CPD Details</h5>
+                                    <div className="space-y-2">
+                                      {member.memberDocuments.cpdDocuments.map((cpd, index) => (
+                                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                          <div className="text-sm">
+                                            <p className="font-medium">{cpd.title}</p>
+                                            <p className="text-muted-foreground">Points: {cpd.points} | Date: {cpd.completion_date ? new Date(cpd.completion_date).toLocaleDateString('en-GB') : 'N/A'}</p>
+                                          </div>
+                                          {cpd.url && (
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => {
+                                                window.open(cpd.url, "_blank");
+                                              }}
+                                            >
+                                              <Download className="w-3 h-3" />
+                                            </Button>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
-                              </div>
-                            </div>
+                              </CardContent>
+                            </Card>
                           </div>
                         </DialogContent>
                       </Dialog>
