@@ -53,7 +53,7 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null); // State to store the File object
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string>(''); // State for image preview
-  
+
   const form = useForm<ContentFormData>({
     resolver: zodResolver(contentFormSchema),
     defaultValues: {
@@ -72,7 +72,7 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
 
   const contentTypes = [
     { value: 'News', label: 'News Article', icon: FileText },
-        { value: 'Event', label: 'Event', icon: Calendar },
+    { value: 'Event', label: 'Event', icon: Calendar },
     { value: 'Resource', label: 'Resource', icon: Image },
   ];
 
@@ -84,7 +84,7 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
       const formData = new FormData();
       for (const key in data) {
         if (key === 'featuredImage') continue; // Skip featuredImage as it's appended separately
-      if (data[key] !== undefined && data[key] !== null && data[key] !== '') { // Added check for empty string
+        if (data[key] !== undefined && data[key] !== null && data[key] !== '') { // Added check for empty string
           if (key === 'eventDate' && data[key]) {
             formData.append(key, format(data[key], 'yyyy-MM-dd'));
           } else if (Array.isArray(data[key])) {
@@ -101,12 +101,21 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
         formData.append('image', featuredImageFile); // 'image' must match the field name in multer
       }
 
-      const response = await fetch('/api/content', {
+      // Get admin token from localStorage
+      const token = localStorage.getItem('admin_token');
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/content`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Unauthorized: Please log in as admin');
+        }
         const errorText = await response.text();
         console.error('Server error response:', errorText);
         throw new Error(`Failed to create content: ${errorText}`);
@@ -245,13 +254,13 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
                     )}
                   </FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       placeholder={
-                        selectedType === 'Event' 
-                          ? "Event venue or address" 
+                        selectedType === 'Event'
+                          ? "Event venue or address"
                           : "Location (if applicable)"
-                      } 
-                      {...field} 
+                      }
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -289,8 +298,8 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
                               format(field.value, "PPP")
                             ) : (
                               <span>
-                                {selectedType === 'Event' 
-                                  ? "Select event date" 
+                                {selectedType === 'Event'
+                                  ? "Select event date"
                                   : "Pick a date (optional)"}
                               </span>
                             )}
@@ -334,14 +343,14 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
                       )}
                     </FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         type="time"
                         placeholder={
-                          selectedType === 'Event' 
-                            ? "Select event time" 
+                          selectedType === 'Event'
+                            ? "Select event time"
                             : "Select time (optional)"
-                        } 
-                        {...field} 
+                        }
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -358,10 +367,10 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
               <FormItem>
                 <FormLabel>{selectedType === 'Resource' ? 'Description/Content' : 'Content'}</FormLabel>
                 <FormControl>
-                  <Textarea 
+                  <Textarea
                     placeholder="Enter your content here..."
                     className="min-h-32"
-                    {...field} 
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
@@ -377,9 +386,9 @@ const CreateContentForm = ({ onSubmit, onCancel }: CreateContentFormProps) => {
                 {featuredImagePreview ? (
                   <div className="relative">
                     {featuredImagePreview.startsWith('data:image') ? (
-                      <img 
-                        src={featuredImagePreview} 
-                        alt="Featured" 
+                      <img
+                        src={featuredImagePreview}
+                        alt="Featured"
                         className="w-full h-40 object-cover rounded-md border"
                       />
                     ) : (

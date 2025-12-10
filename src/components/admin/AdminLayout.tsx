@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import AdminNotifications from "@/components/admin/AdminNotifications";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -52,7 +53,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       requiresRole: "super_admin"
     },
     {
-      name: "Notifications",
+      name: "Notification Settings",
       href: "/admin/notifications",
       icon: Bell
     },
@@ -153,21 +154,35 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Mobile Header with Menu Button */}
       <div className="sticky top-0 z-40 flex items-center justify-between bg-card border-b px-4 py-2 md:hidden">
-        <h1 className="text-lg font-semibold text-primary">BSPCP Admin</h1>
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Menu className="w-5 h-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-80 p-0">
-            <SidebarContent />
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-2">
+          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-80 p-0">
+              <SidebarContent />
+            </SheetContent>
+          </Sheet>
+          <h1 className="text-lg font-semibold text-primary">BSPCP Admin</h1>
+        </div>
+        <AdminNotifications />
       </div>
 
       {/* Main Content */}
       <div className="md:ml-64">
+        {/* Desktop Header */}
+        <header className="hidden md:flex items-center justify-between px-6 py-3 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50 sticky top-0 z-30">
+          <h1 className="text-xl font-semibold text-foreground capitalize">
+            {/* Simple logic to show current page title could go here, for now just spacer */}
+            {navigation.find(n => isActive(n.href))?.name || 'Admin Portal'}
+          </h1>
+          <div className="flex items-center gap-4">
+            <AdminNotifications />
+          </div>
+        </header>
+
         <main className="min-h-screen p-4 md:p-6">
           {children}
         </main>

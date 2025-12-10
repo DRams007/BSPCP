@@ -32,6 +32,7 @@ async function setupDatabase() {
     await pool.query(`DROP TABLE IF EXISTS notification_recipients CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS notification_settings CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS counsellor_notification_preferences CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS admin_activities CASCADE;`);
 
     // Admin authentication tables (create BEFORE members table to satisfy foreign key constraint)
     await pool.query(`
@@ -97,6 +98,22 @@ async function setupDatabase() {
     `);
 
     await pool.query(`
+      CREATE TABLE admin_activities (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          activity_type VARCHAR(100) NOT NULL, -- e.g., 'application_submitted', 'payment_verified', 'content_published'
+          title VARCHAR(255) NOT NULL, -- Short title for the activity
+          message TEXT NOT NULL, -- Detailed message
+          details JSONB, -- Additional structured data
+          related_entity VARCHAR(50), -- e.g., 'member', 'content', 'booking'
+          related_id VARCHAR(255), -- ID of the related entity
+          priority VARCHAR(20) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
+          admin_id UUID REFERENCES admins(id) ON DELETE SET NULL, -- Who performed the action (nullable for system activities)
+          is_read BOOLEAN DEFAULT false, -- For tracking read/unread status
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
       CREATE TABLE members (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           full_name VARCHAR(255),
@@ -132,6 +149,12 @@ async function setupDatabase() {
           payment_verified_by UUID REFERENCES admins(id),
           payment_request_count INTEGER DEFAULT 0,
           counsellor_visible BOOLEAN DEFAULT true,
+          renewal_date TIMESTAMP WITH TIME ZONE,
+          renewal_status VARCHAR(50) DEFAULT 'not_requested' CHECK (renewal_status IN ('not_requested', 'requested', 'uploaded', 'verified', 'rejected')),
+          renewal_proof_url VARCHAR(500),
+          renewal_uploaded_at TIMESTAMP WITH TIME ZONE,
+          renewal_token VARCHAR(1000) UNIQUE,
+          renewal_token_expires_at TIMESTAMP WITH TIME ZONE,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -211,8 +234,14 @@ async function setupDatabase() {
       CREATE TABLE member_payments (
           id SERIAL PRIMARY KEY,
           member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-          proof_of_payment_path VARCHAR(255) NOT NULL,
-          payment_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+          first_name VARCHAR(100) NOT NULL,
+          last_name VARCHAR(100) NOT NULL,
+          amount DECIMAL(10,2) NOT NULL,
+          fee_type VARCHAR(50) NOT NULL CHECK (fee_type IN ('application_fee', 'renewal_fee')),
+          proof_of_payment_path VARCHAR(500),
+          payment_date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          verified_by UUID REFERENCES admins(id),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
@@ -328,6 +357,22 @@ async function setupDatabase() {
       );
     `);
 
+    // Drop renewal audit log table if it exists
+    await pool.query(`DROP TABLE IF EXISTS renewal_audit_log CASCADE;`);
+
+    // Renewal audit log table
+    await pool.query(`
+      CREATE TABLE renewal_audit_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        member_id UUID NOT NULL REFERENCES members(id),
+        admin_id UUID REFERENCES admins(id),
+        action VARCHAR(100) NOT NULL,
+        details TEXT,
+        ip_address INET,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Create indexes for performance optimization on payment tracking system
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_payment_status ON members(payment_status);`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_payment_token ON members(payment_upload_token);`);
@@ -338,6 +383,11 @@ async function setupDatabase() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_audit_log_admin_id ON payment_audit_log(admin_id);`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_payment_audit_log_action ON payment_audit_log(action);`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_members_payment_status_requested ON members(payment_status) WHERE payment_status = 'uploaded';`);
+
+    // Index for admin activities
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_admin_activities_created_at ON admin_activities(created_at DESC);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_admin_activities_type ON admin_activities(activity_type);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_admin_activities_priority ON admin_activities(priority);`);
 
     // Counselling notification preferences table (for counsellors to manage booking notifications)
     await pool.query(`
@@ -412,12 +462,17 @@ async function setupDatabase() {
       );
     `);
 
-    // Insert default membership categories
+    // Insert default membership categories (P50 joining, P150 annual for all members)
     await pool.query(`
       INSERT INTO membership_categories (category_type, joining_fee, annual_fee, description, requires_supervisor_info) VALUES
       ('professional', 50.00, 150.00, 'Full professional membership for qualified counsellors with Bachelor''s degree minimum', FALSE),
-      ('student', 25.00, 75.00, 'Student membership for counselling trainees still in training programs', TRUE);
+      ('student', 50.00, 150.00, 'Student membership for counselling trainees still in training programs', TRUE);
     `);
+
+    // Indexes for member_payments queries
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_member_payments_member_id ON member_payments(member_id);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_member_payments_fee_type ON member_payments(fee_type);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_member_payments_payment_date ON member_payments(payment_date DESC);`);
 
     // Create sequence for BSPCP membership numbering starting at 175
     await pool.query(`DROP SEQUENCE IF EXISTS bspcp_membership_number_seq;`);

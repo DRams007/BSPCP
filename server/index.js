@@ -12,9 +12,13 @@ import crypto from 'crypto';
 import pool from './lib/db.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { setupPaymentEndpoints } from './payment_endpoints.js';
-import { sendMemberPasswordResetEmail, sendMemberApprovalEmail, sendApplicationNotificationEmail, sendCounsellorBookingNotificationEmail, sendApplicantRequestMoreInfoEmail, sendPaymentRequestEmail, sendPaymentVerifiedEmail, sendPaymentRejectedEmail, sendAdminPasswordResetEmail, testEmailConnection, sendApplicationRejectedEmail } from './lib/emailService.js';
+import { setupMemberActionsEndpoints } from './member_actions_endpoints.js';
+import { sendMemberPasswordResetEmail, sendMemberApprovalEmail, sendApplicationNotificationEmail, sendCounsellorBookingNotificationEmail, sendApplicantRequestMoreInfoEmail, sendPaymentVerifiedEmail, sendPaymentRejectedEmail, sendAdminPasswordResetEmail, testEmailConnection, sendApplicationRejectedEmail } from './lib/emailService.js';
 
+import checkAndExpireMemberships from './lib/expiry_trigger.js';
+import cron from 'node-cron';
+import { logAdminAudit } from './lib/auditLogger.js';
+import { logAdminActivity } from './lib/activityLogger.js';
 // Load environment variables from .env file
 dotenv.config();
 
@@ -112,6 +116,81 @@ app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // Use environment variable for production
 
+// Middleware to verify JWT token for members
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token == null) return res.status(401).json({ error: 'Access token required' }); // No token
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' }); // Invalid token
+    req.user = user;
+    next();
+  });
+};
+
+// Admin JWT authentication middleware
+const authenticateAdminToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  // Return JSON error instead of HTML status codes
+  if (token == null) return res.status(401).json({ error: 'Access token required' });
+
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+    let client;
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
+
+    try {
+      // Verify admin still exists and is active
+      client = await pool.connect();
+      const adminResult = await client.query(
+        'SELECT id, is_active, role FROM admins WHERE id = $1',
+        [decoded.adminId]
+      );
+
+      if (adminResult.rows.length === 0) {
+        client.release();
+        return res.status(401).json({ error: 'Admin account not found' });
+      }
+
+      const admin = adminResult.rows[0];
+      if (!admin.is_active) {
+        client.release();
+        return res.status(403).json({ error: 'Admin account is deactivated' });
+      }
+
+      // Check if token is blacklisted (logout scenario)
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const sessionResult = await client.query(
+        'SELECT id FROM admin_sessions WHERE admin_id = $1 AND token_hash = $2',
+        [admin.id, tokenHash]
+      );
+
+      client.release();
+      client = null;
+
+      if (sessionResult.rows.length === 0) {
+        return res.status(401).json({ error: 'Token has been invalidated' });
+      }
+
+      req.admin = {
+        id: admin.id,
+        role: admin.role,
+        ...decoded
+      };
+      next();
+    } catch (dbError) {
+      if (client) {
+        client.release();
+      }
+      console.error('Admin token verification error:', dbError);
+      res.status(500).json({ error: 'Authentication service unavailable', details: dbError.message });
+    }
+  });
+};
+
 // Save backup directory path for static serving
 const backupDir = path.join(__dirname, 'backup');
 
@@ -202,9 +281,9 @@ app.post('/api/membership', upload.fields([
       scholarlyPublications, specializations, employmentStatus, yearsExperience,
       bio, title, languages, sessionTypes, availability,
 
-    // From member_contact_details table
-    phone, email, website, physicalAddress, city,
-    emergencyContact, emergencyPhone, showEmail, showPhone, showAddress
+      // From member_contact_details table
+      phone, email, website, physicalAddress, city,
+      emergencyContact, emergencyPhone, showEmail, showPhone, showAddress
     } = req.body;
 
     console.log('=== MEMBERSHIP APPLICATION RECEIVED ===');
@@ -242,10 +321,10 @@ app.post('/api/membership', upload.fields([
 
     const memberParams = membershipType === 'student' ?
       [firstName, lastName, calculatedFullName, bspcp_membership_number || null, idNumber, dateOfBirth, gender, nationality,
-       institutionName, studyYear, counsellingCoursework, internshipSupervisorName, internshipSupervisorContact,
-       cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType] :
+        institutionName, studyYear, counsellingCoursework, internshipSupervisorName, internshipSupervisorContact,
+        cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType] :
       [firstName, lastName, calculatedFullName, bspcp_membership_number, idNumber, dateOfBirth, gender, nationality,
-       cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType];
+        cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType];
 
     const memberResult = await client.query(memberQuery, memberParams);
     const memberId = memberResult.rows[0].id;
@@ -336,6 +415,21 @@ app.post('/api/membership', upload.fields([
       // Still successful - application was processed, just email failed
     }
 
+    // Log admin activity for new application
+    await logAdminActivity(client, {
+      type: 'application_submitted',
+      title: 'New Application Submitted',
+      message: `New membership application received from ${firstName} ${lastName}`,
+      priority: 'medium',
+      relatedEntity: 'member',
+      relatedId: memberId,
+      details: {
+        name: `${firstName} ${lastName}`,
+        email: email,
+        membershipType: membershipType
+      }
+    });
+
     res.status(201).json({ message: 'Membership application submitted successfully!', memberId });
 
   } catch (error) {
@@ -352,7 +446,7 @@ app.get('/api/applications', async (req, res) => {
   try {
     const client = await pool.connect();
     const { status } = req.query; // Get status from query parameters
-  let query = `
+    let query = `
       SELECT
         m.id,
         m.first_name,
@@ -385,6 +479,13 @@ app.get('/api/applications', async (req, res) => {
         m.payment_verified_at,
         m.payment_rejected_at,
         m.payment_requested_at,
+        m.renewal_status,
+        m.renewal_date,
+        m.renewal_proof_url,
+        m.renewal_uploaded_at,
+        m.renewal_token_expires_at,
+        CASE WHEN m.renewal_date IS NOT NULL THEN to_char(m.renewal_date, 'YYYY-MM-DD') ELSE NULL END AS "renewalDate",
+        CASE WHEN m.renewal_uploaded_at IS NOT NULL THEN to_char(m.renewal_uploaded_at, 'YYYY-MM-DD HH24:MI:SS') ELSE NULL END AS "renewal_uploaded_at_formatted",
         (
           SELECT json_agg(json_build_object('name', mc.original_filename, 'uploaded', TRUE, 'url', mc.file_path))
           FROM member_certificates mc
@@ -401,6 +502,12 @@ app.get('/api/applications', async (req, res) => {
           WHERE mc.member_id = m.id
         ) AS cpd_documents,
         m.payment_proof_url,
+        m.cpd_points,
+        (
+          SELECT COALESCE(SUM(mc.points), 0)
+          FROM member_cpd mc
+          WHERE mc.member_id = m.id
+        ) AS total_cpd_points,
         -- Get latest payment rejection reason from audit log
         ra.details AS rejection_audit_details,
         -- Aggregate payment history from audit log (all payment actions) with upload file info
@@ -439,7 +546,30 @@ app.get('/api/applications', async (req, res) => {
           LEFT JOIN admins admin_upload ON pal.admin_id = admin_upload.id
           WHERE pal.member_id = m.id
             AND pal.action LIKE 'payment_%'
-        ) AS payment_history
+        ) AS payment_history,
+        -- Aggregate renewal history from audit log (all renewal actions)
+        (
+          SELECT json_agg(
+            json_build_object(
+              'id', ral.id::text,
+              'action', ral.action,
+              'details', ral.details,
+              'timestamp', ral.created_at,
+              'adminName', COALESCE(admin_renewal.first_name || ' ' || admin_renewal.last_name, NULL),
+              'adminEmail', admin_renewal.email,
+              'reason', CASE
+                WHEN ral.action = 'renewal_rejected' AND ral.details LIKE 'Renewal rejected by admin%:%'
+                THEN substring(ral.details from ': (.+)$')
+                ELSE NULL
+              END
+            )
+            ORDER BY ral.created_at DESC
+          )
+          FROM renewal_audit_log ral
+          LEFT JOIN admins admin_renewal ON ral.admin_id = admin_renewal.id
+          WHERE ral.member_id = m.id
+            AND ral.action LIKE 'renewal_%'
+        ) AS renewal_history
       FROM members m
       JOIN member_professional_details mpd ON m.id = mpd.member_id
       JOIN member_contact_details mcd ON m.id = mcd.member_id
@@ -474,7 +604,25 @@ app.get('/api/applications', async (req, res) => {
       //   documents.push({ name: "Profile Image", uploaded: true, url: getFullUrl(row.personal_documents.profileImagePath, req) });
       // }
       if (row.payment_proof_url) {
-        documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
+        try {
+          // Try to parse as JSON array (for new multi-file uploads)
+          const proofUrls = JSON.parse(row.payment_proof_url);
+          if (Array.isArray(proofUrls)) {
+            proofUrls.forEach((url, index) => {
+              documents.push({
+                name: `Proof of Payment ${index + 1}`,
+                uploaded: true,
+                url: getFullUrl(url, req)
+              });
+            });
+          } else {
+            // Fallback if JSON but not array (unlikely, but safe)
+            documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
+          }
+        } catch (e) {
+          // If parsing fails, it's a legacy single file string
+          documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
+        }
       }
       if (row.certificates) {
         const certificateDocs = row.certificates.map(cert => ({
@@ -485,7 +633,7 @@ app.get('/api/applications', async (req, res) => {
         documents.push(...certificateDocs);
       }
 
-    return {
+      return {
         id: row.id,
         name: row.name,
         email: row.email,
@@ -500,8 +648,15 @@ app.get('/api/applications', async (req, res) => {
         application_status: row.application_status,
         member_status: row.member_status,
         payment_status: row.payment_status,
+        cpd_points: (parseInt(row.cpd_points || 0) + parseInt(row.total_cpd_points || 0)),
+        // Add professional fields
+        specializations: row.specializations,
+        languages: row.languages,
+        sessionTypes: row.session_types,
+        availability: row.availability,
         personalInfo: {
           dateOfBirth: row.dateOfBirth,
+          renewalDate: row.renewalDate,
           idNumber: row.idNumber,
           physicalAddress: row.physicalAddress,
           postalAddress: row.postalAddress,
@@ -517,7 +672,7 @@ app.get('/api/applications', async (req, res) => {
           rejectionReason: extractPaymentRejectionReason(row.payment_status === 'rejected' ? row.rejection_audit_details : null)
         },
 
-          // Add comprehensive payment history
+        // Add comprehensive payment history
         paymentHistory: row.payment_history ? row.payment_history.map(entry => ({
           id: entry.id,
           action: entry.action,
@@ -551,8 +706,18 @@ app.get('/api/applications', async (req, res) => {
             points: cpd.points,
             completion_date: cpd.completion_date,
             url: cpd.path && cpd.path.trim() ? getFullUrl(cpd.path, req) : null
-          })) : []
+          })) : [],
+          cpd_points: (parseInt(row.cpd_points || 0) + parseInt(row.total_cpd_points || 0))
         },
+        // Add renewal date
+        renewalDate: row.renewalDate,
+        // Add renewal fields
+        renewal_status: row.renewal_status,
+        renewal_date: row.renewal_date,
+        renewal_proof_url: row.renewal_proof_url,
+        renewal_uploaded_at: row.renewal_uploaded_at,
+        renewal_token_expires_at: row.renewal_token_expires_at,
+        renewal_uploaded_at_formatted: row.renewal_uploaded_at_formatted,
         // Add other fields as needed
       };
     });
@@ -565,8 +730,183 @@ app.get('/api/applications', async (req, res) => {
   }
 });
 
+// New API endpoint to fetch membership categories (fees)
+app.get('/api/membership-fees', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query('SELECT * FROM membership_categories WHERE active = true ORDER BY id ASC');
+    client.release();
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching membership fees:', err);
+    res.status(500).json({ error: 'Failed to fetch membership fees', details: err.message });
+  }
+});
+
+// New API endpoint to fetch all bookings for reports
+app.get('/api/admin/bookings', authenticateAdminToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT b.*, m.first_name || ' ' || m.last_name as counsellor_name 
+      FROM bookings b 
+      LEFT JOIN members m ON b.counsellor_id = m.id 
+      ORDER BY b.booking_date DESC
+    `);
+    client.release();
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching bookings:', err);
+    res.status(500).json({ error: 'Failed to fetch bookings', details: err.message });
+  }
+});
+
+// New API endpoint to fetch admin audit logs for reports
+app.get('/api/admin/audit-logs', authenticateAdminToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT a.*, adm.username as admin_name 
+      FROM admin_audit_log a 
+      LEFT JOIN admins adm ON a.admin_id = adm.id 
+      ORDER BY a.created_at DESC 
+      LIMIT 100
+    `);
+    client.release();
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching audit logs:', err);
+    res.status(500).json({ error: 'Failed to fetch audit logs', details: err.message });
+  }
+});
+
+// New API endpoint to fetch payment audit logs for reports
+app.get('/api/admin/payment-audit-logs', authenticateAdminToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT 
+        pal.id,
+        pal.action,
+        pal.details,
+        pal.ip_address,
+        pal.created_at,
+        CONCAT(m.first_name, ' ', m.last_name) as member_name,
+        m.id as member_id,
+        COALESCE(adm.first_name || ' ' || adm.last_name, adm.username, 'System') as admin_name
+      FROM payment_audit_log pal
+      LEFT JOIN members m ON pal.member_id = m.id
+      LEFT JOIN admins adm ON pal.admin_id = adm.id
+      ORDER BY pal.created_at DESC
+      LIMIT 200
+    `);
+    client.release();
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching payment audit logs:', err);
+    res.status(500).json({ error: 'Failed to fetch payment audit logs', details: err.message });
+  }
+});
+
+// New API endpoint to fetch renewal audit logs for reports
+app.get('/api/admin/renewal-audit-logs', authenticateAdminToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const result = await client.query(`
+      SELECT 
+        ral.id,
+        ral.action,
+        ral.details,
+        ral.ip_address,
+        ral.created_at,
+        CONCAT(m.first_name, ' ', m.last_name) as member_name,
+        m.id as member_id,
+        COALESCE(adm.first_name || ' ' || adm.last_name, adm.username, 'System') as admin_name
+      FROM renewal_audit_log ral
+      LEFT JOIN members m ON ral.member_id = m.id
+      LEFT JOIN admins adm ON ral.admin_id = adm.id
+      ORDER BY ral.created_at DESC
+      LIMIT 200
+    `);
+    client.release();
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching renewal audit logs:', err);
+    res.status(500).json({ error: 'Failed to fetch renewal audit logs', details: err.message });
+  }
+});
+
+// New API endpoint to fetch admin activities (notifications)
+app.get('/api/admin/activities', authenticateAdminToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
+    const unreadOnly = req.query.unread === 'true';
+
+    let query = `
+      SELECT * FROM admin_activities 
+    `;
+
+    // Base params
+    const queryParams = [];
+
+    // Filter conditions
+    if (unreadOnly) {
+      query += ` WHERE is_read = false`;
+    }
+
+    // Sort and paginate
+    query += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+
+    queryParams.push(limit, offset);
+
+    const result = await client.query(query, queryParams);
+
+    // Get unread count for badge
+    const countResult = await client.query('SELECT COUNT(*) FROM admin_activities WHERE is_read = false');
+    const unreadCount = parseInt(countResult.rows[0].count);
+
+    client.release();
+
+    res.json({
+      activities: result.rows,
+      unreadCount: unreadCount
+    });
+  } catch (err) {
+    console.error('Error fetching admin activities:', err);
+    res.status(500).json({ error: 'Failed to fetch notifications', details: err.message });
+  }
+});
+
+// New API endpoint to mark activities as read
+app.put('/api/admin/activities/mark-read', authenticateAdminToken, async (req, res) => {
+  try {
+    const client = await pool.connect();
+    const { activityIds, all } = req.body; // Expects { activityIds: [uuid, ...], all: boolean }
+
+    if (all) {
+      // Mark all as read
+      await client.query('UPDATE admin_activities SET is_read = true WHERE is_read = false');
+    } else if (Array.isArray(activityIds) && activityIds.length > 0) {
+      // Mark specific IDs as read
+      await client.query(
+        'UPDATE admin_activities SET is_read = true WHERE id = ANY($1)',
+        [activityIds]
+      );
+    }
+
+    client.release();
+    res.json({ message: 'Notifications marked as read' });
+  } catch (err) {
+    console.error('Error marking notifications as read:', err);
+    res.status(500).json({ error: 'Failed to update notifications', details: err.message });
+  }
+});
+
 // New API endpoint to update application status
-app.put('/api/applications/:id/status', async (req, res) => {
+app.put('/api/applications/:id/status', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
   const { status, reviewComment } = req.body;
   let client;
@@ -578,76 +918,77 @@ app.put('/api/applications/:id/status', async (req, res) => {
     let query;
     let queryParams;
 
-  // Helper function to generate unique username
-  async function generateUniqueUsername(client, firstName, lastName) {
-    // Clean and prepare names
-    const cleanFirst = (firstName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
-    const cleanLast = (lastName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
+    // Helper function to generate unique username
+    async function generateUniqueUsername(client, firstName, lastName) {
+      // Clean and prepare names
+      const cleanFirst = (firstName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
+      const cleanLast = (lastName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
 
-    // Strategy 1: firstInitial + lastName (current logic)
-    let baseUsername = `${cleanFirst.charAt(0)}${cleanLast}`;
+      // Strategy 1: firstInitial + lastName (current logic)
+      let baseUsername = `${cleanFirst.charAt(0)}${cleanLast}`;
 
-    // If strategy 1 is empty, use first name only
-    if (!baseUsername || baseUsername.length < 2) {
-      baseUsername = cleanFirst || 'user';
-    }
-
-    // Multiple strategies to try
-    const strategies = [
-      baseUsername,
-      `${cleanFirst}${cleanLast.charAt(0)}`, // firstName + lastInitial
-      `${cleanFirst}${cleanLast}`, // firstName + lastName
-    ];
-
-    // Try each strategy, adding numeric suffix if needed
-    for (const strategy of strategies) {
-      if (!strategy) continue;
-
-      // Check base version first
-      const existingCheck = await client.query(
-        'SELECT id FROM member_authentication WHERE username = $1',
-        [strategy]
-      );
-
-      if (existingCheck.rows.length === 0) {
-        return strategy; // Base version is available
+      // If strategy 1 is empty, use first name only
+      if (!baseUsername || baseUsername.length < 2) {
+        baseUsername = cleanFirst || 'user';
       }
 
-      // If base version exists, try numeric suffixes
-      for (let suffix = 2; suffix <= 999; suffix++) {
-        const candidate = `${strategy}${suffix}`;
-        const suffixCheck = await client.query(
+      // Multiple strategies to try
+      const strategies = [
+        baseUsername,
+        `${cleanFirst}${cleanLast.charAt(0)}`, // firstName + lastInitial
+        `${cleanFirst}${cleanLast}`, // firstName + lastName
+      ];
+
+      // Try each strategy, adding numeric suffix if needed
+      for (const strategy of strategies) {
+        if (!strategy) continue;
+
+        // Check base version first
+        const existingCheck = await client.query(
           'SELECT id FROM member_authentication WHERE username = $1',
-          [candidate]
+          [strategy]
         );
 
-        if (suffixCheck.rows.length === 0) {
-          return candidate; // Found unique username with suffix
+        if (existingCheck.rows.length === 0) {
+          return strategy; // Base version is available
+        }
+
+        // If base version exists, try numeric suffixes
+        for (let suffix = 2; suffix <= 999; suffix++) {
+          const candidate = `${strategy}${suffix}`;
+          const suffixCheck = await client.query(
+            'SELECT id FROM member_authentication WHERE username = $1',
+            [candidate]
+          );
+
+          if (suffixCheck.rows.length === 0) {
+            return candidate; // Found unique username with suffix
+          }
         }
       }
+
+      // Final fallback: random suffix based on current timestamp
+      const timestamp = Date.now();
+      const fallbackUsername = `${baseUsername}${timestamp}`;
+
+      // Ensure even the fallback is unique (very unlikely it wouldn't be)
+      const existingFallback = await client.query(
+        'SELECT id FROM member_authentication WHERE username = $1',
+        [fallbackUsername]
+      );
+
+      if (existingFallback.rows.length === 0) {
+        return fallbackUsername;
+      }
+
+      // Ultimate fallback: add random numbers (should never reach here)
+      return `${baseUsername}${Math.random().toString(36).substring(2, 8)}`;
     }
 
-    // Final fallback: random suffix based on current timestamp
-    const timestamp = Date.now();
-    const fallbackUsername = `${baseUsername}${timestamp}`;
-
-    // Ensure even the fallback is unique (very unlikely it wouldn't be)
-    const existingFallback = await client.query(
-      'SELECT id FROM member_authentication WHERE username = $1',
-      [fallbackUsername]
-    );
-
-    if (existingFallback.rows.length === 0) {
-      return fallbackUsername;
-    }
-
-    // Ultimate fallback: add random numbers (should never reach here)
-    return `${baseUsername}${Math.random().toString(36).substring(2, 8)}`;
-  }
-
-  if (status === 'approved') {
+    if (status === 'approved') {
       // Update member status to approved and set member as pending password setup (they need to set their password first)
-      query = `UPDATE members SET application_status = $1, member_status = 'pending_password_setup', review_comment = $2 WHERE id = $3 RETURNING *`;
+      // Also initialize renewal_date to approval date + 1 year
+      query = `UPDATE members SET application_status = $1, member_status = 'pending_password_setup', renewal_date = CURRENT_TIMESTAMP + INTERVAL '1 year', review_comment = $2 WHERE id = $3 RETURNING *`;
       queryParams = [status, reviewComment, id];
     } else {
       query = `UPDATE members SET application_status = $1, review_comment = $2 WHERE id = $3 RETURNING *`;
@@ -756,6 +1097,24 @@ app.put('/api/applications/:id/status', async (req, res) => {
       }
     }
 
+    // Log activity for application status change
+    await logAdminActivity(
+      status === 'approved' ? 'application_approved' : status === 'rejected' ? 'application_rejected' : 'application_updated',
+      `Application ${status}`,
+      `Application for ${member.first_name} ${member.last_name} was ${status}`,
+      {
+        memberName: `${member.first_name} ${member.last_name}`,
+        memberEmail: member.email,
+        previousStatus: member.application_status,
+        newStatus: status,
+        reviewComment: reviewComment
+      },
+      'member',
+      id,
+      status === 'approved' ? 'high' : 'medium',
+      req.admin.id
+    );
+
     await client.query('COMMIT'); // Commit transaction
 
     res.json({
@@ -776,7 +1135,7 @@ app.put('/api/applications/:id/status', async (req, res) => {
 });
 
 // New API endpoint to delete member application
-app.delete('/api/applications/:id', async (req, res) => {
+app.delete('/api/applications/:id', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
   const client = await pool.connect();
   try {
@@ -786,15 +1145,16 @@ app.delete('/api/applications/:id', async (req, res) => {
     const memberResult = await client.query(
       `SELECT m.first_name, m.last_name, mcd.email,
                mpd_doc.id_document_path, mpd_doc.profile_image_path,
-               mph.proof_of_payment_path,
-               array_agg(mc.file_path) as certificates
+               m.payment_proof_url, m.renewal_proof_url,
+               array_agg(mc.file_path) as certificates,
+               array_agg(mcpd.document_path) as cpd_documents
        FROM members m
        LEFT JOIN member_contact_details mcd ON m.id = mcd.member_id
        LEFT JOIN member_personal_documents mpd_doc ON m.id = mpd_doc.member_id
-       LEFT JOIN member_payments mph ON m.id = mph.member_id
        LEFT JOIN member_certificates mc ON m.id = mc.member_id
+       LEFT JOIN member_cpd mcpd ON m.id = mcpd.member_id
        WHERE m.id = $1
-       GROUP BY m.first_name, m.last_name, mcd.email, mpd_doc.id_document_path, mpd_doc.profile_image_path, mph.proof_of_payment_path`,
+       GROUP BY m.first_name, m.last_name, mcd.email, mpd_doc.id_document_path, mpd_doc.profile_image_path, m.payment_proof_url, m.renewal_proof_url`,
       [id]
     );
 
@@ -810,17 +1170,36 @@ app.delete('/api/applications/:id', async (req, res) => {
     // Delete uploaded files from server
     const filesToDelete = [];
 
-    if (member.id_document_path) filesToDelete.push(member.id_document_path);
-    if (member.profile_image_path) filesToDelete.push(member.profile_image_path);
-    if (member.proof_of_payment_path) filesToDelete.push(member.proof_of_payment_path);
+    // Helper function to extract filename from path (handles both relative and absolute paths)
+    const extractFilename = (filePath) => {
+      if (!filePath) return null;
+      // If it's an absolute path, extract just the filename
+      if (path.isAbsolute(filePath)) {
+        return path.basename(filePath);
+      }
+      // If it's already relative (starts with 'uploads/'), extract filename
+      if (filePath.startsWith('uploads/')) {
+        return path.basename(filePath);
+      }
+      // Otherwise, treat as filename
+      return filePath;
+    };
+
+    if (member.id_document_path) filesToDelete.push(extractFilename(member.id_document_path));
+    if (member.profile_image_path) filesToDelete.push(extractFilename(member.profile_image_path));
+    if (member.payment_proof_url) filesToDelete.push(extractFilename(member.payment_proof_url));
+    if (member.renewal_proof_url) filesToDelete.push(extractFilename(member.renewal_proof_url));
     if (member.certificates && member.certificates.length > 0) {
-      filesToDelete.push(...member.certificates.filter(cert => cert));
+      filesToDelete.push(...member.certificates.filter(cert => cert).map(extractFilename));
+    }
+    if (member.cpd_documents && member.cpd_documents.length > 0) {
+      filesToDelete.push(...member.cpd_documents.filter(doc => doc).map(extractFilename));
     }
 
     // Delete physical files
-    for (const filePath of filesToDelete) {
-      if (filePath) {
-        const fullPath = path.join(__dirname, filePath);
+    for (const fileName of filesToDelete) {
+      if (fileName) {
+        const fullPath = path.join(uploadDir, fileName);
         try {
           await fs.unlink(fullPath);
           console.log(`Deleted file: ${fullPath}`);
@@ -830,9 +1209,15 @@ app.delete('/api/applications/:id', async (req, res) => {
       }
     }
 
-    // Delete payment_audit_log records first (they reference members without CASCADE)
+    // Delete audit log records first (they reference members without CASCADE)
     await client.query(
       'DELETE FROM payment_audit_log WHERE member_id = $1',
+      [id]
+    );
+
+    // Delete renewal audit log records
+    await client.query(
+      'DELETE FROM renewal_audit_log WHERE member_id = $1',
       [id]
     );
 
@@ -851,8 +1236,25 @@ app.delete('/api/applications/:id', async (req, res) => {
     console.log(`Files deleted: ${filesToDelete.length}`);
     console.log('========================');
 
+    // Log admin audit
+    // Use a new client for audit logging since the transaction is committed/released
+    const auditPool = pool;
+    await logAdminAudit(auditPool, {
+      adminId: req.admin.id,
+      action: 'delete_application',
+      resourceType: 'application',
+      resourceId: id,
+      oldValues: {
+        name: memberName,
+        email: member.email,
+        files_deleted: filesToDelete.length
+      },
+      details: `Permanently deleted application for ${memberName}`,
+      req
+    });
+
     res.json({
-      message: `Application for ${memberName} has been permanently deleted.`, 
+      message: `Application for ${memberName} has been permanently deleted.`,
       deletedMember: memberName,
       filesCleaned: filesToDelete.length
     });
@@ -869,17 +1271,39 @@ app.delete('/api/applications/:id', async (req, res) => {
 });
 
 // New API endpoint to update member status
-app.put('/api/members/:id/status', async (req, res) => {
+app.put('/api/members/:id/status', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   try {
     const client = await pool.connect();
+
+    // Get old status and member info for audit log
+    const oldMember = await client.query(
+      'SELECT first_name, last_name, member_status FROM members WHERE id = $1',
+      [id]
+    );
+    const oldStatus = oldMember.rows[0]?.member_status;
+    const memberName = oldMember.rows[0] ? `${oldMember.rows[0].first_name} ${oldMember.rows[0].last_name}` : id;
+
     const result = await client.query(
       `UPDATE members SET member_status = $1 WHERE id = $2 RETURNING *`,
       [status, id]
     );
     client.release();
+
     if (result.rows.length > 0) {
+      // Log admin audit
+      await logAdminAudit(pool, {
+        adminId: req.admin.id,
+        action: 'update_member_status',
+        resourceType: 'member',
+        resourceId: id,
+        oldValues: { member_status: oldStatus },
+        newValues: { member_status: status },
+        details: `Changed member "${memberName}" status from ${oldStatus} to ${status}`,
+        req
+      });
+
       res.json({ message: `Member ${id} status updated to ${status}`, member: result.rows[0] });
     } else {
       res.status(404).json({ error: 'Member not found' });
@@ -949,52 +1373,52 @@ app.post('/api/send-applicant-email', async (req, res) => {
 });
 
 app.post('/api/member/login', async (req, res) => {
-    const { identifier, password } = req.body;
-    console.log('Login attempt for:', identifier);
-    try {
-      const client = await pool.connect();
+  const { identifier, password } = req.body;
+  console.log('Login attempt for:', identifier);
+  try {
+    const client = await pool.connect();
 
-      // Determine if identifier looks like email or username
-      let authenticationQuery;
-      let params;
-      let isEmail = identifier.includes('@'); // Simple email detection
+    // Determine if identifier looks like email or username
+    let authenticationQuery;
+    let params;
+    let isEmail = identifier.includes('@'); // Simple email detection
 
-      if (isEmail) {
-          // Login with email - find the member by email first
-        authenticationQuery = `
+    if (isEmail) {
+      // Login with email - find the member by email first
+      authenticationQuery = `
           SELECT ma.member_id, ma.username, ma.password_hash, ma.salt, CONCAT(m.first_name, ' ', m.last_name) AS full_name, m.member_status, m.application_status
           FROM member_contact_details mcd
           JOIN members m ON mcd.member_id = m.id
           JOIN member_authentication ma ON ma.member_id = m.id
           WHERE mcd.email = $1
         `;
-        params = [identifier];
-      } else {
-        // Login with username - original logic
-        authenticationQuery = `
+      params = [identifier];
+    } else {
+      // Login with username - original logic
+      authenticationQuery = `
           SELECT ma.member_id, ma.username, ma.password_hash, ma.salt, CONCAT(m.first_name, ' ', m.last_name) AS full_name, m.member_status, m.application_status
           FROM member_authentication ma
           JOIN members m ON ma.member_id = m.id
           WHERE ma.username = $1
         `;
-        params = [identifier];
-      }
+      params = [identifier];
+    }
 
-      const result = await client.query(authenticationQuery, params);
-      client.release();
+    const result = await client.query(authenticationQuery, params);
+    client.release();
 
-      if (result.rows.length === 0) {
-        console.log('User not found:', identifier);
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
+    if (result.rows.length === 0) {
+      console.log('User not found:', identifier);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
-      const user = result.rows[0];
-      console.log('User found:', user.username);
-      console.log('Provided password:', password);
-      console.log('Stored password hash:', user.password_hash);
-      console.log('Stored salt:', user.salt); // Note: bcrypt hash already contains the salt, this is just for inspection
-      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-      console.log('Is password valid (bcrypt.compare result):', isPasswordValid);
+    const user = result.rows[0];
+    console.log('User found:', user.username);
+    console.log('Provided password:', password);
+    console.log('Stored password hash:', user.password_hash);
+    console.log('Stored salt:', user.salt); // Note: bcrypt hash already contains the salt, this is just for inspection
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    console.log('Is password valid (bcrypt.compare result):', isPasswordValid);
 
     if (!isPasswordValid) {
       console.log('Password comparison failed for user:', identifier);
@@ -1401,19 +1825,7 @@ app.post('/api/member/setup-password', async (req, res) => {
   }
 });
 
-// Middleware to verify JWT token
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
 
-  if (token == null) return res.status(401).json({ error: 'Access token required' }); // No token
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid or expired token' }); // Invalid token
-    req.user = user;
-    next();
-  });
-};
 
 app.post('/api/check-email', async (req, res) => {
   const { email } = req.body;
@@ -1565,7 +1977,7 @@ app.get('/api/member/profile', authenticateToken, async (req, res) => {
     const client = await pool.connect();
     const memberId = req.user.memberId; // Extracted from JWT
 
-const query = `
+    const query = `
   SELECT
     m.id,
     m.first_name,
@@ -1843,13 +2255,13 @@ app.put('/api/member/contact/:id', authenticateToken, async (req, res) => {
 });
 
 // New API endpoint to upload proof of payment (using new payment schema)
-app.post('/api/member/payment-proof', authenticateToken, upload.single('paymentProof'), async (req, res) => {
+app.post('/api/member/payment-proof', authenticateToken, upload.array('paymentProof', 3), async (req, res) => {
   const client = await pool.connect();
   try {
     const memberId = req.user.memberId; // Extracted from JWT
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded.' });
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded.' });
     }
 
     // Check if member exists and is approved
@@ -1883,7 +2295,8 @@ app.post('/api/member/payment-proof', authenticateToken, upload.single('paymentP
       });
     }
 
-    const paymentProofPath = `uploads/${req.file.filename}`;
+    const filePaths = req.files.map(file => `uploads/${file.filename}`);
+    const paymentProofUrl = JSON.stringify(filePaths);
 
     // Update member payment fields (new schema)
     await client.query(
@@ -1892,38 +2305,41 @@ app.post('/api/member/payment-proof', authenticateToken, upload.single('paymentP
            payment_status = 'uploaded',
            payment_uploaded_at = CURRENT_TIMESTAMP
        WHERE id = $2`,
-      [paymentProofPath, memberId]
+      [paymentProofUrl, memberId]
     );
 
-    // Log the upload in payment upload logs
-    await client.query(
-      `INSERT INTO payment_upload_logs (
-        member_id,
-        upload_token,
-        original_filename,
-        stored_filename,
-        file_size,
-        file_type,
-        ip_address,
-        user_agent
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [
-        memberId,
-        null, // No token for direct uploads
-        req.file.originalname,
-        paymentProofPath,
-        req.file.size,
-        req.file.mimetype.split('/')[1], // pdf, jpg, jpeg, png
-        req.ip,
-        req.get('User-Agent')
-      ]
-    );
+    // Log the upload in payment upload logs (one entry per file)
+    for (const file of req.files) {
+      const storedIdentifier = `uploads/${file.filename}`;
+      await client.query(
+        `INSERT INTO payment_upload_logs (
+          member_id,
+          upload_token,
+          original_filename,
+          stored_filename,
+          file_size,
+          file_type,
+          ip_address,
+          user_agent
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          memberId,
+          null, // No token for direct uploads
+          file.originalname,
+          storedIdentifier,
+          file.size,
+          file.mimetype.split('/')[1], // pdf, jpg, jpeg, png
+          req.ip,
+          req.get('User-Agent')
+        ]
+      );
+    }
 
     // Log the upload in audit trail
     await client.query(
       `INSERT INTO payment_audit_log (member_id, action, details, ip_address)
        VALUES ($1, $2, $3, $4)`,
-      [memberId, 'payment_uploaded', `Payment proof uploaded by member ${memberName}`, req.ip]
+      [memberId, 'payment_uploaded', `Payment proof (${req.files.length} files) uploaded by member ${memberName}`, req.ip]
     );
 
     // Get admin emails for notification
@@ -1947,11 +2363,25 @@ app.post('/api/member/payment-proof', authenticateToken, upload.single('paymentP
       }
     }
 
+    // Log admin activity for payment upload
+    await logAdminActivity(client, {
+      type: 'payment_proof_uploaded',
+      title: 'Payment Proof Uploaded',
+      message: `${memberName} has uploaded a payment proof`,
+      priority: 'high',
+      relatedEntity: 'member',
+      relatedId: memberId,
+      details: {
+        memberName: memberName,
+        uploadId: req.files[0].filename // Using filename as ID proxy if needed
+      }
+    });
+
     res.status(201).json({
       message: 'Payment proof uploaded successfully! It will be reviewed by our administrators.',
       paymentStatus: 'uploaded',
       uploadedAt: new Date().toISOString(),
-      proofOfPaymentUrl: getFullUrl(paymentProofPath, req),
+      proofOfPaymentUrl: getFullUrl(paymentProofUrl, req),
       memberName: memberName
     });
 
@@ -2066,7 +2496,7 @@ app.post('/api/member/cpd', authenticateToken, upload.single('document'), async 
       ]
     );
 
-const cpdRecord = result.rows[0];
+    const cpdRecord = result.rows[0];
     res.status(201).json({
       message: 'CPD evidence uploaded successfully!',
       cpd: cpdRecord
@@ -2127,7 +2557,7 @@ app.delete('/api/member/cpd/:id', authenticateToken, async (req, res) => {
 });
 
 // API endpoint to create new content
-app.post('/api/content', upload.single('image'), async (req, res) => {
+app.post('/api/content', authenticateAdminToken, upload.single('image'), async (req, res) => {
   const client = await pool.connect();
   try {
     const {
@@ -2174,7 +2604,20 @@ app.post('/api/content', upload.single('image'), async (req, res) => {
       ]
     );
 
-    res.status(201).json({ message: 'Content created successfully!', content: result.rows[0] });
+    const createdContent = result.rows[0];
+
+    // Log admin audit
+    await logAdminAudit(pool, {
+      adminId: req.admin.id,
+      action: 'create_content',
+      resourceType: 'content',
+      resourceId: createdContent.id,
+      newValues: { title, type, status, author },
+      details: `Created ${type} content: "${title}"`,
+      req
+    });
+
+    res.status(201).json({ message: 'Content created successfully!', content: createdContent });
   } catch (error) {
     console.error('Error creating content:', error);
     res.status(500).json({ error: 'Failed to create content', details: error.message });
@@ -2187,11 +2630,19 @@ app.post('/api/content', upload.single('image'), async (req, res) => {
 
 
 
+
 // New API endpoint to delete content
-app.delete('/api/content/:id', async (req, res) => {
+app.delete('/api/content/:id', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
   try {
     const client = await pool.connect();
+
+    // Get content info before deletion for audit log
+    const contentInfo = await client.query(
+      'SELECT title, type FROM content WHERE id = $1',
+      [id]
+    );
+
     const result = await client.query(
       `DELETE FROM content WHERE id = $1 RETURNING id`,
       [id]
@@ -2199,6 +2650,19 @@ app.delete('/api/content/:id', async (req, res) => {
     client.release();
 
     if (result.rows.length > 0) {
+      const deletedContent = contentInfo.rows[0];
+
+      // Log admin audit
+      await logAdminAudit(pool, {
+        adminId: req.admin.id,
+        action: 'delete_content',
+        resourceType: 'content',
+        resourceId: id,
+        oldValues: deletedContent,
+        details: `Deleted ${deletedContent?.type || 'content'}: "${deletedContent?.title || id}"`,
+        req
+      });
+
       res.status(200).json({ message: `Content item ${id} deleted successfully.` });
     } else {
       res.status(404).json({ error: 'Content item not found.' });
@@ -2259,12 +2723,20 @@ app.get('/api/public-content', async (req, res) => {
 });
 
 // New API endpoint to update content status
-app.put('/api/content/:id/status', async (req, res) => {
+app.put('/api/content/:id/status', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body; // 'Published' or 'Draft'
 
   try {
     const client = await pool.connect();
+
+    // Get old status for audit log
+    const oldContent = await client.query(
+      'SELECT title, type, status FROM content WHERE id = $1',
+      [id]
+    );
+    const oldStatus = oldContent.rows[0]?.status;
+
     const result = await client.query(
       `UPDATE content SET status = $1 WHERE id = $2 RETURNING *`,
       [status, id]
@@ -2272,7 +2744,21 @@ app.put('/api/content/:id/status', async (req, res) => {
     client.release();
 
     if (result.rows.length > 0) {
-      res.json({ message: `Content ${id} status updated to ${status}`, content: result.rows[0] });
+      const updatedContent = result.rows[0];
+
+      // Log admin audit
+      await logAdminAudit(pool, {
+        adminId: req.admin.id,
+        action: 'update_content_status',
+        resourceType: 'content',
+        resourceId: id,
+        oldValues: { status: oldStatus },
+        newValues: { status },
+        details: `Changed ${updatedContent.type} "${updatedContent.title}" status from ${oldStatus} to ${status}`,
+        req
+      });
+
+      res.json({ message: `Content ${id} status updated to ${status}`, content: updatedContent });
     } else {
       res.status(404).json({ error: 'Content not found' });
     }
@@ -2355,11 +2841,20 @@ app.get('/api/testimonials', async (req, res) => {
 });
 
 // New API endpoint to update testimonial status
-app.put('/api/testimonials/:id/status', async (req, res) => {
+app.put('/api/testimonials/:id/status', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   try {
     const client = await pool.connect();
+
+    // Get old status for audit log
+    const oldData = await client.query(
+      'SELECT name, status FROM testimonials WHERE id = $1',
+      [id]
+    );
+    const oldStatus = oldData.rows[0]?.status;
+    const testimonialName = oldData.rows[0]?.name;
+
     const result = await client.query(
       `UPDATE testimonials SET status = $1 WHERE id = $2 RETURNING *`,
       [status, id]
@@ -2367,6 +2862,18 @@ app.put('/api/testimonials/:id/status', async (req, res) => {
     client.release();
 
     if (result.rows.length > 0) {
+      // Log admin audit
+      await logAdminAudit(pool, {
+        adminId: req.admin.id,
+        action: 'update_testimonial_status',
+        resourceType: 'testimonial',
+        resourceId: id,
+        oldValues: { status: oldStatus },
+        newValues: { status },
+        details: `Changed testimonial by "${testimonialName}" status from ${oldStatus} to ${status}`,
+        req
+      });
+
       res.json({ message: `Testimonial ${id} status updated to ${status}`, testimonial: result.rows[0] });
     } else {
       res.status(404).json({ error: 'Testimonial not found' });
@@ -2378,10 +2885,17 @@ app.put('/api/testimonials/:id/status', async (req, res) => {
 });
 
 // New API endpoint to delete a testimonial
-app.delete('/api/testimonials/:id', async (req, res) => {
+app.delete('/api/testimonials/:id', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
   try {
     const client = await pool.connect();
+
+    // Get testimonial info before deletion for audit log
+    const testimonialInfo = await client.query(
+      'SELECT name, content FROM testimonials WHERE id = $1',
+      [id]
+    );
+
     const result = await client.query(
       `DELETE FROM testimonials WHERE id = $1 RETURNING id`,
       [id]
@@ -2389,6 +2903,19 @@ app.delete('/api/testimonials/:id', async (req, res) => {
     client.release();
 
     if (result.rows.length > 0) {
+      const deletedTestimonial = testimonialInfo.rows[0];
+
+      // Log admin audit
+      await logAdminAudit(pool, {
+        adminId: req.admin.id,
+        action: 'delete_testimonial',
+        resourceType: 'testimonial',
+        resourceId: id,
+        oldValues: deletedTestimonial,
+        details: `Deleted testimonial by "${deletedTestimonial?.name || id}"`,
+        req
+      });
+
       res.status(200).json({ message: `Testimonial ${id} deleted successfully.` });
     } else {
       res.status(404).json({ error: 'Testimonial not found.' });
@@ -2739,36 +3266,37 @@ app.put('/api/bookings/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/admin/dashboard-stats', async (req, res) => {
-  try {
-    const client = await pool.connect();
+// OLD ENDPOINT - COMMENTED OUT - Use the authenticated version at line 4374 instead
+// app.get('/api/admin/dashboard-stats', async (req, res) => {
+//   try {
+//     const client = await pool.connect();
 
-    const totalMembersResult = await client.query(
-      `SELECT COUNT(*) FROM members WHERE member_status = 'active';`
-    );
-    const pendingApplicationsResult = await client.query(
-      `SELECT COUNT(*) FROM members WHERE application_status = 'pending';`
-    );
-    const activeNewsResult = await client.query(
-      `SELECT COUNT(*) FROM content WHERE type = 'news' AND status = 'Published';`
-    );
-    const upcomingEventsResult = await client.query(
-      `SELECT COUNT(*) FROM content WHERE type = 'event' AND status = 'Published' AND event_date >= NOW();`
-    );
+//     const totalMembersResult = await client.query(
+//       `SELECT COUNT(*) FROM members WHERE member_status = 'Active';`
+//     );
+//     const pendingApplicationsResult = await client.query(
+//       `SELECT COUNT(*) FROM members WHERE application_status = 'pending';`
+//     );
+//     const activeNewsResult = await client.query(
+//       `SELECT COUNT(*) FROM content WHERE type = 'News' AND status = 'Published';`
+//     );
+//     const upcomingEventsResult = await client.query(
+//       `SELECT COUNT(*) FROM content WHERE type = 'Event' AND status = 'Published';`
+//     );
 
-    client.release();
+//     client.release();
 
-    res.json({
-      totalMembers: parseInt(totalMembersResult.rows[0].count, 10),
-      pendingApplications: parseInt(pendingApplicationsResult.rows[0].count, 10),
-      activeNews: parseInt(activeNewsResult.rows[0].count, 10),
-      upcomingEvents: parseInt(upcomingEventsResult.rows[0].count, 10),
-    });
-  } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
-  }
-});
+//     res.json({
+//       totalMembers: parseInt(totalMembersResult.rows[0].count, 10),
+//       pendingApplications: parseInt(pendingApplicationsResult.rows[0].count, 10),
+//       activeNews: parseInt(activeNewsResult.rows[0].count, 10),
+//       upcomingEvents: parseInt(upcomingEventsResult.rows[0].count, 10),
+//     });
+//   } catch (error) {
+//     console.error('Error fetching dashboard stats:', error);
+//     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+//   }
+// });
 
 // New API endpoint to fetch today's confirmed bookings for a specific counsellor
 app.get('/api/member/bookings/today', authenticateToken, async (req, res) => {
@@ -2960,11 +3488,11 @@ app.post('/api/backup', async (req, res) => {
             'Step 2: Create fresh database',
             `createdb -h localhost -U postgres BSPCP`,
             'Step 3: Restore from backup (choose one)',
-            `pg_restore -h localhost -U postgres -d BSPCP "${path.basename(dumpFilePath)}"`, 
+            `pg_restore -h localhost -U postgres -d BSPCP "${path.basename(dumpFilePath)}"`,
             'OR',
-            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`, 
+            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`,
             'OR',
-            `psql -h localhost -U postgres -d BSPCP < "${path.basename(sqlFilePath)}"`, 
+            `psql -h localhost -U postgres -d BSPCP < "${path.basename(sqlFilePath)}"`,
             '▶ BEST for development/staging environments'
           ],
           'Force Restore into Existing Database': [
@@ -2972,22 +3500,22 @@ app.post('/api/backup', async (req, res) => {
             '⚠️ WARNING: This will DROP existing tables first, potentially losing data',
             'Step 1: Verify you have backups of current data',
             'Step 2: Force restore with clean option',
-            `pg_restore -h localhost -U postgres -d BSPCP --clean --if-exists "${path.basename(dumpFilePath)}"`, 
+            `pg_restore -h localhost -U postgres -d BSPCP --clean --if-exists "${path.basename(dumpFilePath)}"`,
             'OR with psql (if current DB has issues)',
-            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}" --variable ON_ERROR_STOP=off`, 
+            `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}" --variable ON_ERROR_STOP=off`,
             '▶ USE with CAUTION - backup current data first!'
           ],
           'Safe Side-by-Side Restore': [
             'Option 3 - Create new database copy (safe - no data loss)',
             'Step 1: Create new database with timestamp',
-            `createdb -h localhost -U postgres "BSPCP_backup_${new Date().toISOString().split('T')[0]}"`, 
+            `createdb -h localhost -U postgres "BSPCP_backup_${new Date().toISOString().split('T')[0]}"`,
             'Step 2: Restore to the new database',
-            `pg_restore -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" "${path.basename(dumpFilePath)}"`, 
+            `pg_restore -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" "${path.basename(dumpFilePath)}"`,
             'OR',
-            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" < "${path.basename(bakFilePath)}"`, 
+            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" < "${path.basename(bakFilePath)}"`,
             'Step 3: Compare databases and merge if needed',
-            `psql -h localhost -U postgres -d BSPCP -c "SELECT COUNT(*) FROM members;"`, 
-            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" -c "SELECT COUNT(*) FROM members;"`, 
+            `psql -h localhost -U postgres -d BSPCP -c "SELECT COUNT(*) FROM members;"`,
+            `psql -h localhost -U postgres -d "BSPCP_backup_${new Date().toISOString().split('T')[0]}" -c "SELECT COUNT(*) FROM members;"`,
             '▶ SAFEST option - keeps both original and backup data'
           ],
           quickRestoreMethods: {
@@ -2995,7 +3523,7 @@ app.post('/api/backup', async (req, res) => {
               `pg_restore -h localhost -U postgres -d BSPCP "${path.basename(dumpFilePath)}"`
             ],
             'SQL Text Restore': [
-              `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`, 
+              `psql -h localhost -U postgres -d BSPCP < "${path.basename(bakFilePath)}"`,
               'OR',
               `psql -h localhost -U postgres -d BSPCP < "${path.basename(sqlFilePath)}"`
             ]
@@ -3345,66 +3873,9 @@ async function getFileSize(filePath) {
 // ADMIN AUTHENTICATION ENDPOINTS
 // =========================================
 
-// Admin JWT authentication middleware
-const authenticateAdminToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
 
-  // Return JSON error instead of HTML status codes
-  if (token == null) return res.status(401).json({ error: 'Access token required' });
 
-  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
-    let client;
-    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
 
-    try {
-      // Verify admin still exists and is active
-      client = await pool.connect();
-      const adminResult = await client.query(
-        'SELECT id, is_active, role FROM admins WHERE id = $1',
-        [decoded.adminId]
-      );
-
-      if (adminResult.rows.length === 0) {
-        client.release();
-        return res.status(401).json({ error: 'Admin account not found' });
-      }
-
-      const admin = adminResult.rows[0];
-      if (!admin.is_active) {
-        client.release();
-        return res.status(403).json({ error: 'Admin account is deactivated' });
-      }
-
-      // Check if token is blacklisted (logout scenario)
-      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-      const sessionResult = await client.query(
-        'SELECT id FROM admin_sessions WHERE admin_id = $1 AND token_hash = $2',
-        [admin.id, tokenHash]
-      );
-
-      client.release();
-      client = null;
-
-      if (sessionResult.rows.length === 0) {
-        return res.status(401).json({ error: 'Token has been invalidated' });
-      }
-
-      req.admin = {
-        id: admin.id,
-        role: admin.role,
-        ...decoded
-      };
-      next();
-    } catch (dbError) {
-      if (client) {
-        client.release();
-      }
-      console.error('Admin token verification error:', dbError);
-      res.status(500).json({ error: 'Authentication service unavailable', details: dbError.message });
-    }
-  });
-};
 
 // Role-based permissions middleware
 const requireRole = (requiredRole) => {
@@ -3522,6 +3993,15 @@ app.post('/api/admin/login', async (req, res) => {
     console.log(`IP: ${req.ip}`);
     console.log('==========================');
 
+    // Audit log login
+    await logAdminAudit(pool, {
+      adminId: admin.id,
+      action: 'login',
+      resourceType: 'system',
+      details: 'Admin logged in',
+      req
+    });
+
     res.json({
       message: 'Login successful',
       token,
@@ -3557,12 +4037,13 @@ app.post('/api/admin/logout', authenticateAdminToken, async (req, res) => {
     );
 
     // Log activity
-    await client.query(
-      `INSERT INTO admin_audit_log (
-        admin_id, action, resource_type, resource_id, details
-      ) VALUES ($1, $2, $3, $4, $5)`,
-      [req.admin.id, 'logout', 'system', null, 'Admin logged out']
-    );
+    await logAdminAudit(pool, {
+      adminId: req.admin.id,
+      action: 'logout',
+      resourceType: 'system',
+      details: 'Admin logged out',
+      req
+    });
 
     client.release();
 
@@ -3590,13 +4071,7 @@ app.get('/api/admin/profile', authenticateAdminToken, async (req, res) => {
       return res.status(404).json({ error: 'Admin profile not found' });
     }
 
-    // Log activity
-    await client.query(
-      `INSERT INTO admin_audit_log (
-        admin_id, action, resource_type, resource_id
-      ) VALUES ($1, $2, $3, $4)`,
-      [req.admin.id, 'profile_view', 'own_profile', req.admin.id]
-    );
+
 
     client.release();
     res.json({ admin: result.rows[0] });
@@ -4220,6 +4695,8 @@ app.put('/api/admins/:id/status', authenticateAdminToken, requireRole('super_adm
   }
 });
 
+
+
 // Dashboard statistics endpoint
 app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) => {
   let client;
@@ -4231,7 +4708,9 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
       SELECT COUNT(*) as total_members,
              COUNT(CASE WHEN member_status = 'active' AND application_status = 'approved' THEN 1 END) as active_members
       FROM members
+      WHERE application_status = 'approved'
     `);
+    console.log('membersResult:', membersResult.rows[0]);
 
     // Get pending applications
     const pendingApplicationsResult = await client.query(`
@@ -4240,19 +4719,20 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
       WHERE application_status = 'pending'
     `);
 
-    // Get published news/articles
-    const activeNewsResult = await client.query(`
-      SELECT COUNT(*) as active_news
+    const activeNewsResult = await client.query(
+      `SELECT COUNT(*) as active_news
       FROM content
-      WHERE status = 'Published' AND type IN ('Article', 'News')
+      WHERE type = 'News' AND status = 'Published'
     `);
+    console.log('activeNewsResult:', activeNewsResult.rows[0].active_news);
 
     // Get upcoming events (future dates)
-    const upcomingEventsResult = await client.query(`
-      SELECT COUNT(*) as upcoming_events
+    const upcomingEventsResult = await client.query(
+      `SELECT COUNT(*) as upcoming_events
       FROM content
-      WHERE type = 'Event' AND event_date > CURRENT_DATE
+      WHERE type = 'Event' AND status = 'Published'
     `);
+    console.log('upcomingEventsResult:', upcomingEventsResult.rows[0].upcoming_events);
 
     const stats = {
       totalMembers: parseInt(membersResult.rows[0].total_members, 10),
@@ -4261,6 +4741,7 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
       activeNews: parseInt(activeNewsResult.rows[0].active_news, 10),
       upcomingEvents: parseInt(upcomingEventsResult.rows[0].upcoming_events, 10)
     };
+    console.log('Dashboard stats being returned:', stats);
 
     // Log dashboard access
     await client.query(
@@ -4283,6 +4764,66 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
     res.status(500).json({ error: 'Failed to load dashboard statistics' });
   }
 });
+
+// Admin activities endpoint for live activity feed
+app.get('/api/admin/activities', authenticateAdminToken, async (req, res) => {
+  let client;
+  try {
+    client = await pool.connect();
+
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const activitiesResult = await client.query(`
+      SELECT
+        aa.id,
+        aa.activity_type,
+        aa.title,
+        aa.message,
+        aa.details,
+        aa.related_entity,
+        aa.related_id,
+        aa.priority,
+        aa.admin_id,
+        aa.is_read,
+        aa.created_at,
+        COALESCE(a.first_name || ' ' || a.last_name, 'System') as admin_name
+      FROM admin_activities aa
+      LEFT JOIN admins a ON aa.admin_id = a.id
+      ORDER BY aa.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+
+    const activities = activitiesResult.rows.map(activity => ({
+      id: activity.id,
+      type: activity.activity_type,
+      title: activity.title,
+      message: activity.message,
+      details: activity.details,
+      relatedEntity: activity.related_entity,
+      relatedId: activity.related_id,
+      priority: activity.priority,
+      adminId: activity.admin_id,
+      adminName: activity.admin_name,
+      isRead: activity.is_read,
+      timestamp: activity.created_at
+    }));
+
+    client.release();
+    client = null;
+
+    res.json({ activities });
+
+  } catch (error) {
+    if (client) {
+      client.release();
+    }
+    console.error('Error fetching admin activities:', error);
+    res.status(500).json({ error: 'Failed to load activities' });
+  }
+});
+
+
 
 // =========================================
 // NOTIFICATION MANAGEMENT ENDPOINTS
@@ -4358,6 +4899,18 @@ app.post('/api/admin/notification-recipients', authenticateAdminToken, async (re
     client.release();
 
     const recipient = result.rows[0];
+
+    // Log admin audit
+    await logAdminAudit(pool, {
+      adminId: req.admin.id,
+      action: 'add_notification_recipient',
+      resourceType: 'notification_settings',
+      resourceId: recipient.id,
+      newValues: { email },
+      details: `Added notification recipient: ${email}`,
+      req
+    });
+
     res.status(201).json({
       message: 'Notification recipient added successfully',
       recipient: {
@@ -4399,6 +4952,17 @@ app.delete('/api/admin/notification-recipients/:id', authenticateAdminToken, asy
 
     client.release();
 
+    // Log admin audit
+    await logAdminAudit(pool, {
+      adminId: req.admin.id,
+      action: 'delete_notification_recipient',
+      resourceType: 'notification_settings',
+      resourceId: id,
+      oldValues: { email },
+      details: `Removed notification recipient: ${email}`,
+      req
+    });
+
     res.json({
       message: 'Notification recipient removed successfully',
       deletedRecipient: email
@@ -4437,6 +5001,19 @@ app.put('/api/admin/notification-recipients/:id/status', authenticateAdminToken,
     client.release();
 
     const recipient = result.rows[0];
+
+    // Log admin audit
+    await logAdminAudit(pool, {
+      adminId: req.admin.id,
+      action: 'update_notification_recipient_status',
+      resourceType: 'notification_settings',
+      resourceId: id,
+      oldValues: { isActive: !isActive },
+      newValues: { isActive },
+      details: `${isActive ? 'Activated' : 'Deactivated'} notification recipient: ${recipient.email}`,
+      req
+    });
+
     res.json({
       message: `Notification recipient ${isActive ? 'activated' : 'deactivated'} successfully`,
       recipient: {
@@ -4476,6 +5053,19 @@ app.put('/api/admin/notification-settings', authenticateAdminToken, async (req, 
     client.release();
 
     const setting = result.rows[0];
+
+    // Log admin audit
+    await logAdminAudit(pool, {
+      adminId: req.admin.id,
+      action: 'update_notification_settings',
+      resourceType: 'notification_settings',
+      resourceId: 'notifications_enabled',
+      oldValues: { enabled: !enabled },
+      newValues: { enabled },
+      details: `${enabled ? 'Enabled' : 'Disabled'} email notifications`,
+      req
+    });
+
     res.json({
       message: `Notifications ${enabled ? 'enabled' : 'disabled'} successfully`,
       settings: {
@@ -4573,8 +5163,169 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+// New API endpoint to validate renewal token
+app.get('/api/member/renewal-token/:token', async (req, res) => {
+  const { token } = req.params;
+
+  if (!token) {
+    return res.status(400).json({ error: 'Renewal token is required' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Find member by renewal token
+    const result = await client.query(
+      `SELECT
+        m.id,
+        CONCAT(m.first_name, ' ', m.last_name) AS name,
+        mcd.email,
+        m.membership_type,
+        m.member_status,
+        m.renewal_status,
+        m.renewal_token_expires_at
+      FROM members m
+      JOIN member_contact_details mcd ON m.id = mcd.member_id
+      WHERE m.renewal_token = $1
+        AND m.renewal_token_expires_at > NOW()
+        AND m.application_status = 'approved'
+        AND m.member_status IN ('active', 'expired')`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Invalid or expired renewal token' });
+    }
+
+    const member = result.rows[0];
+    client.release();
+
+    res.json({
+      member: {
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        membershipType: member.membership_type,
+        member_status: member.member_status,
+        renewal_status: member.renewal_status
+      }
+    });
+
+  } catch (error) {
+    console.error('Error validating renewal token:', error);
+    res.status(500).json({ error: 'Failed to validate renewal token', details: error.message });
+  }
+});
+
+// New API endpoint to upload renewal proof
+app.post('/api/renewal/upload', upload.single('renewalProof'), async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Authorization token required' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded.' });
+  }
+
+  try {
+    const client = await pool.connect();
+
+    // Validate renewal token and get member info
+    const tokenResult = await client.query(
+      `SELECT
+        m.id,
+        CONCAT(m.first_name, ' ', m.last_name) AS full_name,
+        mcd.email,
+        m.renewal_status,
+        m.renewal_token_expires_at
+      FROM members m
+      JOIN member_contact_details mcd ON m.id = mcd.member_id
+      WHERE m.renewal_token = $1
+        AND m.renewal_token_expires_at > NOW()
+        AND m.application_status = 'approved'
+        AND m.member_status IN ('active', 'expired')`,
+      [token]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      client.release();
+      return res.status(401).json({ error: 'Invalid or expired renewal token' });
+    }
+
+    const member = tokenResult.rows[0];
+    const memberName = member.full_name;
+
+    // Check if renewal proof has already been uploaded and verified
+    if (member.renewal_status === 'verified') {
+      client.release();
+      return res.status(400).json({
+        error: 'Renewal proof has already been verified. Cannot upload new proof.',
+        renewalStatus: member.renewal_status
+      });
+    }
+
+    const renewalProofPath = `/uploads/${req.file.filename}`;
+
+    // Update member renewal fields
+    await client.query(
+      `UPDATE members
+       SET renewal_proof_url = $1,
+           renewal_status = 'uploaded',
+           renewal_uploaded_at = CURRENT_TIMESTAMP
+       WHERE id = $2`,
+      [renewalProofPath, member.id]
+    );
+
+    // Log the upload in renewal audit log
+    await client.query(
+      `INSERT INTO renewal_audit_log (member_id, action, details, ip_address)
+       VALUES ($1, $2, $3, $4)`,
+      [member.id, 'renewal_uploaded', `Renewal proof uploaded by member ${memberName}`, req.ip]
+    );
+
+    // Get admin emails for notification
+    const adminEmailsResult = await client.query(
+      'SELECT email FROM admins WHERE is_active = true'
+    );
+
+    const adminEmails = adminEmailsResult.rows.map(row => row.email);
+
+    // Send email notification to admins
+    if (adminEmails.length > 0) {
+      try {
+        await sendEmail(
+          adminEmails,
+          'New Renewal Proof Submitted - BSPCP Member',
+          `A new renewal proof has been submitted by ${memberName}.\n\nPlease review the submission in the admin dashboard.\n\nMember ID: ${member.id}\nEmail: ${member.email}\nStatus: renewal proof uploaded`
+        );
+        console.log('📧 Renewal submission notification sent to admins');
+      } catch (emailError) {
+        console.error('❌ Failed to send renewal submission notification:', emailError.message);
+      }
+    }
+
+    client.release();
+
+    res.status(201).json({
+      message: 'Renewal proof uploaded successfully! It will be reviewed by our administrators.',
+      renewalStatus: 'uploaded',
+      uploadedAt: new Date().toISOString(),
+      proofOfRenewalUrl: getFullUrl(renewalProofPath, req),
+      memberName: memberName
+    });
+
+  } catch (error) {
+    console.error('Error uploading renewal proof:', error);
+    res.status(500).json({ error: 'Failed to upload renewal proof', details: error.message });
+  }
+});
+
 // Setup payment endpoints after middleware is defined
-setupPaymentEndpoints(app, authenticateToken, authenticateAdminToken, pool, JWT_SECRET, getFullUrl, sendEmail);
+setupMemberActionsEndpoints(app, authenticateToken, authenticateAdminToken, pool, JWT_SECRET, getFullUrl, sendEmail);
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../dist')));
@@ -4583,6 +5334,11 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // All other GET requests not handled by API routes should return the React app
 app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
+  // Schedule the expiry check to run once every day at midnight
+  cron.schedule('0 0 * * *', () => {
+    console.log('Running scheduled job: checkAndExpireMemberships');
+    checkAndExpireMemberships();
+  });
 });
 
 
@@ -4603,6 +5359,9 @@ app.listen(PORT, '0.0.0.0', async () => {
 
     console.log(`Server running on port ${PORT}`);
     console.log('Admin Authentication API endpoints available at:');
+    // Run the expiry check once on startup
+    console.log('Running initial check for expired memberships...');
+    checkAndExpireMemberships();
     console.log('POST /api/admin/login - Admin login');
     console.log('POST /api/admin/logout - Admin logout');
     console.log('GET /api/admin/profile - Get admin profile');

@@ -32,6 +32,17 @@ The BSPCP platform is currently focused on maturing the admin dashboard and memb
 
 ## Recent Changes
 
+### HTTP 401 Authentication Fix
+- Fixed approve application button failing with HTTP 401 error
+- Added missing Authorization header with admin JWT token to updateApplicationStatus API call
+- Implementation: Added Bearer token authentication consistent with other admin API calls
+
+### Technical Fixes
+- Modified `updateApplicationStatus` function in Applications.tsx
+- Added token retrieval from localStorage: `localStorage.getItem('admin_token')`
+- Added Authorization header: `'Authorization': \`Bearer ${adminToken}\``
+- Added error handling for missing authentication tokens
+
 ### Payment System Implementation
 - Full payment verification workflow with document uploads
 - Admin rejection/approval with detailed audit trails

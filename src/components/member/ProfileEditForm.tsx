@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, User } from 'lucide-react';
+import { Upload, User, Lock } from 'lucide-react';
 import { IMemberProfile } from '@/types/member';
 import { useToast } from '@/hooks/use-toast';
 
@@ -247,14 +247,14 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
               <Upload className="h-4 w-4" />
               Change Photo
             </Button>
-              <input
-                id="profile-image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                ref={fileInputRef}
-                aria-label="Profile Image Upload"
+            <input
+              id="profile-image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              ref={fileInputRef}
+              aria-label="Profile Image Upload"
             />
             <p className="text-sm text-muted-foreground mt-2">
               Upload a professional headshot (max 2MB)
@@ -299,15 +299,23 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             name="bspcp_membership_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>BSPCP Membership Number</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  BSPCP Membership Number
+                  <Lock className="w-3 h-3 text-muted-foreground" />
+                </FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="Enter your BSPCP membership number"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      readOnly
+                      disabled
+                      className="bg-muted text-muted-foreground cursor-not-allowed"
+                    />
+                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  </div>
                 </FormControl>
                 <p className="text-xs text-muted-foreground">
-                  This is your official BSPCP member identification number
+                  This official identification number is system-generated and cannot be changed manually.
                 </p>
                 <FormMessage />
               </FormItem>
@@ -343,7 +351,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Gender</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select gender" />
@@ -412,10 +420,10 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             <FormItem>
               <FormLabel>Professional Bio</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="Tell clients about your background, approach, and areas of expertise..."
                   className="min-h-32"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -460,7 +468,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Employment Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select employment status" />
@@ -515,10 +523,10 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             <FormItem>
               <FormLabel>Other Qualifications</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="List any other relevant qualifications"
                   className="min-h-20"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -533,10 +541,10 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             <FormItem>
               <FormLabel>Scholarly Publications</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="List any scholarly publications"
                   className="min-h-20"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -566,10 +574,10 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
                             return checked
                               ? field.onChange([...field.value, spec])
                               : field.onChange(
-                                  field.value?.filter(
-                                    (value) => value !== spec
-                                  )
-                                );
+                                field.value?.filter(
+                                  (value) => value !== spec
+                                )
+                              );
                           }}
                         />
                       </FormControl>
@@ -607,10 +615,10 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
                             return checked
                               ? field.onChange([...field.value, lang])
                               : field.onChange(
-                                  field.value?.filter(
-                                    (value) => value !== lang
-                                  )
-                                );
+                                field.value?.filter(
+                                  (value) => value !== lang
+                                )
+                              );
                           }}
                         />
                       </FormControl>
@@ -648,10 +656,10 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
                             return checked
                               ? field.onChange([...field.value, type])
                               : field.onChange(
-                                  field.value?.filter(
-                                    (value) => value !== type
-                                  )
-                                );
+                                field.value?.filter(
+                                  (value) => value !== type
+                                )
+                              );
                           }}
                         />
                       </FormControl>

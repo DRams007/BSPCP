@@ -343,9 +343,8 @@ const StudentMembershipForm = () => {
 
               return (
                 <div key={i} className="flex items-center">
-                  <div className={`w-12 h-10 rounded-full flex items-center justify-center gap-2 text-sm font-semibold ${
-                    isActive ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
-                  }`}>
+                  <div className={`w-12 h-10 rounded-full flex items-center justify-center gap-2 text-sm font-semibold ${isActive ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
+                    }`}>
                     <StepIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
                     <span>{stepIcons[i].number}</span>
                   </div>
@@ -402,19 +401,7 @@ const StudentMembershipForm = () => {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="bspcp_membership_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>BSPCP Membership Number (if any)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter if you have one" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -844,43 +831,69 @@ const StudentMembershipForm = () => {
                       <FormItem>
                         <FormLabel>Areas of Interest/Specialization</FormLabel>
                         <FormControl>
-                          <Select
-                            onValueChange={(value) => {
-                              const currentSpecializations = form.getValues('specializations') || [];
-                              if (currentSpecializations.includes(value)) {
-                                field.onChange(currentSpecializations.filter((s) => s !== value));
-                              } else {
-                                field.onChange([...currentSpecializations, value]);
-                              }
-                            }}
-                            value={field.value?.[0] || ''}
-                          >
-                            <SelectTrigger className="w-full h-11">
-                              <SelectValue placeholder="Select areas you're interested in" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Depression & Anxiety">Depression & Anxiety</SelectItem>
-                              <SelectItem value="Stress Management">Stress Management</SelectItem>
-                              <SelectItem value="Self-esteem Issues">Self-esteem Issues</SelectItem>
-                              <SelectItem value="Life Transitions">Life Transitions</SelectItem>
-                              <SelectItem value="Relationship Issues">Relationship Issues</SelectItem>
-                              <SelectItem value="Communication Problems">Communication Problems</SelectItem>
-                              <SelectItem value="Pre-Marital Counselling">Pre-Marital Counselling</SelectItem>
-                              <SelectItem value="Separation Support">Separation Support</SelectItem>
-                              <SelectItem value="Family Conflicts">Family Conflicts</SelectItem>
-                              <SelectItem value="Parenting Support">Parenting Support</SelectItem>
-                              <SelectItem value="Blended Family Issues">Blended Family Issues</SelectItem>
-                              <SelectItem value="Generational Conflicts">Generational Conflicts</SelectItem>
-                              <SelectItem value="Behavioral Issues">Behavioral Issues</SelectItem>
-                              <SelectItem value="School Problems">School Problems</SelectItem>
-                              <SelectItem value="Developmental Concerns">Developmental Concerns</SelectItem>
-                              <SelectItem value="Teen Mental Health">Teen Mental Health</SelectItem>
-                              <SelectItem value="Trauma & PTSD">Trauma & PTSD</SelectItem>
-                              <SelectItem value="Addiction Support">Addiction Support</SelectItem>
-                              <SelectItem value="Grief & Loss">Grief & Loss</SelectItem>
-                              <SelectItem value="Career Counselling">Career Counselling</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="space-y-3">
+                            <Select
+                              onValueChange={(value) => {
+                                const currentSpecializations = form.getValues('specializations') || [];
+                                if (!currentSpecializations.includes(value)) {
+                                  field.onChange([...currentSpecializations, value]);
+                                }
+                              }}
+                              value="" // Always reset to empty to allow re-selecting different options
+                            >
+                              <SelectTrigger className="w-full h-11">
+                                <SelectValue placeholder="Select areas you're interested in" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Depression & Anxiety">Depression & Anxiety</SelectItem>
+                                <SelectItem value="Stress Management">Stress Management</SelectItem>
+                                <SelectItem value="Self-esteem Issues">Self-esteem Issues</SelectItem>
+                                <SelectItem value="Life Transitions">Life Transitions</SelectItem>
+                                <SelectItem value="Relationship Issues">Relationship Issues</SelectItem>
+                                <SelectItem value="Communication Problems">Communication Problems</SelectItem>
+                                <SelectItem value="Pre-Marital Counselling">Pre-Marital Counselling</SelectItem>
+                                <SelectItem value="Separation Support">Separation Support</SelectItem>
+                                <SelectItem value="Family Conflicts">Family Conflicts</SelectItem>
+                                <SelectItem value="Parenting Support">Parenting Support</SelectItem>
+                                <SelectItem value="Blended Family Issues">Blended Family Issues</SelectItem>
+                                <SelectItem value="Generational Conflicts">Generational Conflicts</SelectItem>
+                                <SelectItem value="Behavioral Issues">Behavioral Issues</SelectItem>
+                                <SelectItem value="School Problems">School Problems</SelectItem>
+                                <SelectItem value="Developmental Concerns">Developmental Concerns</SelectItem>
+                                <SelectItem value="Teen Mental Health">Teen Mental Health</SelectItem>
+                                <SelectItem value="Trauma & PTSD">Trauma & PTSD</SelectItem>
+                                <SelectItem value="Addiction Support">Addiction Support</SelectItem>
+                                <SelectItem value="Grief & Loss">Grief & Loss</SelectItem>
+                                <SelectItem value="Career Counselling">Career Counselling</SelectItem>
+                              </SelectContent>
+                            </Select>
+
+                            {/* Selected Specializations List */}
+                            {field.value && field.value.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {field.value.map((spec, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                                  >
+                                    <span>{spec}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newSpecializations = [...field.value];
+                                        newSpecializations.splice(index, 1);
+                                        field.onChange(newSpecializations);
+                                      }}
+                                      className="text-muted-foreground hover:text-destructive focus:outline-none"
+                                    >
+                                      <span className="sr-only">Remove</span>
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -914,10 +927,10 @@ const StudentMembershipForm = () => {
                                       return checked
                                         ? field.onChange([...field.value, type])
                                         : field.onChange(
-                                            field.value?.filter(
-                                              (value) => value !== type
-                                            )
-                                          );
+                                          field.value?.filter(
+                                            (value) => value !== type
+                                          )
+                                        );
                                     }}
                                   />
                                 </FormControl>
@@ -975,7 +988,7 @@ const StudentMembershipForm = () => {
           </form>
         </Form>
       </CardContent>
-    </Card>
+    </Card >
   );
 };
 

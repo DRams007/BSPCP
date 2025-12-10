@@ -119,99 +119,103 @@ const MemberDashboard = () => {
       <Navigation />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
-            <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                Welcome back, {member.full_name}
-                </h1>
-                <p className="text-muted-foreground">
-                Manage your profile, track your CPD progress, and update your information
-                </p>
-                <Badge variant="outline" className="mt-2">
-                {member.specializations && member.specializations.length > 0 ? member.specializations.join(', ') : 'No Specialization'}
-                </Badge>
-                {member.bspcp_membership_number && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Membership Number: {member.bspcp_membership_number}
-                  </p>
-                )}
+        <div className="mb-8 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                <div className="flex-1">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+                    Welcome back, {member.full_name}
+                    </h1>
+                    <p className="text-muted-foreground text-sm sm:text-base">
+                    Manage your profile, track your CPD progress, and update your information
+                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
+                        <Badge variant="outline" className="w-fit">
+                        {member.specializations && member.specializations.length > 0 ? member.specializations.join(', ') : 'No Specialization'}
+                        </Badge>
+                        {member.bspcp_membership_number && (
+                          <p className="text-sm text-muted-foreground">
+                            Membership Number: {member.bspcp_membership_number}
+                          </p>
+                        )}
+                    </div>
+                </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col items-start sm:items-end">
+                        <span className="text-sm font-medium">Available for booking</span>
+                        <span className="text-xs text-muted-foreground">
+                          {member.counsellor_visible !== false ? 'Available' : 'Unavailable'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (!token) {
+                              throw new Error('No authentication token found.');
+                            }
+
+                            const newVisibility = !member.counsellor_visible;
+                            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/visibility`, {
+                              method: 'PUT',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`,
+                              },
+                              body: JSON.stringify({ counsellor_visible: newVisibility }),
+                            });
+
+                            if (!response.ok) {
+                              throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+
+                            toast({
+                              title: "Visibility Updated",
+                              description: `Your counsellor profile is now ${newVisibility ? 'visible' : 'hidden'} to potential clients.`,
+                              variant: "default",
+                            });
+
+                            // Refresh member data to reflect changes
+                            fetchMemberProfile();
+                          } catch (error) {
+                            console.error('Error updating visibility:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to update profile visibility. Please try again.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                          member.counsellor_visible !== false ? 'bg-primary' : 'bg-gray-200'
+                        }`}
+                      >
+                        <span className="sr-only">Toggle counsellor visibility</span>
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            member.counsellor_visible !== false ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
+                    </Button>
+                </div>
             </div>
-          <div className="flex items-center gap-4 mt-1">
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-medium">Available for booking</span>
-                <span className="text-xs text-muted-foreground">
-                  {member.counsellor_visible !== false ? 'Available' : 'Unavailable'}
-                </span>
-              </div>
-              <button
-                onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('token');
-                    if (!token) {
-                      throw new Error('No authentication token found.');
-                    }
-
-                    const newVisibility = !member.counsellor_visible;
-                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/member/visibility`, {
-                      method: 'PUT',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({ counsellor_visible: newVisibility }),
-                    });
-
-                    if (!response.ok) {
-                      throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    toast({
-                      title: "Visibility Updated",
-                      description: `Your counsellor profile is now ${newVisibility ? 'visible' : 'hidden'} to potential clients.`,
-                      variant: "default",
-                    });
-
-                    // Refresh member data to reflect changes
-                    fetchMemberProfile();
-                  } catch (error) {
-                    console.error('Error updating visibility:', error);
-                    toast({
-                      title: "Error",
-                      description: "Failed to update profile visibility. Please try again.",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                  member.counsellor_visible !== false ? 'bg-primary' : 'bg-gray-200'
-                }`}
-              >
-                <span className="sr-only">Toggle counsellor visibility</span>
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    member.counsellor_visible !== false ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-          </div>
         </div>
 
 
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex w-full overflow-x-auto space-x-0 ml-[-20px] md:ml-0 md:grid md:grid-cols-5 md:overflow-visible">
-            <TabsTrigger value="profile" className="min-w-fit whitespace-nowrap">Profile</TabsTrigger>
-            <TabsTrigger value="contact" className="min-w-fit whitespace-nowrap">Contact Info</TabsTrigger>
-            <TabsTrigger value="cpd" className="min-w-fit whitespace-nowrap">CPD Evidence</TabsTrigger>
-            <TabsTrigger value="bookings" className="min-w-fit whitespace-nowrap">Clients Bookings</TabsTrigger>
-            <TabsTrigger value="settings" className="min-w-fit whitespace-nowrap">Account</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto p-1">
+            <TabsTrigger value="profile" className="text-xs sm:text-sm">Profile</TabsTrigger>
+            <TabsTrigger value="contact" className="text-xs sm:text-sm">Contact Info</TabsTrigger>
+            <TabsTrigger value="cpd" className="text-xs sm:text-sm col-span-1">CPD Evidence</TabsTrigger>
+            <TabsTrigger value="bookings" className="text-xs sm:text-sm col-span-1">Clients Bookings</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs sm:text-sm col-span-2 sm:col-span-1 md:col-span-1">Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">

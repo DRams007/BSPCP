@@ -1,0 +1,71 @@
+{
+  "columns": [
+    {
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "counsellor_id",
+      "data_type": "uuid"
+    },
+    {
+      "column_name": "client_name",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "phone_number",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "category",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "needs",
+      "data_type": "text"
+    },
+    {
+      "column_name": "session_type",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "support_urgency",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "booking_date",
+      "data_type": "date"
+    },
+    {
+      "column_name": "booking_time",
+      "data_type": "time without time zone"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    }
+  ],
+  "firstRow": {
+    "id": "8234fece-136b-441b-9158-eb3717b27592",
+    "counsellor_id": "f290b160-1d17-4ccf-bc49-f4eb809cc189",
+    "client_name": "Ditiro Ramaduba",
+    "phone_number": "+2677141232",
+    "email": "DRamaduba@gmail.com",
+    "category": null,
+    "needs": "A",
+    "session_type": "in-person",
+    "support_urgency": "immediate",
+    "booking_date": "2025-11-28T22:00:00.000Z",
+    "booking_time": "11:30:00",
+    "status": "confirmed",
+    "created_at": "2025-11-28T10:10:32.474Z"
+  }
+}

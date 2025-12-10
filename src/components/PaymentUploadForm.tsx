@@ -6,58 +6,72 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Loader2, CheckCircle, AlertCircle, CreditCard, DollarSign, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { UploadResult } from '../types/upload';
 
 interface PaymentUploadFormProps {
   memberId?: string;
   uploadToken?: string;
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: UploadResult) => void;
   onError?: (error: string) => void;
 }
 
 const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: PaymentUploadFormProps) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
-
-
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file type
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        toast({
-          title: "Invalid File Type",
-          description: "Please upload PDF, JPG, or PNG files only.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validate file size (5MB limit)
       const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
+
+      if (newFiles.length + selectedFiles.length > 3) {
         toast({
-          title: "File Too Large",
-          description: "Please upload files smaller than 5MB.",
+          title: "Too Many Files",
+          description: "You can upload a maximum of 3 files.",
           variant: "destructive",
         });
         return;
       }
 
-      setSelectedFile(file);
+      const validFiles = newFiles.filter(file => {
+        if (!allowedTypes.includes(file.type)) {
+          toast({
+            title: "Invalid File Type",
+            description: `${file.name} is not a valid type. Please upload PDF, JPG, or PNG files only.`,
+            variant: "destructive",
+          });
+          return false;
+        }
+        if (file.size > maxSize) {
+          toast({
+            title: "File Too Large",
+            description: `${file.name} is too large. Please upload files smaller than 5MB.`,
+            variant: "destructive",
+          });
+          return false;
+        }
+        return true;
+      });
+
+      setSelectedFiles(prev => [...prev, ...validFiles]);
     }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleUpload = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!selectedFile) {
+    if (selectedFiles.length === 0) {
       toast({
         title: "No File Selected",
-        description: "Please select a payment proof file to upload.",
+        description: "Please select at least one payment proof file to upload.",
         variant: "destructive",
       });
       return;
@@ -68,9 +82,11 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
 
     try {
       const formData = new FormData();
-      formData.append('paymentProof', selectedFile);
+      selectedFiles.forEach((file) => {
+        formData.append('paymentProof', file);
+      });
 
-      console.log('Starting payment proof upload...');
+      console.log(`Starting upload of ${selectedFiles.length} files...`);
 
       // Use uploadToken prop if provided, otherwise fallback to localStorage token
       const authToken = uploadToken || localStorage.getItem('token');
@@ -110,7 +126,7 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
       });
 
       // Reset form
-      setSelectedFile(null);
+      setSelectedFiles([]);
 
       // Call success callback
       onSuccess?.(result);
@@ -181,7 +197,7 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg border">
+          <div className="bg-gray-50 p-4 rounded-lg border">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <strong>Bank:</strong> Stanbic Bank of Botswana
@@ -195,8 +211,8 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
               <div>
                 <strong>Branch:</strong> Fairground Branch (Branch No: 1011)
               </div>
-                            <div>
-               <strong>Branch Code:</strong> 064 967
+              <div>
+                <strong>Branch Code:</strong> 064 967
               </div>
             </div>
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
@@ -234,24 +250,63 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
               <div className="mt-2">
                 <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8">
                   <div className="text-center">
-                    {selectedFile ? (
+                    {selectedFiles.length > 0 ? (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-center gap-2">
-                          {getFileIcon(selectedFile.type)}
-                          <CheckCircle className="w-6 h-6 text-green-500" />
+                        <div className="space-y-3">
+                          {selectedFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                              <div className="flex items-center gap-3">
+                                {getFileIcon(file.type)}
+                                <div className="text-left">
+                                  <p className="text-sm font-medium truncate max-w-[200px]">{file.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatFileSize(file.size)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
+                                  onClick={() => removeFile(index)}
+                                >
+                                  <span className="sr-only">Remove</span>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x w-4 h-4"><path d="M18 6 6 18" /><path d="m6 6 18 12" /></svg>
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">{selectedFile.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatFileSize(selectedFile.size)}
-                          </p>
-                        </div>
+
+                        {selectedFiles.length < 3 && (
+                          <div className="mt-4">
+                            <Button type="button" variant="outline" className="cursor-pointer relative">
+                              <label htmlFor="payment-proof-add" className="cursor-pointer flex items-center gap-2 w-full h-full">
+                                <Upload className="w-4 h-4" />
+                                Add Another File
+                              </label>
+                              <input
+                                id="payment-proof-add"
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png,image/*"
+                                onChange={handleFileSelect}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                multiple
+                              />
+                            </Button>
+                          </div>
+                        )}
+
                         <Button
                           type="button"
-                          variant="outline"
-                          onClick={() => setSelectedFile(null)}
+                          variant="ghost"
+                          className="text-muted-foreground text-xs"
+                          onClick={() => setSelectedFiles([])}
                         >
-                          Choose Different File
+                          Clear All
                         </Button>
                       </div>
                     ) : (
@@ -260,7 +315,7 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
                         <div>
                           <Button type="button" variant="outline" className="cursor-pointer">
                             <label htmlFor="payment-proof" className="cursor-pointer">
-                              Click to upload payment proof
+                              Click to upload payment proof (Max 3)
                             </label>
                           </Button>
                           <input
@@ -269,7 +324,8 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
                             accept=".pdf,.jpg,.jpeg,.png,image/*"
                             onChange={handleFileSelect}
                             className="hidden"
-                            required
+                            multiple
+                            required={selectedFiles.length === 0}
                           />
                           <p className="text-xs text-muted-foreground mt-2">
                             PDF, JPG, PNG files up to 5MB
@@ -287,7 +343,7 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isUploading || !selectedFile}
+              disabled={isUploading || selectedFiles.length === 0}
               className="w-full"
               size="lg"
             >

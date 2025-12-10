@@ -98,7 +98,7 @@ const ContentList = ({ searchQuery, contentTypeFilter, statusFilter, refreshTrig
       if (contentTypeFilter !== 'all') params.append('type', contentTypeFilter);
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
-      const response = await fetch(`/api/content?${params.toString()}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/content?${params.toString()}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -127,8 +127,12 @@ const ContentList = ({ searchQuery, contentTypeFilter, statusFilter, refreshTrig
   const handleDeleteContent = async (id: number) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/content/${id}`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/content/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -160,10 +164,12 @@ const ContentList = ({ searchQuery, contentTypeFilter, statusFilter, refreshTrig
     setIsLoading(true);
     const newStatus = currentStatus === 'Published' ? 'Draft' : 'Published';
     try {
-      const response = await fetch(`/api/content/${id}/status`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/content/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ status: newStatus }),
       });

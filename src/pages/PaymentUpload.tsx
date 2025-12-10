@@ -7,17 +7,21 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import PaymentUploadForm from '@/components/PaymentUploadForm';
 import { CheckCircle, AlertTriangle, Lock, ArrowRight, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { UploadResult } from '../types/upload';
 
 interface MemberInfo {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  membershipType: 'professional' | 'student';
+  membershipType: string;
   applicationStatus: 'approved' | 'pending' | 'rejected';
   paymentStatus: 'not_requested' | 'requested' | 'uploaded' | 'verified' | 'rejected';
   paymentUploadToken?: string;
   paymentRequiredBy?: string;
 }
+
+
 
 const PaymentUpload = () => {
   const [searchParams] = useSearchParams();
@@ -78,7 +82,7 @@ const PaymentUpload = () => {
     validateTokenAndGetInfo();
   }, [uploadToken]);
 
-  const handleUploadSuccess = (uploadData: any) => {
+  const handleUploadSuccess = (uploadData: UploadResult) => {
     console.log('Payment upload successful:', uploadData);
     setUploadComplete(true);
 
@@ -194,7 +198,7 @@ const PaymentUpload = () => {
               <div className="text-center space-y-4">
                 <h2 className="text-2xl font-bold text-gray-900">Payment Proof Submitted!</h2>
                 <p className="text-muted-foreground max-w-md">
-                  Thank you, <span className="font-medium">{memberInfo.name}</span>.
+                  Thank you, <span className="font-medium">{memberInfo.first_name} {memberInfo.last_name}</span>.
                   Your payment proof has been successfully submitted and is now under review.
                 </p>
               </div>
@@ -232,7 +236,7 @@ const PaymentUpload = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Welcome, {memberInfo.name}!
+                  Welcome, {memberInfo.first_name} {memberInfo.last_name}!
                 </h1>
                 <p className="text-muted-foreground">
                   Complete your membership by uploading payment proof
@@ -240,11 +244,14 @@ const PaymentUpload = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                {/* Dynamic membership type display */}
                 <Badge
                   variant={memberInfo.membershipType === 'professional' ? 'default' : 'secondary'}
                   className="bg-blue-100 text-blue-800"
                 >
-                  {memberInfo.membershipType === 'professional' ? 'Professional Member' : 'Student Member'}
+                  {memberInfo.membershipType
+                    ? memberInfo.membershipType.charAt(0).toUpperCase() + memberInfo.membershipType.slice(1) + ' Membership'
+                    : 'Membership'}
                 </Badge>
               </div>
             </div>

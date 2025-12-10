@@ -418,11 +418,11 @@ const BookingManagement = () => {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
       {/* Main Navigation Tabs */}
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-        <TabsTrigger value="bookings">All Bookings</TabsTrigger>
-        <TabsTrigger value="clients">Clients</TabsTrigger>
-        <TabsTrigger value="reports">Reports</TabsTrigger>
+      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto p-1">
+        <TabsTrigger value="dashboard" className="text-xs sm:text-sm">Dashboard</TabsTrigger>
+        <TabsTrigger value="bookings" className="text-xs sm:text-sm">All Bookings</TabsTrigger>
+        <TabsTrigger value="clients" className="text-xs sm:text-sm">Clients</TabsTrigger>
+        <TabsTrigger value="reports" className="text-xs sm:text-sm">Reports</TabsTrigger>
       </TabsList>
 
       {/* Dashboard Tab */}
@@ -434,7 +434,7 @@ const BookingManagement = () => {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
           <Card className="border-l-4 border-l-green-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -676,8 +676,8 @@ const BookingManagement = () => {
             </div>
 
             {/* Bookings Table */}
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Client</TableHead>

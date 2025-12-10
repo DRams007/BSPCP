@@ -677,19 +677,20 @@ const getApplicationNotificationEmailTemplate = (applicationData, memberId, appl
   `;
 };
 
+
 // Payment request email to member
-export const sendPaymentRequestEmail = async (memberEmail, memberName, membershipType, uploadToken) => {
+export const sendPaymentRequestEmail = async (memberEmail, memberName, membershipType, paymentToken) => {
   try {
     const transporter = createTransporter();
-    const uploadLink = `${process.env.BASE_URL}/payment-upload?token=${uploadToken}`;
+    const paymentLink = `${process.env.BASE_URL}/payment-upload?token=${paymentToken}`;
 
     const membershipPrice = membershipType === 'professional' ? 'BWP 200.00' : 'BWP 200.00';
 
     const mailOptions = {
       from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
       to: memberEmail,
-      subject: '💳 Payment Proof Required - Complete Your BSPCP Membership Activation',
-      html: getPaymentRequestEmailTemplate(memberName, membershipType, membershipPrice, uploadLink)
+      subject: '💰 Action Required: Submit Proof of Payment - BSPCP Membership',
+      html: getPaymentRequestEmailTemplate(memberName, membershipType, membershipPrice, paymentLink)
     };
 
     const result = await transporter.sendMail(mailOptions);
@@ -697,6 +698,30 @@ export const sendPaymentRequestEmail = async (memberEmail, memberName, membershi
     return result;
   } catch (error) {
     console.error('❌ Failed to send payment request email:', error.message);
+    throw error;
+  }
+};
+
+// Renewal request email to member
+export const sendRenewalRequestEmail = async (memberEmail, memberName, membershipType, renewalToken) => {
+  try {
+    const transporter = createTransporter();
+    const renewalLink = `${process.env.BASE_URL}/renewal-upload?token=${renewalToken}`;
+
+    const membershipPrice = membershipType === 'professional' ? 'BWP 150.00' : 'BWP 150.00'; // Renewal fee
+
+    const mailOptions = {
+      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      to: memberEmail,
+      subject: '🔔 Action Required: Renew Your BSPCP Membership',
+      html: getRenewalRequestEmailTemplate(memberName, membershipType, membershipPrice, renewalLink)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Renewal request email sent successfully to:', memberEmail);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send renewal request email:', error.message);
     throw error;
   }
 };
@@ -774,6 +799,48 @@ export const sendPaymentRejectedEmail = async (memberEmail, memberName, adminNam
   }
 };
 
+// Renewal verification email to member
+export const sendRenewalVerifiedEmail = async (memberEmail, memberName, adminName, adminNotes) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      to: memberEmail,
+      subject: '🎉 Membership Renewed - Thank You for Your Continued Support!',
+      html: getRenewalVerificationEmailTemplate(memberName, 'verified', {}, adminNotes)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Renewal verification success email sent successfully to:', memberEmail);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send renewal verification email:', error.message);
+    throw error;
+  }
+};
+
+// Renewal rejection email to member
+export const sendRenewalRejectedEmail = async (memberEmail, memberName, adminName, rejectionReason, renewalToken) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: `"BSPCP Admin" <${process.env.GMAIL_USER}>`,
+      to: memberEmail,
+      subject: '❌ Membership Renewal Issue - Action Required',
+      html: getRenewalVerificationEmailTemplate(memberName, 'rejected', {}, rejectionReason, renewalToken)
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    console.log('📧 Renewal rejection email sent successfully to:', memberEmail);
+    return result;
+  } catch (error) {
+    console.error('❌ Failed to send renewal rejection email:', error.message);
+    throw error;
+  }
+};
+
 // Payment verification email to member (legacy function - replaced by verified/rejected specific functions)
 export const sendPaymentVerificationEmail = async (memberEmail, memberName, verificationResult, paymentData, adminNotes = '') => {
   try {
@@ -798,8 +865,9 @@ export const sendPaymentVerificationEmail = async (memberEmail, memberName, veri
   }
 };
 
+
 // Payment request email template
-const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPrice, uploadLink) => {
+const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPrice, paymentLink) => {
   const memberTypeDisplay = membershipType === 'professional' ? 'Professional' : 'Student';
 
   return `
@@ -808,7 +876,7 @@ const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPr
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Payment Required - BSPCP Membership</title>
+      <title>Submit Proof of Payment - BSPCP Membership</title>
       <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
         .header { background: linear-gradient(135deg, #f9620b 0%, #ff8534 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
@@ -817,9 +885,6 @@ const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPr
         .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
         .bank-details { background: #ffffff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0; }
         .price-highlight { background: #ecfdf5; border: 2px solid #059669; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }
-        .step-guide { background: #fef3c7; border: 2px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .step-item { margin: 10px 0; padding-left: 20px; position: relative; }
-        .step-item:before { content: "✓"; position: absolute; left: 0; color: #f59e0b; font-weight: bold; }
         .alert { background: #fee2e2; border: 2px solid #dc2626; padding: 15px; border-radius: 5px; margin: 20px 0; color: #991b1b; }
         .link-text { color: #2563eb; word-break: break-all; }
         h3 { color: #f9620b; margin-top: 30px; margin-bottom: 15px; }
@@ -827,30 +892,133 @@ const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPr
     </head>
     <body>
       <div class="header">
-        <h1>💳 Final Step: Payment Verification</h1>
-        <p>Complete your ${memberTypeDisplay} membership activation</p>
+        <h1>💰 Payment Required</h1>
+        <p>Complete your ${memberTypeDisplay} membership application</p>
       </div>
 
       <div class="content">
         <h2>Hello ${memberName},</h2>
 
-        <p><strong>Great news!</strong> Your BSPCP membership application has been approved. To complete your membership activation, please submit proof of payment using the secure link below.</p>
-
-        <div class="step-guide">
-          <h3 style="color: #92400e; margin-top: 0;">🗂️ Your Membership Information</h3>
-          <ul style="padding-left: 20px;">
-            <li><strong>Membership Type:</strong> ${memberTypeDisplay} Member</li>
-            <li><strong>Total Amount:</strong> ${membershipPrice}</li>
-            <li><strong>Application Status:</strong> ✅ Approved</li>
-          </ul>
-        </div>
+        <p>Thank you for your interest in joining the Botswana Society of Patient Counselling and Psychotherapy (BSPCP). Your membership application has been approved and is now ready for the final step: payment verification.</p>
 
         <div class="price-highlight">
-          <h3 style="margin: 0 0 10px 0; color: #047857;">💰 Membership Fees</h3>
+          <h3 style="margin: 0 0 10px 0; color: #047857;">💰 Membership Fee</h3>
           <div style="font-size: 24px; font-weight: bold; color: #065f46;">
-            BWP 200.00
+            ${membershipPrice}
           </div>
-          <p style="margin: 5px 0; color: #374151;">Joining Fee: BWP 50.00 + Annual Fee: BWP 150.00</p>
+          <p style="margin: 5px 0 0 0; font-size: 14px; color: #047857;">(BWP 50.00 Joining Fee + BWP 150.00 Annual Fee)</p>
+        </div>
+
+        <h3>🏦 Payment Instructions</h3>
+        <p>Please make payment to the following account:</p>
+
+        <div class="bank-details">
+          <h4 style="margin: 0 0 15px 0; color: #374151;">💳 Bank Transfer Details</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-family: monospace;">
+            <div><strong>Bank Name:</strong>Stanbic Bank of Botswana</div>
+            <div><strong>Branch:</strong>Fairground Branch (Branch No: 1011)</div>
+            <div><strong>Account Name:</strong>Botswana Society of Professional Counsellors and Psychotherapists</div>
+            <div><strong>Account Number:</strong>906 000 5981 641</div>
+            <div><strong>Branch Code:</strong> 064 967</div>
+          </div>
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+            <strong>Reference:</strong> BSPCP-${Date.now().toString().slice(-6)}
+          </div>
+        </div>
+
+        <h3>📤 Submit Payment Proof</h3>
+        <p>Once you've completed the payment, click the button below to upload your proof of payment:</p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${paymentLink}" class="button">📤 Upload Payment Proof</a>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <strong>Secure Upload Link:</strong><br>
+          <span class="link-text">${paymentLink}</span><br><br>
+          <em>This link expires in 30 days for security reasons.</em>
+        </div>
+
+        <div class="alert">
+          <strong>⚠️ Important:</strong><br>
+          Please submit your payment proof within <strong>30 days</strong> to complete your membership activation. After this period, you may need to reapply.
+        </div>
+
+        <h3>📋 What to Upload</h3>
+        <p>Please upload a clear photo or scan of:</p>
+        <ul style="padding-left: 20px;">
+          <li>Bank transfer receipt/deposit slip</li>
+          <li>Mobile banking confirmation</li>
+          <li>ATM receipt (if applicable)</li>
+        </ul>
+
+        <p><strong>Requirements:</strong></p>
+        <ul style="padding-left: 20px;">
+          <li>Document must be clearly readable</li>
+          <li>Reference number should be visible</li>
+          <li>Amount and date should be clearly shown</li>
+          <li>Accepted formats: PDF, JPG, JPEG, PNG</li>
+          <li>Maximum file size: 5MB</li>
+        </ul>
+
+        <p>If you encounter any issues or need assistance, please contact our membership team.</p>
+
+        <p>Thank you for joining the BSPCP community!</p>
+
+        <p>Best regards,<br>
+        <strong>BSPCP Membership Team</strong><br>
+        Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated message from the BSPCP Membership System. Please do not reply to this email.</p>
+        <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy | All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+// Renewal request email template
+const getRenewalRequestEmailTemplate = (memberName, membershipType, membershipPrice, renewalLink) => {
+  const memberTypeDisplay = membershipType === 'professional' ? 'Professional' : 'Student';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Renew Your BSPCP Membership</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #f9620b 0%, #ff8534 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 40px 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; background: #f9620b; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 25px 0; font-weight: bold; font-size: 16px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .bank-details { background: #ffffff; border: 2px solid #e5e7eb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .price-highlight { background: #ecfdf5; border: 2px solid #059669; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }
+        .alert { background: #fee2e2; border: 2px solid #dc2626; padding: 15px; border-radius: 5px; margin: 20px 0; color: #991b1b; }
+        .link-text { color: #2563eb; word-break: break-all; }
+        h3 { color: #f9620b; margin-top: 30px; margin-bottom: 15px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>🔔 Membership Renewal Required</h1>
+        <p>Renew your ${memberTypeDisplay} membership to stay active</p>
+      </div>
+
+      <div class="content">
+        <h2>Hello ${memberName},</h2>
+
+        <p>Your annual BSPCP membership is due for renewal. To continue enjoying your member benefits, please renew your membership by submitting proof of payment for the annual fee.</p>
+
+        <div class="price-highlight">
+          <h3 style="margin: 0 0 10px 0; color: #047857;">💰 Annual Renewal Fee</h3>
+          <div style="font-size: 24px; font-weight: bold; color: #065f46;">
+            ${membershipPrice}
+          </div>
         </div>
 
         <h3>🏦 Payment Instructions</h3>
@@ -866,58 +1034,39 @@ const getPaymentRequestEmailTemplate = (memberName, membershipType, membershipPr
             <div><strong>Branch Code:</strong> 064 967</div>
           </div>
           <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
-            <strong>Reference:</strong> BSPCP-MEM-${Date.now().toString().slice(-6)}
+            <strong>Reference:</strong> BSPCP-REN-${Date.now().toString().slice(-6)}
           </div>
         </div>
 
-        <h3>📤 Submit Payment Proof</h3>
-        <p>Once you've completed the payment, click the button below to upload your payment proof:</p>
+        <h3>📤 Submit Renewal Proof</h3>
+        <p>Once you've completed the payment, click the button below to upload your proof of payment:</p>
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${uploadLink}" class="button">📤 Upload Payment Proof</a>
+          <a href="${renewalLink}" class="button">📤 Upload Renewal Proof</a>
         </div>
 
         <div style="background: #ffffff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
           <strong>Secure Upload Link:</strong><br>
-          <span class="link-text">${uploadLink}</span><br><br>
+          <span class="link-text">${renewalLink}</span><br><br>
           <em>This link expires in 30 days for security reasons.</em>
         </div>
 
         <div class="alert">
-          <strong>⚠️ Important Deadlines:</strong><br>
-          Please submit your payment proof within <strong>30 days</strong> from receiving this email. After this period, you may need to request a new payment link.
+          <strong>⚠️ Important:</strong><br>
+          Please submit your renewal proof within <strong>30 days</strong> to avoid interruption of your membership benefits.
         </div>
-
-        <h3>📋 What Documents to Upload</h3>
-        <p>Please upload a clear, readable document showing:</p>
-        <ul style="padding-left: 20px;">
-          <li>Bank statement showing the transfer</li>
-          <li>Full transaction details (amount, date, recipient)</li>
-          <li>Payment reference number (if applicable)</li>
-          <li>Your account information (partial masking is acceptable)</li>
-        </ul>
-
-        <p><strong>Accepted formats:</strong> PDF, JPG, PNG (max 5MB)</p>
-
-        <h3>🎯 What Happens Next?</h3>
-        <ol style="padding-left: 20px;">
-          <li class="step-item">Upload your payment proof using the secure link above</li>
-          <li class="step-item">Our team reviews and verifies your payment (typically 1-2 business days)</li>
-          <li class="step-item">Receive confirmation email with membership card details</li>
-          <li class="step-item">Access full member benefits and dashboard</li>
-        </ol>
 
         <p>If you encounter any issues or need assistance, please contact our membership team.</p>
 
-        <p><strong>Thank you for joining BSPCP!</strong> We're excited to have you as part of our professional community.</p>
+        <p>Thank you for your continued commitment to the BSPCP.</p>
 
         <p>Best regards,<br>
-        <strong>BSPCP Membership Activation Team</strong><br>
+        <strong>BSPCP Membership Team</strong><br>
         Botswana Society of Patient Counselling and Psychotherapy</p>
       </div>
 
       <div class="footer">
-        <p>This is an automated message from BSPCP Membership System. Please do not reply to this email.</p>
+        <p>This is an automated message from the BSPCP Membership System. Please do not reply to this email.</p>
         <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy | All rights reserved.</p>
       </div>
     </body>
@@ -1118,7 +1267,7 @@ const getPaymentVerificationEmailTemplate = (memberName, verificationResult, pay
           <div class="step-item">Update your profile with additional qualifications and experience</div>
 
           <div style="text-align: center; margin: 25px 0;">
-            <a href="${process.env.BASE_URL || 'https://localhost:5173'}/login" class="button">🚀 Access Member Dashboard</a>
+            <a href="${process.env.BASE_URL}/member-login" class="button">🚀 Access Member Dashboard</a>
           </div>
           ` : `
           <div class="step-item">Review the admin notes above for specific requirements</div>
@@ -1163,6 +1312,113 @@ const getPaymentVerificationEmailTemplate = (memberName, verificationResult, pay
 
       <div class="footer">
         <p>This is an automated message from BSPCP Membership Verification System. Please save this email for your records.</p>
+        <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy | All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+};
+
+// Renewal verification result email template
+const getRenewalVerificationEmailTemplate = (memberName, verificationResult, paymentData, adminNotes, renewalToken = null) => {
+  const isVerified = verificationResult === 'verified';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Membership Renewal ${isVerified ? 'Successful' : 'Issue'} - BSPCP</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: ${isVerified ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'}; color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f8f9fa; padding: 40px 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; background: ${isVerified ? '#10b981' : '#ef4444'}; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; font-size: 16px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+        .member-status { background: ${isVerified ? '#ecfdf5' : '#fef2f2'}; border: 2px solid ${isVerified ? '#059669' : '#dc2626'}; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+        ${!isVerified ? '.rejection-notes { background: #fee2e2; border: 2px solid #dc2626; padding: 15px; border-radius: 5px; margin: 20px 0; color: #991b1b; }' : ''}
+        .next-steps { background: ${isVerified ? '#fef3c7' : '#f0f9ff'}; border: 2px solid ${isVerified ? '#f59e0b' : '#0284c7'}; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .step-item { margin: 8px 0; padding-left: 20px; position: relative; }
+        .step-item:before { content: ${isVerified ? '"🎯"' : '"⚠️"'}; position: absolute; left: 0; }
+        .link-text { color: #2563eb; word-break: break-all; }
+        h3 { color: ${isVerified ? '#059669' : '#dc2626'}; margin-top: 30px; margin-bottom: 15px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>${isVerified ? '🎉 Membership Renewed!' : '❌ Membership Renewal Issue'}</h1>
+        <p>${isVerified ? 'Thank you for your continued support!' : 'Action Required for Your Membership'}</p>
+      </div>
+
+      <div class="content">
+        <h2>Hello ${memberName},</h2>
+
+        <div class="member-status">
+          <h3 style="margin: 0 0 10px 0; color: ${isVerified ? '#059669' : '#dc2626'};">
+            ${isVerified ? '✅ Renewal Successful' : '❌ Renewal Verification Failed'}
+          </h3>
+          <p style="margin: 0; font-size: 16px; font-weight: ${isVerified ? 'bold' : 'normal'}; color: ${isVerified ? '#065f46' : '#991b1b'};">
+            Your membership ${isVerified ? 'is active for another year!' : 'renewal requires attention'}
+          </p>
+        </div>
+
+        ${!isVerified && adminNotes ? `
+        <div class="rejection-notes">
+          <h4 style="margin: 0 0 10px 0;">🔍 Admin Notes:</h4>
+          <div style="background: #ffffff; padding: 10px; border-radius: 4px; border: 1px solid #dc2626;">
+            ${adminNotes}
+          </div>
+        </div>
+        ` : ''}
+
+        ${!isVerified && renewalToken ? `
+        <div style="background: #ecfdf5; border: 2px solid #059669; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin: 0 0 15px 0; color: #059669;">🔄 Submit New Renewal Proof</h3>
+          <p>You can re-submit your renewal proof using the secure link below. This link will expire in 30 days for security reasons.</p>
+
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.BASE_URL}/renewal-upload?token=${renewalToken}" class="button">📤 Upload Renewal Proof</a>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #e5e7eb; padding: 15px; border-radius: 5px;">
+            <strong>Secure Upload Link:</strong><br>
+            <span class="link-text">${process.env.BASE_URL}/renewal-upload?token=${renewalToken}</span>
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="next-steps">
+          <h3 style="margin: 0 0 15px 0; color: ${isVerified ? '#92400e' : '#1e40af'};">
+            ${isVerified ? '🎯 What\'s Next?' : '⚠️ Required Actions'}
+          </h3>
+
+          ${isVerified ? `
+          <div class="step-item">Your membership is now active for another year.</div>
+          <div class="step-item">You can continue to access all member benefits.</div>
+
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.BASE_URL || 'https://localhost:5173'}/login" class="button">🚀 Access Member Dashboard</a>
+          </div>
+          ` : `
+          <div class="step-item">Review the admin notes above for specific requirements</div>
+          <div class="step-item">Prepare a new, clearer renewal proof document</div>
+          <div class="step-item">Re-submit renewal proof using the link provided</div>
+          <div class="step-item">Allow 1-2 business days for re-verification</div>
+
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.BASE_URL || 'https://localhost:5173'}/contact" class="button">📞 Contact Support</a>
+          </div>
+          `}
+        </div>
+
+        <p>Best regards,<br>
+        <strong>BSPCP Membership Team</strong><br>
+        Botswana Society of Patient Counselling and Psychotherapy</p>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated message from the BSPCP Membership System. Please save this email for your records.</p>
         <p>&copy; ${new Date().getFullYear()} Botswana Society of Patient Counselling and Psychotherapy | All rights reserved.</p>
       </div>
     </body>

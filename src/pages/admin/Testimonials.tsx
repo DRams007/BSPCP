@@ -78,7 +78,12 @@ const Testimonials = () => {
       if (searchTerm) {
         queryParams.append("search", searchTerm);
       }
-      const response = await fetch(`/api/testimonials?${queryParams.toString()}`);
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/testimonials?${queryParams.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -103,10 +108,12 @@ const Testimonials = () => {
 
   const handleStatusChange = async (id: number, newStatus: Testimonial['status']) => {
     try {
-      const response = await fetch(`/api/testimonials/${id}/status`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/testimonials/${id}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -127,10 +134,10 @@ const Testimonials = () => {
       const action = newStatus === "Pending"
         ? "unapproved"
         : newStatus === "Approved"
-        ? "approved"
-        : newStatus === "Rejected"
-        ? "rejected"
-        : `changed to ${newStatus}`;
+          ? "approved"
+          : newStatus === "Rejected"
+            ? "rejected"
+            : `changed to ${newStatus}`;
 
       toast({
         title: "Status Updated",
@@ -148,8 +155,12 @@ const Testimonials = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      const response = await fetch(`/api/testimonials/${id}`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/testimonials/${id}`, {
         method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -205,17 +216,16 @@ const Testimonials = () => {
     return [...Array(5)].map((_, i) => (
       <Star
         key={i}
-        className={`w-4 h-4 ${
-          i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-        }`}
+        className={`w-4 h-4 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+          }`}
       />
     ));
   };
 
   const filteredTestimonials = testimonials.filter(testimonial => {
     const matchesSearch = testimonial.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          testimonial.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          testimonial.role.toLowerCase().includes(searchTerm.toLowerCase());
+      testimonial.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      testimonial.role.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || testimonial.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

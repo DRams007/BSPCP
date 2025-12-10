@@ -54,7 +54,12 @@ const Content = () => {
 
   const fetchContentStats = async () => {
     try {
-      const response = await fetch('/api/content-stats');
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/content-stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -117,40 +122,40 @@ const Content = () => {
         </div>
 
         {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> {/* Changed to 3 columns */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Content</CardTitle>
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{contentStats.total}</div>
-                  <p className="text-xs text-muted-foreground">Overall content count</p>
-                </CardContent>
-              </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> {/* Changed to 3 columns */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Content</CardTitle>
+              <FileText className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{contentStats.total}</div>
+              <p className="text-xs text-muted-foreground">Overall content count</p>
+            </CardContent>
+          </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Published</CardTitle>
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{contentStats.published}</div>
-                  <p className="text-xs text-muted-foreground">Live content items</p>
-                </CardContent>
-              </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Published</CardTitle>
+              <Globe className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{contentStats.published}</div>
+              <p className="text-xs text-muted-foreground">Live content items</p>
+            </CardContent>
+          </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Draft</CardTitle>
-                  <Pencil className="w-4 h-4 text-muted-foreground" /> {/* Changed icon to Pencil */}
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{contentStats.draft}</div>
-                  <p className="text-xs text-muted-foreground">Content in progress</p>
-                </CardContent>
-              </Card>
-            </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Draft</CardTitle>
+              <Pencil className="w-4 h-4 text-muted-foreground" /> {/* Changed icon to Pencil */}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{contentStats.draft}</div>
+              <p className="text-xs text-muted-foreground">Content in progress</p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Filters and Search */}
         <Card>
@@ -193,12 +198,12 @@ const Content = () => {
             </div>
 
             {/* Integrate ContentList here */}
-                <ContentList
-                  searchQuery={searchQuery}
-                  contentTypeFilter={contentTypeFilter}
-                  statusFilter={statusFilter}
-                  refreshTrigger={refreshContentListTrigger} // Pass the new trigger
-                />
+            <ContentList
+              searchQuery={searchQuery}
+              contentTypeFilter={contentTypeFilter}
+              statusFilter={statusFilter}
+              refreshTrigger={refreshContentListTrigger} // Pass the new trigger
+            />
           </CardContent>
         </Card>
       </div>

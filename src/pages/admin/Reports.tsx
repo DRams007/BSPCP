@@ -1,90 +1,346 @@
+import { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RefreshCw, FileText, DollarSign, Calendar, Filter, BarChart3, GraduationCap, Activity, Server } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  TrendingUp, 
-  Users, 
-  FileText, 
-  Calendar,
-  Download,
-  BarChart3,
-  PieChart,
-  Activity,
-  Globe,
-  Filter,
-  RefreshCw
-} from "lucide-react";
-import { useState } from "react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  LineChart,
-  Line,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell
-} from "recharts";
+  fetchReportData,
+  transformToMemberList,
+  transformToFinanceReport,
+  transformToRenewalsReport,
+  transformToDemographics,
+  transformToProfessionalStats,
+  transformToCPDStats,
+  transformToBookingStats,
+  transformToMembershipGrowth,
+  FinanceRecord,
+  RenewalRecord,
+  Booking,
+  AuditLog,
+  PaymentAuditLog,
+  RenewalAuditLog,
+} from "@/services/reportService";
+import ReportTable from "@/components/admin/reports/ReportTable";
+import ReportFilter from "@/components/admin/reports/ReportFilter";
+import { SimpleBarChart, SimplePieChart, SimpleLineChart, StatCard } from "@/components/admin/reports/AnalyticsCharts";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 const Reports = () => {
-  const [dateRange, setDateRange] = useState("30days");
   const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const handleExportReport = async (reportType: string) => {
+  // Data States
+  const [memberList, setMemberList] = useState<any[]>([]);
+  const [financeData, setFinanceData] = useState<FinanceRecord[]>([]);
+  const [renewalData, setRenewalData] = useState<RenewalRecord[]>([]);
+
+  // Analytics States
+  const [demographics, setDemographics] = useState<any>({ age: [], location: [] });
+  const [membershipGrowth, setMembershipGrowth] = useState<any[]>([]);
+  const [professional, setProfessional] = useState<any>({ specializations: [], languages: [], experience: [] });
+  const [cpdStats, setCpdStats] = useState<any>({ compliance: [], topAchievers: [] });
+  const [bookingStats, setBookingStats] = useState<any>({ volume: [], types: [] });
+  const [bookingsList, setBookingsList] = useState<Booking[]>([]);
+  const [systemLogs, setSystemLogs] = useState<AuditLog[]>([]);
+  const [paymentAuditLogs, setPaymentAuditLogs] = useState<PaymentAuditLog[]>([]);
+  const [renewalAuditLogs, setRenewalAuditLogs] = useState<RenewalAuditLog[]>([]);
+
+  // Error states for debugging
+  const [dataErrors, setDataErrors] = useState<{ [key: string]: string }>({});
+
+  // Report Writer State
+  const [rwReportType, setRwReportType] = useState<string>("members");
+  const [rwColumns, setRwColumns] = useState<string[]>(["fullName", "email", "status", "membershipType"]);
+  const [rwFilters, setRwFilters] = useState<Record<string, string>>({});
+
+  const loadData = async () => {
     setIsLoading(true);
-    // Simulate export process
-    setTimeout(() => {
+    setDataErrors({}); // Clear previous errors
+
+    try {
+      const { members, fees, bookings, logs, payments, paymentAuditLogs, renewalAuditLogs } = await fetchReportData();
+      setLastUpdated(new Date());
+
+      // Process successfully loaded data
+      setMemberList(transformToMemberList(members));
+      setFinanceData(transformToFinanceReport(payments || []));
+      setRenewalData(transformToRenewalsReport(members));
+
+      setDemographics(transformToDemographics(members));
+      setProfessional(transformToProfessionalStats(members));
+      setCpdStats(transformToCPDStats(members));
+      setMembershipGrowth(transformToMembershipGrowth(members));
+
+      // Handle bookings data specifically with error tracking
+      try {
+        console.log('Processing bookings data:', bookings ? `Found ${bookings.length} bookings` : 'No bookings data');
+        setBookingStats(transformToBookingStats(bookings || []));
+        setBookingsList(bookings || []);
+        if (bookings && bookings.length > 0) {
+          console.log('First booking sample:', bookings[0]);
+        }
+      } catch (bookingError) {
+        console.error('Error processing bookings data:', bookingError);
+        setDataErrors(prev => ({ ...prev, bookings: 'Error processing bookings data' }));
+      }
+
+      setSystemLogs(logs);
+      setPaymentAuditLogs(paymentAuditLogs || []);
+      setRenewalAuditLogs(renewalAuditLogs || []);
+    } catch (error) {
+      console.error("Failed to load report data", error);
+
+      // Identify which component failed and set specific error messages
+      if (error.message && error.message.includes('bookings')) {
+        setDataErrors(prev => ({ ...prev, bookings: 'Failed to load bookings data' }));
+      } else {
+        setDataErrors(prev => ({ ...prev, general: 'Failed to load report data. Please check authentication and try again.' }));
+      }
+    } finally {
       setIsLoading(false);
-      // In a real app, this would trigger a download
-      alert(`${reportType} report exported successfully!`);
-    }, 2000);
+    }
   };
 
-  const handleRefreshData = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Column Definitions
+  const memberListColumns = [
+    { key: "id", label: "Member ID", sortable: true },
+    { key: "fullName", label: "Full Name", sortable: true },
+    { key: "email", label: "Email", sortable: true },
+    { key: "phone", label: "Phone", sortable: true },
+    {
+      key: "joiningDate",
+      label: "Joining Date",
+      sortable: true,
+      render: (val: string) => (val ? format(new Date(val), "yyyy-MM-dd") : "-"),
+    },
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      render: (val: string) => (
+        <Badge variant={val === "Active" ? "default" : "secondary"}>{val}</Badge>
+      ),
+    },
+  ];
+
+  const financeColumns = [
+    { key: "memberId", label: "Member ID", sortable: true },
+    { key: "fullName", label: "Full Name", sortable: true },
+    {
+      key: "paymentDate",
+      label: "Payment Date",
+      sortable: true,
+      render: (val: string) => (val ? format(new Date(val), "yyyy-MM-dd") : "-"),
+    },
+    { key: "paymentType", label: "Payment Type", sortable: true },
+    {
+      key: "amount",
+      label: "Amount Paid",
+      sortable: true,
+      render: (val: number) => `BWP ${val.toFixed(2)}`,
+    },
+  ];
+
+  const renewalColumns = [
+    { key: "fullName", label: "Member Name", sortable: true },
+    {
+      key: "renewalDate",
+      label: "Renewal Date",
+      sortable: true,
+      render: (val: string) => (val ? format(new Date(val), "yyyy-MM-dd") : "-"),
+    },
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      render: (val: string) => {
+        let variant: "default" | "destructive" | "outline" | "secondary" = "outline";
+        if (val === "Renewed") variant = "default";
+        if (val === "Overdue") variant = "destructive";
+        if (val === "Due Soon") variant = "secondary";
+        return <Badge variant={variant}>{val}</Badge>;
+      },
+    },
+    {
+      key: "daysOverdue",
+      label: "Days Overdue",
+      sortable: true,
+      render: (val: number) => (val ? <span className="text-red-500 font-bold">{val}</span> : "-"),
+    },
+  ];
+
+  const bookingColumns = [
+    {
+      key: "booking_date",
+      label: "Date",
+      sortable: true,
+      render: (val: string) => (val ? format(new Date(val), "yyyy-MM-dd") : "-")
+    },
+    { key: "client_name", label: "Client", sortable: true },
+    { key: "counsellor_name", label: "Counsellor", sortable: true },
+    { key: "session_type", label: "Type", sortable: true },
+    { key: "status", label: "Status", sortable: true },
+  ];
+
+  const logColumns = [
+    {
+      key: "created_at",
+      label: "Timestamp",
+      sortable: true,
+      render: (val: string) => (val ? format(new Date(val), "PPpp") : "-")
+    },
+    { key: "admin_name", label: "Admin", sortable: true },
+    { key: "action", label: "Action", sortable: true },
+    { key: "details", label: "Details", sortable: false },
+  ];
+
+  const paymentAuditLogColumns = [
+    {
+      key: "created_at",
+      label: "Timestamp",
+      sortable: true,
+      render: (val: string) => (val ? format(new Date(val), "PPpp") : "-")
+    },
+    { key: "member_name", label: "Member", sortable: true },
+    { key: "admin_name", label: "Admin", sortable: true },
+    { key: "action", label: "Action", sortable: true },
+    { key: "details", label: "Details", sortable: false },
+  ];
+
+  const renewalAuditLogColumns = [
+    {
+      key: "created_at",
+      label: "Timestamp",
+      sortable: true,
+      render: (val: string) => (val ? format(new Date(val), "PPpp") : "-")
+    },
+    { key: "member_name", label: "Member", sortable: true },
+    { key: "admin_name", label: "Admin", sortable: true },
+    { key: "action", label: "Action", sortable: true },
+    { key: "details", label: "Details", sortable: false },
+  ];
+
+  const cpdColumns = [
+    { key: "name", label: "Member Name", sortable: true },
+    { key: "points", label: "Total Points", sortable: true },
+  ];
+
+  // Report Writer Configurations
+  const reportWriterConfigs: Record<string, { columns: any[], data: any[] }> = {
+    members: {
+      columns: [
+        { key: "id", label: "Member ID" },
+        { key: "fullName", label: "Full Name" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+        { key: "joiningDate", label: "Joining Date" },
+        { key: "status", label: "Status" },
+        { key: "membershipType", label: "Membership Type" },
+      ],
+      data: memberList,
+    },
+    finance: {
+      columns: [
+        { key: "memberId", label: "Member ID" },
+        { key: "fullName", label: "Full Name" },
+        { key: "paymentDate", label: "Payment Date" },
+        { key: "paymentType", label: "Payment Type" },
+        { key: "amount", label: "Amount" },
+        { key: "paymentMethod", label: "Method" },
+        { key: "status", label: "Status" },
+      ],
+      data: financeData,
+    },
+    renewals: {
+      columns: [
+        { key: "memberId", label: "Member ID" },
+        { key: "fullName", label: "Full Name" },
+        { key: "renewalDate", label: "Renewal Date" },
+        { key: "status", label: "Status" },
+        { key: "daysOverdue", label: "Days Overdue" },
+      ],
+      data: renewalData,
+    },
+    bookings: {
+      columns: [
+        { key: "id", label: "Booking ID" },
+        { key: "client_name", label: "Client Name" },
+        { key: "counsellor_name", label: "Counsellor" },
+        { key: "booking_date", label: "Date" },
+        { key: "session_type", label: "Session Type" },
+        { key: "status", label: "Status" },
+      ],
+      data: bookingsList,
+    },
+    cpd: {
+      columns: [
+        { key: "id", label: "Member ID" },
+        { key: "name", label: "Member Name" },
+        { key: "points", label: "CPD Points" },
+      ],
+      data: cpdStats.topAchievers,
+    },
+    system: {
+      columns: [
+        { key: "id", label: "Log ID" },
+        { key: "admin_name", label: "Admin" },
+        { key: "action", label: "Action" },
+        { key: "created_at", label: "Timestamp" },
+        { key: "details", label: "Details" },
+      ],
+      data: systemLogs,
+    },
+    paymentAuditLogs: {
+      columns: [
+        { key: "id", label: "Log ID" },
+        { key: "member_name", label: "Member" },
+        { key: "admin_name", label: "Admin" },
+        { key: "action", label: "Action" },
+        { key: "created_at", label: "Timestamp" },
+        { key: "details", label: "Details" },
+      ],
+      data: paymentAuditLogs,
+    },
+    renewalAuditLogs: {
+      columns: [
+        { key: "id", label: "Log ID" },
+        { key: "member_name", label: "Member" },
+        { key: "admin_name", label: "Admin" },
+        { key: "action", label: "Action" },
+        { key: "created_at", label: "Timestamp" },
+        { key: "details", label: "Details" },
+      ],
+      data: renewalAuditLogs,
+    },
   };
 
-  const membershipData = [
-    { month: "Jan", members: 120, applications: 25 },
-    { month: "Feb", members: 135, applications: 30 },
-    { month: "Mar", members: 142, applications: 28 },
-    { month: "Apr", members: 158, applications: 35 },
-    { month: "May", members: 165, applications: 32 },
-    { month: "Jun", members: 178, applications: 40 },
-  ];
+  const currentReportConfig = reportWriterConfigs[rwReportType] || reportWriterConfigs.members;
+  const reportWriterAvailableColumns = currentReportConfig.columns;
 
-  const websiteTrafficData = [
-    { month: "Jan", visitors: 4200 },
-    { month: "Feb", visitors: 4800 },
-    { month: "Mar", visitors: 5200 },
-    { month: "Apr", visitors: 4900 },
-    { month: "May", visitors: 5600 },
-    { month: "Jun", visitors: 6100 },
-  ];
+  const filteredReportWriterData = currentReportConfig.data.filter((row) => {
+    return Object.entries(rwFilters).every(([key, filterVal]) => {
+      if (!filterVal) return true;
+      const rowVal = String(row[key] || "").toLowerCase();
+      return rowVal.includes(filterVal.toLowerCase());
+    });
+  });
 
-  const membershipTypeData = [
-    { name: "Full Member", value: 145, color: "#0088FE" },
-    { name: "Associate", value: 89, color: "#00C49F" },
-    { name: "Student", value: 67, color: "#FFBB28" },
-    { name: "International", value: 23, color: "#FF8042" },
-  ];
+  // Summaries
+  const totalRevenue = financeData.reduce((sum, item) => sum + item.amount, 0);
+  const currentMonthRevenue = financeData
+    .filter((item) => new Date(item.paymentDate).getMonth() === new Date().getMonth())
+    .reduce((sum, item) => sum + item.amount, 0);
+  const overdueCount = renewalData.filter((r) => r.status === "Overdue").length;
+  const dueSoonCount = renewalData.filter((r) => r.status === "Due Soon").length;
 
   return (
     <AdminLayout>
@@ -93,301 +349,313 @@ const Reports = () => {
           <div>
             <h1 className="text-2xl font-bold">Reports & Analytics</h1>
             <p className="text-muted-foreground">
-              View detailed reports and analytics for your organization
+              {lastUpdated
+                ? `Last updated: ${format(lastUpdated, "PPpp")}`
+                : "Loading data..."}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7days">Last 7 days</SelectItem>
-                <SelectItem value="30days">Last 30 days</SelectItem>
-                <SelectItem value="90days">Last 90 days</SelectItem>
-                <SelectItem value="1year">Last year</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              onClick={handleRefreshData}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button 
-              onClick={() => handleExportReport('Summary')}
-              disabled={isLoading}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Report
-            </Button>
+          <Button onClick={loadData} disabled={isLoading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh Data
+          </Button>
+        </div>
+
+        {/* Error display */}
+        {Object.keys(dataErrors).length > 0 && (
+          <div className="space-y-4">
+            {Object.entries(dataErrors).map(([key, error]) => (
+              <Alert key={key} variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong className="capitalize">{key}</strong>: {error}
+                </AlertDescription>
+              </Alert>
+            ))}
           </div>
-        </div>
+        )}
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-              <Users className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">324</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+12%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="analytics" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 h-auto">
+            <TabsTrigger value="analytics">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="members">
+              <FileText className="w-4 h-4 mr-2" />
+              Members
+            </TabsTrigger>
+            <TabsTrigger value="finance">
+              <DollarSign className="w-4 h-4 mr-2" />
+              Finance
+            </TabsTrigger>
+            <TabsTrigger value="renewals">
+              <Calendar className="w-4 h-4 mr-2" />
+              Renewals
+            </TabsTrigger>
+            <TabsTrigger value="cpd">
+              <GraduationCap className="w-4 h-4 mr-2" />
+              CPD
+            </TabsTrigger>
+            <TabsTrigger value="bookings">
+              <Activity className="w-4 h-4 mr-2" />
+              Bookings
+            </TabsTrigger>
+            <TabsTrigger value="system">
+              <Server className="w-4 h-4 mr-2" />
+              System
+            </TabsTrigger>
+            <TabsTrigger value="writer">
+              <Filter className="w-4 h-4 mr-2" />
+              Writer
+            </TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">New Applications</CardTitle>
-              <FileText className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">47</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+8%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+          {/* 1. Member List */}
+          <TabsContent value="members" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Member List</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ReportTable title="Member_List" data={memberList} columns={memberListColumns} />
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Website Visitors</CardTitle>
-              <Globe className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">6,100</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+15%</span> from last month
-              </p>
-            </CardContent>
-          </Card>
+          {/* 2. Analytics */}
+          <TabsContent value="analytics" className="space-y-6 mt-4">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="Total Members"
+                value={memberList.length}
+                description="All registered members"
+              />
+              <StatCard
+                title="Active Members"
+                value={memberList.filter(m => m.originalStatus === 'active').length}
+                description="Currently active"
+              />
+              <StatCard
+                title="Total Revenue"
+                value={`BWP ${totalRevenue.toFixed(2)}`}
+                description="All-time revenue"
+              />
+              <StatCard
+                title="Pending Renewals"
+                value={overdueCount + dueSoonCount}
+                description={`${overdueCount} overdue, ${dueSoonCount} due soon`}
+              />
+            </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Events This Month</CardTitle>
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">8</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-blue-600">2</span> upcoming events
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Engagement Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard
+                title="Recent Bookings"
+                value={bookingsList.length}
+                description="Total booking records"
+              />
+              <StatCard
+                title="CPD Compliance"
+                value={`${cpdStats.compliance[0]?.value || 0}/${memberList.length}`}
+                description="Members meeting CPD requirements"
+              />
+              <StatCard
+                title="Current Month Revenue"
+                value={`BWP ${currentMonthRevenue.toFixed(2)}`}
+                description="Revenue this month"
+              />
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Membership Growth Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" />
-                Membership Growth
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={membershipData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="members" fill="hsl(var(--primary))" radius={4} />
-                  <Bar dataKey="applications" fill="hsl(var(--secondary))" radius={4} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+            {/* Growth & Demographics Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Growth & Demographics</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <SimpleLineChart
+                  title="Membership Growth Trend"
+                  data={membershipGrowth}
+                  dataKey="newMembers"
+                  xAxisKey="month"
+                  nameKey="month"
+                />
+                <SimplePieChart title="Nationality Distribution" data={demographics.location} dataKey="value" nameKey="name" />
+              </div>
+            </div>
 
-          {/* Website Traffic Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Website Traffic
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={websiteTrafficData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="visitors" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Professional Insights Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Professional Insights</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <SimpleBarChart title="Top Specializations" data={professional.specializations} dataKey="value" nameKey="name" />
+                <SimpleBarChart title="Languages Spoken" data={professional.languages} dataKey="value" nameKey="name" />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <SimpleBarChart title="Experience Levels" data={professional.experience} dataKey="value" nameKey="name" />
+                <SimplePieChart
+                  title="Member Status Distribution"
+                  data={[
+                    { name: 'Active', value: memberList.filter(m => m.originalStatus === 'active').length },
+                    { name: 'Pending', value: memberList.filter(m => m.originalStatus === 'pending').length },
+                    { name: 'Suspended', value: memberList.filter(m => m.originalStatus === 'suspended').length },
+                    { name: 'Expired', value: memberList.filter(m => m.originalStatus === 'expired').length },
+                  ].filter(item => item.value > 0)}
+                  dataKey="value"
+                  nameKey="name"
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Membership Distribution */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChart className="w-5 h-5" />
-                Membership Types
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <RechartsPieChart>
-                  <Pie
-                    data={membershipTypeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            {/* Activity Trends Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Activity Trends</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <SimpleLineChart
+                  title="Booking Volume (Last 30 Days)"
+                  data={bookingStats.volume}
+                  dataKey="count"
+                  xAxisKey="date"
+                  nameKey={""}
+                />
+                <SimplePieChart
+                  title="CPD Compliance Status"
+                  data={cpdStats.compliance}
+                  dataKey="value"
+                  nameKey="name"
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* 3. Finance */}
+          <TabsContent value="finance" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <StatCard title="Total Revenue" value={`BWP ${totalRevenue.toFixed(2)}`} />
+              <StatCard title="Revenue (This Month)" value={`BWP ${currentMonthRevenue.toFixed(2)}`} />
+            </div>
+            <Card>
+              <CardHeader><CardTitle>Payment History</CardTitle></CardHeader>
+              <CardContent>
+                <ReportTable title="Finance_Report" data={financeData} columns={financeColumns} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 4. Renewals */}
+          <TabsContent value="renewals" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <StatCard title="Overdue Renewals" value={overdueCount} description="Members with expired renewal dates" />
+              <StatCard title="Due Soon (30 Days)" value={dueSoonCount} description="Members expiring within 30 days" />
+            </div>
+            <Card>
+              <CardHeader><CardTitle>Renewal Status</CardTitle></CardHeader>
+              <CardContent>
+                <ReportTable title="Renewals_Report" data={renewalData} columns={renewalColumns} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 5. CPD */}
+          <TabsContent value="cpd" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SimplePieChart title="CPD Compliance" data={cpdStats.compliance} dataKey="value" nameKey="name" />
+              <Card>
+                <CardHeader><CardTitle>Top CPD Achievers</CardTitle></CardHeader>
+                <CardContent>
+                  <ReportTable title="CPD_Achievers" data={cpdStats.topAchievers} columns={cpdColumns} searchable={false} />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* 6. Bookings */}
+          <TabsContent value="bookings" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SimpleLineChart title="Booking Volume (Last 30 Days)" data={bookingStats.volume} dataKey="count" xAxisKey="date" nameKey={""} />
+              <SimplePieChart title="Session Types" data={bookingStats.types} dataKey="value" nameKey="name" />
+            </div>
+            <Card>
+              <CardHeader><CardTitle>Recent Bookings</CardTitle></CardHeader>
+              <CardContent>
+                <ReportTable title="Bookings_Report" data={bookingsList} columns={bookingColumns} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 7. System */}
+          <TabsContent value="system" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader><CardTitle>Admin Activity Log</CardTitle></CardHeader>
+              <CardContent>
+                <ReportTable title="Admin_Activity_Logs" data={systemLogs} columns={logColumns} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Payment Audit Log</CardTitle></CardHeader>
+              <CardContent>
+                <ReportTable title="Payment_Audit_Logs" data={paymentAuditLogs} columns={paymentAuditLogColumns} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Renewal Audit Log</CardTitle></CardHeader>
+              <CardContent>
+                <ReportTable title="Renewal_Audit_Logs" data={renewalAuditLogs} columns={renewalAuditLogColumns} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 8. Report Writer */}
+          <TabsContent value="writer" className="space-y-4 mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Report Writer</CardTitle>
+                <div className="flex items-center gap-4 mt-4">
+                  <label className="text-sm font-medium">Report Type:</label>
+                  <Select
+                    value={rwReportType}
+                    onValueChange={(value) => {
+                      setRwReportType(value);
+                      const defaultColumns = reportWriterConfigs[value]?.columns.slice(0, 4).map(c => c.key) || [];
+                      setRwColumns(defaultColumns);
+                      setRwFilters({});
+                    }}
                   >
-                    {membershipTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Detailed Reports */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Detailed Reports</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="quick" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="quick">Quick Reports</TabsTrigger>
-                  <TabsTrigger value="custom">Custom Reports</TabsTrigger>
-                  <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="quick" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button 
-                      variant="outline" 
-                      className="justify-start h-auto p-4"
-                      onClick={() => handleExportReport('Member Directory')}
-                      disabled={isLoading}
-                    >
-                      <div className="text-left">
-                        <div className="font-medium">Member Directory</div>
-                        <div className="text-sm text-muted-foreground">
-                          Complete list of all members with contact details
-                        </div>
-                      </div>
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="justify-start h-auto p-4"
-                      onClick={() => handleExportReport('Financial Summary')}
-                      disabled={isLoading}
-                    >
-                      <div className="text-left">
-                        <div className="font-medium">Financial Summary</div>
-                        <div className="text-sm text-muted-foreground">
-                          Membership fees and payment status report
-                        </div>
-                      </div>
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="justify-start h-auto p-4"
-                      onClick={() => handleExportReport('Event Analytics')}
-                      disabled={isLoading}
-                    >
-                      <div className="text-left">
-                        <div className="font-medium">Event Analytics</div>
-                        <div className="text-sm text-muted-foreground">
-                          Attendance and engagement metrics
-                        </div>
-                      </div>
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="justify-start h-auto p-4"
-                      onClick={() => handleExportReport('Content Performance')}
-                      disabled={isLoading}
-                    >
-                      <div className="text-left">
-                        <div className="font-medium">Content Performance</div>
-                        <div className="text-sm text-muted-foreground">
-                          Most viewed articles and resources
-                        </div>
-                      </div>
-                    </Button>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="custom" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="start-date">Start Date</Label>
-                      <Input type="date" id="start-date" />
-                    </div>
-                    <div>
-                      <Label htmlFor="end-date">End Date</Label>
-                      <Input type="date" id="end-date" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="report-type">Report Type</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select report type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="membership">Membership Report</SelectItem>
-                        <SelectItem value="financial">Financial Report</SelectItem>
-                        <SelectItem value="engagement">Engagement Report</SelectItem>
-                        <SelectItem value="activity">Activity Report</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button>
-                      <Filter className="w-4 h-4 mr-2" />
-                      Generate Report
-                    </Button>
-                    <Button variant="outline">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="scheduled" className="space-y-4">
-                  <div className="text-center py-8">
-                    <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No Scheduled Reports</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Set up automated reports to be generated and sent regularly
-                    </p>
-                    <Button>Create Scheduled Report</Button>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </div>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Select report type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="members">Members</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="renewals">Renewals</SelectItem>
+                      <SelectItem value="bookings">Bookings</SelectItem>
+                      <SelectItem value="cpd">CPD</SelectItem>
+                      <SelectItem value="system">Admin Activity Logs</SelectItem>
+                      <SelectItem value="paymentAuditLogs">Payment Audit Logs</SelectItem>
+                      <SelectItem value="renewalAuditLogs">Renewal Audit Logs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <ReportFilter
+                  availableColumns={reportWriterAvailableColumns}
+                  selectedColumns={rwColumns}
+                  onColumnToggle={(key) => {
+                    setRwColumns((prev) => prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]);
+                  }}
+                  filters={rwFilters}
+                  onFilterChange={(key, val) => setRwFilters((prev) => ({ ...prev, [key]: val }))}
+                  onClearFilters={() => setRwFilters({})}
+                />
+                <ReportTable
+                  title="Custom_Report"
+                  data={filteredReportWriterData}
+                  columns={reportWriterAvailableColumns.filter((col) => rwColumns.includes(col.key))}
+                  searchable={false}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );

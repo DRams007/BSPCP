@@ -147,8 +147,9 @@ const PaymentVerification = () => {
       setSelectedPayment(null);
       setVerificationNotes('');
 
-      // Refresh data
+      // Refresh data and notify other components
       fetchPaymentRecords();
+      window.dispatchEvent(new CustomEvent('paymentVerified'));
 
     } catch (error) {
       console.error('Verification error:', error);

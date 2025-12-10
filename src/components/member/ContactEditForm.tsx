@@ -110,75 +110,67 @@ const ContactEditForm = ({ member, onContactUpdate }: ContactEditFormProps) => {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Email */}
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex-1">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex flex-col items-center space-y-2 pt-6">
-              <FormField
-                control={form.control}
-                name="show_email"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="text-sm">Show Publicly</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <FormControl>
+                    <Input type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="show_email"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="text-sm">Show email publicly</FormLabel>
+                </FormItem>
+              )}
+            />
           </div>
 
           {/* Phone */}
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex-1">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+267 71 234 567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="flex flex-col items-center space-y-2 pt-6">
-              <FormField
-                control={form.control}
-                name="show_phone"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="text-sm">Show Publicly</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
+          <div className="space-y-3">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+267 71 234 567" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="show_phone"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="text-sm">Show phone publicly</FormLabel>
+                </FormItem>
+              )}
+            />
           </div>
 
           <FormField
@@ -197,43 +189,39 @@ const ContactEditForm = ({ member, onContactUpdate }: ContactEditFormProps) => {
 
           {/* Practice Address */}
           <div className="space-y-4">
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex-1">
+            <div className="space-y-3">
               <FormField
                 control={form.control}
                 name="physical_address"
                 render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Practice Address</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Street address, plot number, building details"
-                          className="min-h-20"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="flex flex-col items-center space-y-2 pt-6">
-                <FormField
-                  control={form.control}
-                  name="show_address"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2">
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="text-sm">Show Publicly</FormLabel>
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <FormItem>
+                    <FormLabel>Practice Address</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Street address, plot number, building details"
+                        className="min-h-20"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="show_address"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="text-sm">Show address publicly</FormLabel>
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,7 +13,9 @@ import {
   Settings,
   LogOut,
   Bell,
-  Search
+  Search,
+  RefreshCw,
+  Activity
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 
@@ -23,11 +25,15 @@ const AdminDashboard = () => {
   const { token, logout } = useAuth();
   const [stats, setStats] = useState({
     totalMembers: 0,
+    activeMembers: 0,
     pendingApplications: 0,
     activeNews: 0,
     upcomingEvents: 0
   });
+  const [activities, setActivities] = useState([]);
+  const [pendingTasks, setPendingTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchStats = async () => {
     try {
@@ -61,11 +67,92 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchActivities = async () => {
+    try {
+      if (!token) return;
+
+      const response = await fetch("/api/admin/activities?limit=10", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch activities");
+      }
+
+      const data = await response.json();
+      setActivities(data.activities || []);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+    }
+  };
+
+  const generatePendingTasks = useCallback(() => {
+    const tasks = [];
+
+    if ((stats.pendingApplications || 0) > 0) {
+      tasks.push({
+        id: 1,
+        task: `Review ${stats.pendingApplications} pending membership applications`,
+        priority: "high",
+        count: stats.pendingApplications,
+        action: () => navigate("/admin/applications")
+      });
+    }
+
+    // Add more dynamic tasks based on stats
+    if ((stats.upcomingEvents || 0) > 0) {
+      tasks.push({
+        id: 2,
+        task: `Manage ${stats.upcomingEvents} upcoming events`,
+        priority: "medium",
+        count: stats.upcomingEvents,
+        action: () => navigate("/admin/content")
+      });
+    }
+
+    // Default tasks if no dynamic ones
+    if (tasks.length === 0) {
+      tasks.push({
+        id: 3,
+        task: "Check system notifications",
+        priority: "low",
+        count: 0,
+        action: () => navigate("/admin/notifications")
+      });
+    }
+
+    setPendingTasks(tasks);
+  }, [stats, navigate]);
+
+  const refreshDashboard = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchStats(), fetchActivities()]);
+    generatePendingTasks();
+    setRefreshing(false);
+  };
+
   useEffect(() => {
     if (token) {
-      fetchStats();
+      refreshDashboard();
     }
   }, [token, navigate]);
+
+  useEffect(() => {
+    generatePendingTasks();
+  }, [generatePendingTasks]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      refreshDashboard();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [token]);
 
   const handleLogout = () => {
     toast({
@@ -75,18 +162,16 @@ const AdminDashboard = () => {
     logout();
   };
 
-  const recentActivities = [
-    { id: 1, action: "New membership application", user: "Dr. Sarah Johnson", time: "2 hours ago", type: "application" },
-    { id: 2, action: "News article published", user: "Admin", time: "4 hours ago", type: "content" },
-    { id: 3, action: "Member profile updated", user: "Dr. Michael Brown", time: "1 day ago", type: "update" },
-    { id: 4, action: "Event registration opened", user: "Admin", time: "2 days ago", type: "event" },
-  ];
+  const formatTimeAgo = (timestamp: string | number | Date) => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - activityTime) / 1000);
 
-  const pendingTasks = [
-    { id: 1, task: "Review 12 pending membership applications", priority: "high", count: 12 },
-    { id: 2, task: "Approve 3 counselor directory submissions", priority: "medium", count: 3 },
-    { id: 3, task: "Update upcoming event details", priority: "low", count: 1 },
-  ];
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  };
 
   return (
     <AdminLayout>
@@ -98,10 +183,7 @@ const AdminDashboard = () => {
             <p className="text-muted-foreground text-sm md:text-base">Overview of your BSPCP administration</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="flex items-center gap-1 text-xs">
-              <Bell className="w-3 h-3" />
-              3 notifications
-            </Badge>
+
             <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs md:text-sm">
               <LogOut className="w-3 h-3 md:w-4 md:h-4 mr-2" />
               Logout
@@ -177,14 +259,14 @@ const AdminDashboard = () => {
                   <div key={task.id} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="flex-1">
                       <p className="text-sm font-medium">{task.task}</p>
-                      <Badge 
+                      <Badge
                         variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'}
                         className="text-xs mt-1"
                       >
                         {task.priority} priority
                       </Badge>
                     </div>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={task.action}>
                       Review
                     </Button>
                   </div>
@@ -195,24 +277,44 @@ const AdminDashboard = () => {
 
           {/* Recent Activities */}
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Activities</CardTitle>
-              <CardDescription>Latest system activities</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Activities</CardTitle>
+                <CardDescription>Latest system activities</CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refreshDashboard}
+                disabled={refreshing}
+                className="text-xs"
+              >
+                <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {recentActivities.map((activity) => (
+                {activities.length > 0 ? activities.map((activity) => (
                   <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                    <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${activity.priority === 'high' ? 'bg-red-500' :
+                        activity.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                      }`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">by {activity.user}</p>
+                      <p className="text-sm font-medium">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground">{activity.message}</p>
+                      <p className="text-xs text-muted-foreground">by {activity.adminName}</p>
                     </div>
                     <span className="text-xs text-muted-foreground flex-shrink-0">
-                      {activity.time}
+                      {formatTimeAgo(activity.timestamp)}
                     </span>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No recent activities</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

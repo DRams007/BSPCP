@@ -52,7 +52,12 @@ const BackupManagement: React.FC = () => {
   const fetchBackups = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/backups?status=active');
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/backups?status=active`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch backups');
       }
@@ -69,7 +74,12 @@ const BackupManagement: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/backups/stats');
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/backups/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch backup stats');
       }
@@ -83,7 +93,12 @@ const BackupManagement: React.FC = () => {
   const handleDownload = async (backup: BackupRecord) => {
     try {
       toast.loading('Preparing download...', { id: 'download' });
-      const response = await fetch(`/api/backups/${backup.id}/download`);
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/backups/${backup.id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Download failed');
@@ -109,10 +124,12 @@ const BackupManagement: React.FC = () => {
 
   const handleDelete = async (backupId: string) => {
     try {
-      const response = await fetch(`/api/backups/${backupId}/delete`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/backups/${backupId}/delete`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -137,10 +154,12 @@ const BackupManagement: React.FC = () => {
     setBackupError(null);
 
     try {
-      const response = await fetch('/api/backup', {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/backup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -236,39 +255,39 @@ const BackupManagement: React.FC = () => {
                 Statistics
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Backup Statistics</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {stats?.total_backups || 0}
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Backup Statistics</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {stats?.total_backups || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Backups</div>
                   </div>
-                  <div className="text-sm text-gray-600">Total Backups</div>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
-                    {stats?.active_backups || 0}
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {stats?.active_backups || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Active Backups</div>
                   </div>
-                  <div className="text-sm text-gray-600">Active Backups</div>
-                </div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {stats?.deleted_backups || 0}
+                  <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {stats?.deleted_backups || 0}
+                    </div>
+                    <div className="text-sm text-gray-600">Deleted Backups</div>
                   </div>
-                  <div className="text-sm text-gray-600">Deleted Backups</div>
-                </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {stats?.total_size_formatted || '0 B'}
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {stats?.total_size_formatted || '0 B'}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Size</div>
                   </div>
-                  <div className="text-sm text-gray-600">Total Size</div>
                 </div>
               </div>
-            </div>
-          </DialogContent>
+            </DialogContent>
           </Dialog>
         </div>
       </div>

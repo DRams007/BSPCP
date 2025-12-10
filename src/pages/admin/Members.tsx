@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Eye, Download, Mail, Loader2, Clock, User, GraduationCap, FileText, Check, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Search, Eye, Download, Mail, Loader2, Clock, User, GraduationCap, FileText, Check, X, AlertCircle } from "lucide-react";
 
 interface Member {
   id: number;
@@ -48,17 +49,41 @@ interface Member {
   updated_at: string;
   created_at: string;
   application_status: string;
-  member_status: "active" | "pending" | "suspended" | "pending_password_setup";
+  member_status: "active" | "pending" | "suspended" | "pending_password_setup" | "expired";
   membershipType: string;
   specializations: string[];
   languages: string[];
   session_types: string[];
   availability: string;
   dateOfBirth: string;
+  renewalDate: string;
   idNumber: string;
   physicalAddress: string;
   postalAddress: string;
   membershipId: string;
+  renewal_status: "not_requested" | "requested" | "uploaded" | "verified" | "rejected";
+  renewal_date: string;
+  renewal_proof_url?: string;
+  renewal_uploaded_at?: string;
+  renewal_uploaded_at_formatted?: string;
+  renewal_token_expires_at?: string;
+  renewal_history?: Array<{
+    id: string;
+    action: string;
+    details: string;
+    timestamp: string;
+    adminName: string;
+    adminEmail: string;
+    reason: string;
+  }>;
+  personalInfo: {
+    dateOfBirth: string;
+    renewalDate: string;
+    idNumber: string;
+    physicalAddress: string;
+    postalAddress: string;
+    membershipNumber: string;
+  };
   memberDocuments?: {
     idDocument?: {
       name: string;
@@ -104,6 +129,21 @@ interface Application {
 
 const Members = () => {
   const { toast } = useToast();
+  const { token } = useAuth();
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
+  };
   const [searchTerm, setSearchTerm] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
@@ -114,12 +154,168 @@ const Members = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [renewalVerificationNotes, setRenewalVerificationNotes] = useState("");
+  const [isApprovingRenewal, setIsApprovingRenewal] = useState(false);
+  const [isRejectingRenewal, setIsRejectingRenewal] = useState(false);
+  const [isSendingRenewalRequest, setIsSendingRenewalRequest] = useState(false);
 
-  const fetchMembers = async () => {
-    setLoading(true);
+
+  const handleSendRenewalRequest = async (memberId: number) => {
+    setIsSendingRenewalRequest(true);
+    try {
+      if (!token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in again to continue.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/send-renewal-request/${memberId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        toast({
+          title: "Session Expired",
+          description: "Your session has expired. Please log in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`HTTP error! status: ${response.status}${errorData.error ? ` - ${errorData.error}` : ''}`);
+      }
+
+      toast({
+        title: "Success",
+        description: "Renewal request sent successfully.",
+        variant: "default",
+      });
+
+      fetchMembers();
+    } catch (err) {
+      const error = err as Error;
+      toast({
+        title: "Error",
+        description: `Failed to send renewal request: ${error.message}`,
+        variant: "destructive",
+      });
+      console.error("Error sending renewal request:", err);
+    } finally {
+      setIsSendingRenewalRequest(false);
+    }
+  };
+
+
+  const handleApproveRenewal = async (memberId: number) => {
+    setIsApprovingRenewal(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/renewal-records/${memberId}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('admin_token') || ''}`,
+        },
+        body: JSON.stringify({ reviewComment: renewalVerificationNotes }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: "Renewal Approved",
+        description: `Renewal has been approved successfully.`,
+      });
+
+      setRenewalVerificationNotes("");
+      fetchMembers();
+
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error approving renewal:', error);
+      toast({
+        title: "Approval Failed",
+        description: `Failed to approve renewal: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsApprovingRenewal(false);
+    }
+  };
+
+  const handleRejectRenewal = async (memberId: number) => {
+    if (!renewalVerificationNotes.trim()) {
+      toast({
+        title: "Rejection Reason Required",
+        description: "Please provide a reason for rejecting the renewal.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRejectingRenewal(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/renewal-records/${memberId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('admin_token') || ''}`,
+        },
+        body: JSON.stringify({ reviewComment: renewalVerificationNotes }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: "Renewal Rejected",
+        description: `Renewal has been rejected.`,
+        variant: "destructive",
+      });
+
+      setRenewalVerificationNotes("");
+      fetchMembers();
+
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error rejecting renewal:', error);
+      toast({
+        title: "Rejection Failed",
+        description: `Failed to reject renewal: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsRejectingRenewal(false);
+    }
+  };
+
+
+
+
+  const fetchMembers = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/applications?status=approved`);
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/applications?status=approved`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -131,6 +327,12 @@ const Members = () => {
         membershipId: app.personalInfo.membershipNumber,
         application_status: app.application_status,
         member_status: app.member_status,
+        renewal_status: app.renewal_status,
+        renewal_date: app.renewal_date,
+        renewal_proof_url: app.renewal_proof_url,
+        renewal_uploaded_at: app.renewal_uploaded_at,
+        renewal_token_expires_at: app.renewal_token_expires_at,
+        renewal_history: app.renewal_history,
         membershipType: app.membershipType,
         submittedDate: app.submittedDate,
         updated_at: app.updated_at,
@@ -146,9 +348,18 @@ const Members = () => {
         session_types: app.session_types,
         availability: app.availability,
         dateOfBirth: app.personalInfo.dateOfBirth,
+        renewalDate: app.personalInfo.renewalDate,
         idNumber: app.personalInfo.idNumber,
         physicalAddress: app.personalInfo.physicalAddress,
         postalAddress: app.personalInfo.postalAddress,
+        personalInfo: {
+          dateOfBirth: app.personalInfo.dateOfBirth,
+          renewalDate: app.personalInfo.renewalDate,
+          idNumber: app.personalInfo.idNumber,
+          physicalAddress: app.personalInfo.physicalAddress,
+          postalAddress: app.personalInfo.postalAddress,
+          membershipNumber: app.personalInfo.membershipNumber,
+        },
         memberDocuments: app.memberDocuments || {
           idDocument: null,
           certificates: [],
@@ -161,20 +372,29 @@ const Members = () => {
       setError(`Failed to fetch members: ${error.message}`);
       console.error("Error fetching members:", err);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchMembers();
+
+    const handlePaymentVerified = () => fetchMembers();
+    window.addEventListener('paymentVerified', handlePaymentVerified);
+
+    return () => {
+      window.removeEventListener('paymentVerified', handlePaymentVerified);
+    };
   }, []);
 
   const handleStatusChange = async (memberId: number, newStatus: "active" | "pending" | "suspended") => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/members/${memberId}/status`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/members/${memberId}/status`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({ status: newStatus }),
       });
@@ -193,7 +413,7 @@ const Members = () => {
   };
 
   const handleSelectMember = (memberId: number) => {
-    setSelectedMembers(prevSelected => 
+    setSelectedMembers(prevSelected =>
       prevSelected.includes(memberId)
         ? prevSelected.filter(id => id !== memberId)
         : [...prevSelected, memberId]
@@ -218,10 +438,12 @@ const Members = () => {
   const sendEmail = async () => {
     setSendingEmail(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/send-email`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/send-email`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           recipients: mailRecipients,
@@ -259,10 +481,10 @@ const Members = () => {
   };
 
   const filteredMembers = members.filter(member => {
-    const matchesSearch = searchTerm === "" || 
-                          member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          member.membershipId.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = searchTerm === "" ||
+      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.membershipId.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -282,7 +504,7 @@ const Members = () => {
       <AdminLayout>
         <div className="p-6 text-red-500">
           <p>Error: {error}</p>
-          <Button onClick={fetchMembers} className="mt-4">Retry</Button>
+          <Button onClick={() => fetchMembers()} className="mt-4">Retry</Button>
         </div>
       </AdminLayout>
     );
@@ -305,6 +527,7 @@ const Members = () => {
               <Mail className="w-4 h-4 mr-2" />
               Email Selected ({selectedMembers.length})
             </Button>
+
             <Button>
               <Download className="w-4 h-4 mr-2" />
               Export List
@@ -379,19 +602,18 @@ const Members = () => {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          className={`${
-                            member.membershipType === 'professional'
+                          className={`${member.membershipType === 'professional'
                               ? 'bg-purple-100 text-purple-800'
                               : member.membershipType === 'student'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
                         >
                           {member.membershipType === 'professional'
                             ? 'Professional'
                             : member.membershipType === 'student'
-                            ? 'Student'
-                            : member.membershipType || 'Unknown'}
+                              ? 'Student'
+                              : member.membershipType || 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -411,6 +633,8 @@ const Members = () => {
                             <Clock className="w-3 h-3 mr-1" />
                             Pending Password Setup
                           </div>
+                        ) : member.member_status === "expired" ? (
+                          <Badge className="bg-red-100 text-red-800">Expired</Badge>
                         ) : (
                           <Select
                             value={member.member_status}
@@ -434,7 +658,7 @@ const Members = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Dialog>
+                          <Dialog onOpenChange={(open) => { if (open) fetchMembers(false); }}>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm">
                                 <Eye className="w-4 h-4" />
@@ -463,11 +687,10 @@ const Members = () => {
                                     <div><strong>Phone:</strong> {member.phone}</div>
                                     <div><strong>Membership Type:</strong>
                                       <Badge
-                                        className={`ml-2 ${
-                                          member.membershipType === 'professional'
+                                        className={`ml-2 ${member.membershipType === 'professional'
                                             ? 'bg-purple-100 text-purple-800'
                                             : 'bg-blue-100 text-blue-800'
-                                        }`}
+                                          }`}
                                       >
                                         {member.membershipType === 'professional' ? 'Professional' : 'Student'}
                                       </Badge>
@@ -638,12 +861,143 @@ const Members = () => {
                                     )}
                                   </CardContent>
                                 </Card>
+
+                                {/* Renewal Information */}
+                                <Card className="md:col-span-2">
+                                  <CardHeader className="pb-3">
+                                    <CardTitle className="text-lg flex items-center justify-between">
+                                      <span className="flex items-center">
+                                        <Clock className="w-5 h-5 mr-2" />
+                                        Renewal Verification
+                                      </span>
+                                      <Badge
+                                        className={`${member.renewal_status === 'verified'
+                                            ? 'bg-green-100 text-green-800'
+                                            : member.renewal_status === 'uploaded'
+                                              ? 'bg-blue-100 text-blue-800'
+                                              : member.renewal_status === 'rejected'
+                                                ? 'bg-red-100 text-red-800'
+                                                : member.renewal_status === 'requested'
+                                                  ? 'bg-blue-100 text-blue-800'
+                                                  : 'bg-gray-100 text-gray-800'
+                                          }`}
+                                      >
+                                        {(member.renewal_status || '').replace('_', ' ').toUpperCase()}
+                                      </Badge>
+                                    </CardTitle>
+                                    {member.renewal_status === 'rejected' && member.renewal_history && (
+                                      <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-2">
+                                        <div className="flex items-center">
+                                          <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+                                          <div className="text-sm">
+                                            <p className="font-medium text-red-800">
+                                              Previous Rejection Reason: {(() => {
+                                                const latestRejection = member.renewal_history
+                                                  .filter(entry => entry.action === 'renewal_rejected')
+                                                  .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+                                                return latestRejection?.reason || 'Renewal proof was rejected';
+                                              })()}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                      {/* Renewal Document Display - LEFT */}
+                                      {member.renewal_proof_url && (
+                                        <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border">
+                                          <FileText className="w-12 h-12 text-blue-500" />
+                                          <div className="flex-1">
+                                            <p className="font-medium">Renewal Proof Document</p>
+                                            <p className="text-sm text-muted-foreground">
+                                              Uploaded {member.renewal_uploaded_at_formatted ? member.renewal_uploaded_at_formatted : 'recently'}
+                                            </p>
+                                          </div>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => window.open(`${import.meta.env.VITE_API_URL}${member.renewal_proof_url}`, '_blank')}
+                                          >
+                                            <Download className="w-4 h-4" />
+                                          </Button>
+                                        </div>
+                                      )}
+
+                                      {/* Renewal Information - RIGHT */}
+                                      <div className="space-y-3 text-sm">
+                                        <div>
+                                          <strong>Renewal Date:</strong> {member.personalInfo?.renewalDate ? new Date(member.personalInfo.renewalDate).toLocaleDateString('en-GB') : 'N/A'}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Renewal Verification Actions */}
+                                    {member.renewal_status === 'uploaded' && (
+                                      <div className="mt-6 pt-6 border-t">
+                                        <div className="space-y-4">
+                                          <div>
+                                            <Label htmlFor="renewal-notes">Verification Notes</Label>
+                                            <Textarea
+                                              id="renewal-notes"
+                                              placeholder="Enter verification notes or rejection reason..."
+                                              value={renewalVerificationNotes}
+                                              onChange={(e) => setRenewalVerificationNotes(e.target.value)}
+                                              rows={3}
+                                            />
+                                          </div>
+                                          <div className="flex gap-3">
+                                            <Button
+                                              onClick={() => handleApproveRenewal(member.id)}
+                                              className="bg-green-600 hover:bg-green-700"
+                                              disabled={isApprovingRenewal || isRejectingRenewal}
+                                            >
+                                              {isApprovingRenewal ? (
+                                                <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                              ) : (
+                                                <Check className="w-4 h-4 mr-2" />
+                                              )}
+                                              {isApprovingRenewal ? "Approving..." : "Approve Renewal"}
+                                            </Button>
+                                            <Button
+                                              variant="destructive"
+                                              onClick={() => handleRejectRenewal(member.id)}
+                                              disabled={isApprovingRenewal || isRejectingRenewal || !renewalVerificationNotes.trim()}
+                                            >
+                                              {isRejectingRenewal ? (
+                                                <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                              ) : (
+                                                <X className="w-4 h-4 mr-2" />
+                                              )}
+                                              {isRejectingRenewal ? "Rejecting..." : "Reject Renewal"}
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
                               </div>
                             </DialogContent>
                           </Dialog>
                           <Button variant="outline" size="sm" onClick={() => openMailDialog([member.email])}>
                             <Mail className="w-4 h-4" />
                           </Button>
+                          {member.member_status === "expired" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleSendRenewalRequest(member.id)}
+                              disabled={isSendingRenewalRequest}
+                            >
+                              {isSendingRenewalRequest ? (
+                                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Clock className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -668,19 +1022,18 @@ const Members = () => {
                           <div className="flex items-center space-x-2 mb-1">
                             <p className="font-medium">{member.name}</p>
                             <Badge
-                              className={`${
-                                member.membershipType === 'professional'
+                              className={`${member.membershipType === 'professional'
                                   ? 'bg-purple-100 text-purple-800'
                                   : member.membershipType === 'student'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              } text-xs px-2 py-1`}
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                } text-xs px-2 py-1`}
                             >
                               {member.membershipType === 'professional'
                                 ? 'Professional'
                                 : member.membershipType === 'student'
-                                ? 'Student'
-                                : member.membershipType || 'Unknown'}
+                                  ? 'Student'
+                                  : member.membershipType || 'Unknown'}
                             </Badge>
                           </div>
                           <div className="text-sm text-muted-foreground space-y-1">
@@ -698,6 +1051,8 @@ const Members = () => {
                             <Clock className="w-3 h-3 mr-1" />
                             Pending Password Setup
                           </div>
+                        ) : member.member_status === "expired" ? (
+                          <Badge className="bg-red-100 text-red-800">Expired</Badge>
                         ) : (
                           <Select
                             value={member.member_status}
@@ -718,7 +1073,7 @@ const Members = () => {
                       </div>
                     </div>
                     <div className="flex gap-2 border-t pt-3">
-                      <Dialog>
+                      <Dialog onOpenChange={(open) => { if (open) fetchMembers(false); }}>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm" className="flex-1">
                             <Eye className="w-4 h-4 mr-2" />
@@ -748,11 +1103,10 @@ const Members = () => {
                                 <div><strong>Phone:</strong> {member.phone}</div>
                                 <div><strong>Membership Type:</strong>
                                   <Badge
-                                    className={`ml-2 ${
-                                      member.membershipType === 'professional'
+                                    className={`ml-2 ${member.membershipType === 'professional'
                                         ? 'bg-purple-100 text-purple-800'
                                         : 'bg-blue-100 text-blue-800'
-                                    }`}
+                                      }`}
                                   >
                                     {member.membershipType === 'professional' ? 'Professional' : 'Student'}
                                   </Badge>
@@ -930,6 +1284,16 @@ const Members = () => {
                         <Mail className="w-4 h-4 mr-2" />
                         Email
                       </Button>
+                      {member.member_status === "expired" && (
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => handleSendRenewalRequest(member.id)} disabled={isSendingRenewalRequest}>
+                          {isSendingRenewalRequest ? (
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                          ) : (
+                            <Clock className="w-4 h-4 mr-2" />
+                          )}
+                          Renew
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
