@@ -111,8 +111,32 @@ const upload = multer({
   },
 });
 
-app.use(cors());
+// Replace your current cors() with:
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://bspcp.org.bw', 'https://www.bspcp.org.bw']
+    : true,
+  credentials: true
+}));
+
 app.use(express.json());
+
+// Add this after app.use(cors()); and app.use(express.json());
+app.use((req, res, next) => {
+  // CSP headers to allow Google Fonts while maintaining security
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "script-src 'self' 'unsafe-eval'; " +
+    "connect-src 'self'; " +
+    "img-src 'self' https://*; " +
+    "frame-src 'none'; " +
+    "upgrade-insecure-requests;"
+  );
+  next();
+});
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // Use environment variable for production
 
@@ -846,7 +870,9 @@ app.get('/api/admin/activities', authenticateAdminToken, async (req, res) => {
     const unreadOnly = req.query.unread === 'true';
 
     let query = `
-      SELECT * FROM admin_activities 
+      SELECT a.*, adm.username as admin_name 
+      FROM admin_activities a
+      LEFT JOIN admins adm ON a.admin_id = adm.id
     `;
 
     // Base params
@@ -854,11 +880,11 @@ app.get('/api/admin/activities', authenticateAdminToken, async (req, res) => {
 
     // Filter conditions
     if (unreadOnly) {
-      query += ` WHERE is_read = false`;
+      query += ` WHERE a.is_read = false`;
     }
 
     // Sort and paginate
-    query += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+    query += ` ORDER BY a.created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
 
     queryParams.push(limit, offset);
 
@@ -983,6 +1009,22 @@ app.put('/api/applications/:id/status', authenticateAdminToken, async (req, res)
 
       // Ultimate fallback: add random numbers (should never reach here)
       return `${baseUsername}${Math.random().toString(36).substring(2, 8)}`;
+    }
+
+    // Check payment status if trying to approve
+    if (status === 'approved') {
+      const paymentCheck = await client.query(
+        'SELECT payment_status FROM members WHERE id = $1',
+        [id]
+      );
+
+      if (paymentCheck.rows.length > 0 && paymentCheck.rows[0].payment_status !== 'verified') {
+        client.release();
+        return res.status(400).json({
+          error: 'Cannot approve application: Payment not verified.',
+          details: 'Please verify the payment before approving the application.'
+        });
+      }
     }
 
     if (status === 'approved') {
@@ -1129,6 +1171,194 @@ app.put('/api/applications/:id/status', authenticateAdminToken, async (req, res)
     }
     console.error('Error updating application status:', err);
     res.status(500).json({ error: 'Failed to update application status', details: err.message });
+  } finally {
+    if (client) client.release();
+  }
+});
+
+// New API endpoint to mark application as existing paid (approves and bypasses payment)
+app.post('/api/applications/:id/mark-existing-paid', authenticateAdminToken, async (req, res) => {
+  const { id } = req.params;
+  const { sendEmail = true, adminPassword } = req.body;
+  let client;
+
+  if (!adminPassword) {
+    return res.status(400).json({ error: 'Admin password is required to perform this action.' });
+  }
+
+  try {
+    client = await pool.connect();
+
+    // Verify admin password
+    const adminResult = await client.query('SELECT password_hash FROM admins WHERE id = $1', [req.admin.id]);
+    if (adminResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Admin not found.' });
+    }
+
+    const validPassword = await bcrypt.compare(adminPassword, adminResult.rows[0].password_hash);
+    if (!validPassword) {
+      client.release();
+      return res.status(403).json({ error: 'Invalid password. Please try again.' });
+    }
+
+    await client.query('BEGIN');
+
+    // 1. Check if application exists
+    const memberResult = await client.query('SELECT * FROM members WHERE id = $1', [id]);
+    if (memberResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(404).json({ error: 'Application not found' });
+    }
+    const member = memberResult.rows[0];
+
+    // 2. Update status to approved and payment to verified
+    // Initialize renewal_date to now + 1 year
+    const updateResult = await client.query(
+      `UPDATE members
+       SET application_status = 'approved',
+           member_status = 'pending_password_setup',
+           payment_status = 'verified',
+           payment_verified_at = CURRENT_TIMESTAMP,
+           renewal_date = CURRENT_TIMESTAMP + INTERVAL '1 year',
+           review_comment = COALESCE(review_comment, '') || ' [Marked as Existing User - Paid]'
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+    const updatedMember = updateResult.rows[0];
+
+    // 3. Insert payment fee record (0.00 for manual/existing)
+    await client.query(
+      `INSERT INTO member_payments (member_id, first_name, last_name, amount, fee_type, verified_by)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        id,
+        member.first_name,
+        member.last_name,
+        200.00,
+        'application_fee',
+        req.admin.id
+      ]
+    );
+
+    // 4. Log Payment Verification Audit
+    await client.query(
+      `INSERT INTO payment_audit_log (member_id, admin_id, action, details, ip_address)
+         VALUES ($1, $2, $3, $4, $5)`,
+      [
+        id,
+        req.admin.id,
+        'payment_verified_manual',
+        `Marked as Existing/Paid by admin ${req.admin.firstName} ${req.admin.lastName}`,
+        req.ip
+      ]
+    );
+
+    // 5. Handle Authentication (Generate Username)
+    // Generate membership number if missing
+    let membershipNumber = updatedMember.bspcp_membership_number;
+    if (!membershipNumber) {
+      const nextNumResult = await client.query('SELECT nextval(\'bspcp_membership_number_seq\') AS next_num');
+      const nextNum = nextNumResult.rows[0].next_num;
+      membershipNumber = `BSPCP ${String(nextNum).padStart(4, '0')}`;
+      await client.query(
+        'UPDATE members SET bspcp_membership_number = $1 WHERE id = $2',
+        [membershipNumber, id]
+      );
+    }
+
+    const existingAuth = await client.query('SELECT * FROM member_authentication WHERE member_id = $1', [id]);
+
+    // Helper function to generate unique username (duplicated from status endpoint)
+    async function generateUniqueUsernameSimple(client, firstName, lastName) {
+      const cleanFirst = (firstName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
+      const cleanLast = (lastName || '').trim().toLowerCase().replace(/[^a-zA-Z]/g, '');
+
+      let baseUsername = `${cleanFirst.charAt(0)}${cleanLast}`;
+      if (!baseUsername || baseUsername.length < 2) baseUsername = cleanFirst || 'user';
+
+      const strategies = [
+        baseUsername,
+        `${cleanFirst}${cleanLast.charAt(0)}`,
+        `${cleanFirst}${cleanLast}`,
+      ];
+
+      for (const strategy of strategies) {
+        if (!strategy) continue;
+        const check = await client.query('SELECT id FROM member_authentication WHERE username = $1', [strategy]);
+        if (check.rows.length === 0) return strategy;
+
+        for (let i = 2; i <= 99; i++) {
+          const cand = `${strategy}${i}`;
+          const check2 = await client.query('SELECT id FROM member_authentication WHERE username = $1', [cand]);
+          if (check2.rows.length === 0) return cand;
+        }
+      }
+      return `${baseUsername}${Date.now().toString().slice(-4)}`;
+    }
+
+    const username = await generateUniqueUsernameSimple(client, updatedMember.first_name, updatedMember.last_name);
+
+    if (existingAuth.rows.length === 0) {
+      await client.query(
+        `INSERT INTO member_authentication (member_id, username, password_hash, salt)
+           VALUES ($1, $2, NULL, NULL)`,
+        [id, username]
+      );
+    } else {
+      await client.query(
+        `UPDATE member_authentication SET username = $1 WHERE member_id = $2`,
+        [username, id]
+      );
+    }
+
+    // 6. Send Email
+    if (sendEmail) {
+      const emailResult = await client.query(
+        `SELECT email FROM member_contact_details WHERE member_id = $1`,
+        [id]
+      );
+      if (emailResult.rows.length > 0) {
+        const memberEmail = emailResult.rows[0].email;
+        const setupToken = jwt.sign(
+          { memberId: id, purpose: 'password_setup' },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+        const fullName = `${updatedMember.first_name} ${updatedMember.last_name}`.trim();
+
+        try {
+          await sendMemberApprovalEmail(memberEmail, fullName, username, setupToken);
+        } catch (e) {
+          console.error('Failed to send member approval email:', e);
+        }
+      }
+    }
+
+    // 7. Log Activity
+    await logAdminActivity(
+      'application_approved_manual',
+      'Existing Member Approved',
+      `Application for ${updatedMember.first_name} ${updatedMember.last_name} was marked as existing/paid and approved`,
+      {
+        memberName: `${updatedMember.first_name} ${updatedMember.last_name}`,
+        newStatus: 'approved'
+      },
+      'member',
+      id,
+      'high',
+      req.admin.id
+    );
+
+    await client.query('COMMIT');
+    res.json({ message: 'Member marked as existing/paid and approved successfully', application: updatedMember, usernameGenerated: true });
+
+  } catch (err) {
+    if (client) await client.query('ROLLBACK');
+    console.error('Error marking as existing paid:', err);
+    res.status(500).json({ error: 'Failed to process request', details: err.message });
   } finally {
     if (client) client.release();
   }
@@ -1390,7 +1620,7 @@ app.post('/api/member/login', async (req, res) => {
           FROM member_contact_details mcd
           JOIN members m ON mcd.member_id = m.id
           JOIN member_authentication ma ON ma.member_id = m.id
-          WHERE mcd.email = $1
+          WHERE LOWER(mcd.email) = LOWER($1)
         `;
       params = [identifier];
     } else {
@@ -1399,7 +1629,7 @@ app.post('/api/member/login', async (req, res) => {
           SELECT ma.member_id, ma.username, ma.password_hash, ma.salt, CONCAT(m.first_name, ' ', m.last_name) AS full_name, m.member_status, m.application_status
           FROM member_authentication ma
           JOIN members m ON ma.member_id = m.id
-          WHERE ma.username = $1
+          WHERE LOWER(ma.username) = LOWER($1)
         `;
       params = [identifier];
     }
@@ -1497,14 +1727,14 @@ app.post('/api/member/forgot-password', async (req, res) => {
       `SELECT m.id, CONCAT(m.first_name, ' ', m.last_name) AS full_name, mcd.email
        FROM members m
        JOIN member_contact_details mcd ON m.id = mcd.member_id
-       WHERE mcd.email = $1`,
+       WHERE LOWER(mcd.email) = LOWER($1)`,
       [email]
     );
 
     if (memberResult.rows.length === 0) {
       // For security, always send a generic success message even if email not found
       client.release();
-      return res.status(200).json({ message: 'If an account with that email exists, you will receive a password reset link.' });
+      return res.status(404).json({ error: 'Email does not exist.' });
     }
 
     const member = memberResult.rows[0];
@@ -1521,7 +1751,7 @@ app.post('/api/member/forgot-password', async (req, res) => {
     }
 
     client.release();
-    res.status(200).json({ message: 'If an account with that email exists, you will receive a password reset link.' });
+    res.status(200).json({ message: 'A password reset email has been successfully sent to your email address.' });
 
   } catch (error) {
     console.error('Error during forgot password request:', error);
@@ -3913,7 +4143,7 @@ app.post('/api/admin/login', async (req, res) => {
       `SELECT id, username, email, password_hash, salt, role, first_name, last_name,
                is_active, login_attempts, locked_until
        FROM admins
-       WHERE (username = $1 OR email = $1) AND is_active = true`,
+       WHERE (LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)) AND is_active = true`,
       [identifier]
     );
 
@@ -4356,7 +4586,7 @@ app.post('/api/admin/forgot-password', async (req, res) => {
 
     // Find admin by email
     const adminResult = await client.query(
-      'SELECT id, username, email, first_name, last_name FROM admins WHERE email = $1 AND is_active = true',
+      'SELECT id, username, email, first_name, last_name FROM admins WHERE LOWER(email) = LOWER($1) AND is_active = true',
       [email]
     );
 
@@ -4741,6 +4971,30 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
       activeNews: parseInt(activeNewsResult.rows[0].active_news, 10),
       upcomingEvents: parseInt(upcomingEventsResult.rows[0].upcoming_events, 10)
     };
+
+    // Calculate member growth
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Get count of currently approved members who were created before this month
+    // Note: This is an approximation as we don't track exact "approved_at" date for historical point-in-time
+    const prevMembersResult = await client.query(`
+      SELECT COUNT(*) as prev_count
+      FROM members
+      WHERE application_status = 'approved' AND created_at < $1
+    `, [startOfMonth]);
+    
+    const prevCount = parseInt(prevMembersResult.rows[0].prev_count, 10);
+    const currentCount = parseInt(membersResult.rows[0].total_members, 10);
+    
+    let memberGrowth = 0;
+    if (prevCount > 0) {
+      memberGrowth = Math.round(((currentCount - prevCount) / prevCount) * 100);
+    } else if (currentCount > 0) {
+      memberGrowth = 100;
+    }
+    
+    stats.memberGrowth = memberGrowth;
     console.log('Dashboard stats being returned:', stats);
 
     // Log dashboard access

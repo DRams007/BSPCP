@@ -358,9 +358,9 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -475,11 +475,11 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Employed">Employed</SelectItem>
-                    <SelectItem value="Self-Employed">Self-Employed</SelectItem>
-                    <SelectItem value="Unemployed">Unemployed</SelectItem>
-                    <SelectItem value="Student">Student</SelectItem>
-                    <SelectItem value="Retired">Retired</SelectItem>
+                    <SelectItem value="employed">Employed</SelectItem>
+                    <SelectItem value="self-employed">Self-Employed</SelectItem>
+                    <SelectItem value="unemployed">Unemployed</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="retired">Retired</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

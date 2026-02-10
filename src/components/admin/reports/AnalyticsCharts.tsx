@@ -13,6 +13,7 @@ import {
     Cell,
     LineChart,
     Line,
+    LabelList,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -34,12 +35,57 @@ export const SimpleBarChart: React.FC<ChartProps> = ({ title, data, dataKey, nam
             </CardHeader>
             <CardContent>
                 <ResponsiveContainer width="100%" height={height}>
-                    <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey={nameKey} type="category" width={100} tick={{ fontSize: 12 }} />
-                        <Tooltip />
-                        <Bar dataKey={dataKey} fill="#8884d8" radius={[0, 4, 4, 0]} />
+                    <BarChart
+                        data={data}
+                        layout="vertical"
+                        margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+                        <XAxis type="number" hide />
+                        <YAxis
+                            dataKey={nameKey}
+                            type="category"
+                            width={100}
+                            tick={{ fontSize: 12, fill: "#6B7280" }}
+                            axisLine={false}
+                            tickLine={false}
+                        />
+                        <Tooltip
+                            cursor={{ fill: "transparent" }}
+                            content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                    return (
+                                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                            <p className="font-semibold text-sm mb-1">{label}</p>
+                                            <p className="text-sm text-blue-600">
+                                                {payload[0].value}
+                                            </p>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
+                        />
+                        <Bar
+                            dataKey={dataKey}
+                            fill="currentColor"
+                            radius={[0, 4, 4, 0]}
+                            barSize={32}
+                            className="fill-primary"
+                        >
+                            {/* 
+                              We can use Cell if we want different colors, 
+                              but a single primary color is often cleaner for "standard" bars.
+                              Let's stick to a nice primary theme or mapped colors if preferred.
+                              For now, using 'fill-primary' uses the tailwind theme color which looks professional.
+                            */}
+                            {
+                                data.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))
+                            }
+                            <LabelList dataKey={dataKey} position="right" fontSize={12} fill="#6B7280" />
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             </CardContent>

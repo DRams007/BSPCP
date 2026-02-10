@@ -28,7 +28,8 @@ const AdminDashboard = () => {
     activeMembers: 0,
     pendingApplications: 0,
     activeNews: 0,
-    upcomingEvents: 0
+    upcomingEvents: 0,
+    memberGrowth: 0
   });
   const [activities, setActivities] = useState([]);
   const [pendingTasks, setPendingTasks] = useState([]);
@@ -165,7 +166,12 @@ const AdminDashboard = () => {
   const formatTimeAgo = (timestamp: string | number | Date) => {
     const now = new Date();
     const activityTime = new Date(timestamp);
-    const diffInSeconds = Math.floor((now - activityTime) / 1000);
+
+    if (isNaN(activityTime.getTime())) {
+      return 'Invalid date';
+    }
+
+    const diffInSeconds = Math.floor((now.getTime() - activityTime.getTime()) / 1000);
 
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
@@ -201,7 +207,7 @@ const AdminDashboard = () => {
             <CardContent className="p-0 pt-2">
               <div className="text-xl md:text-2xl font-bold">{stats.totalMembers}</div>
               <p className="text-xs text-muted-foreground">
-                +12% from last month
+                {stats.memberGrowth > 0 ? '+' : ''}{stats.memberGrowth}% from last month
               </p>
             </CardContent>
           </Card>
@@ -254,7 +260,7 @@ const AdminDashboard = () => {
               <CardDescription>Items requiring your attention</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                 {pendingTasks.map((task) => (
                   <div key={task.id} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="flex-1">
@@ -294,19 +300,19 @@ const AdminDashboard = () => {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                 {activities.length > 0 ? activities.map((activity) => (
                   <div key={activity.id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50">
                     <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${activity.priority === 'high' ? 'bg-red-500' :
-                        activity.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                      activity.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
                       }`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{activity.title}</p>
                       <p className="text-xs text-muted-foreground">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">by {activity.adminName}</p>
+                      <p className="text-xs text-muted-foreground">by {activity.admin_name || 'System'}</p>
                     </div>
                     <span className="text-xs text-muted-foreground flex-shrink-0">
-                      {formatTimeAgo(activity.timestamp)}
+                      {formatTimeAgo(activity.created_at)}
                     </span>
                   </div>
                 )) : (

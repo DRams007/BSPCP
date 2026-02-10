@@ -44,9 +44,15 @@ const ForgotPassword = () => {
       if (response.ok) {
         toast({
           title: "Password Reset Initiated",
-          description: result.message || "If an account with that email exists, you will receive a password reset link.",
+          description: result.message,
         });
         form.reset();
+      } else if (response.status === 404) {
+        toast({
+          title: "Error",
+          description: result.error || "Email does not exist.",
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Error",

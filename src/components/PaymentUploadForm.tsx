@@ -150,11 +150,11 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) {
-      return <Upload className="w-8 h-8 text-blue-500" />;
+      return <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />;
     } else if (fileType === 'application/pdf') {
-      return <FileText className="w-8 h-8 text-red-500" />;
+      return <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />;
     }
-    return <Upload className="w-8 h-8 text-gray-500" />;
+    return <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />;
   };
 
   const formatFileSize = (bytes: number) => {
@@ -248,7 +248,7 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
             <div>
               <Label htmlFor="payment-proof">Payment Proof Document *</Label>
               <div className="mt-2">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8">
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 sm:p-6 lg:p-8">
                   <div className="text-center">
                     {selectedFiles.length > 0 ? (
                       <div className="space-y-4">
@@ -258,7 +258,7 @@ const PaymentUploadForm = ({ memberId, uploadToken, onSuccess, onError }: Paymen
                               <div className="flex items-center gap-3">
                                 {getFileIcon(file.type)}
                                 <div className="text-left">
-                                  <p className="text-sm font-medium truncate max-w-[200px]">{file.name}</p>
+                                  <p className="text-sm font-medium truncate max-w-[150px] sm:max-w-[200px] md:max-w-[300px] lg:max-w-[400px]">{file.name}</p>
                                   <p className="text-xs text-muted-foreground">
                                     {formatFileSize(file.size)}
                                   </p>

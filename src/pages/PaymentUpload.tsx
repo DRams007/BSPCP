@@ -258,30 +258,17 @@ const PaymentUpload = () => {
 
             {/* Progress Steps */}
             <div className="mt-6">
-              <div className="flex items-center justify-between max-w-md">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </div>
-                  <span className="ml-2 text-sm font-medium">Application Approved</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                <div className="flex items-center justify-center p-2">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                  <span className="text-sm font-medium">Application Approved</span>
                 </div>
-
-                <div className="w-8 border-t border-gray-300 mx-2"></div>
-
-                <div className="flex items-center">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <ArrowRight className="w-4 h-4 text-green-600" />
-                  </div>
-                  <span className="ml-2 text-sm font-medium">Payment Proof Required</span>
+                <div className="flex items-center justify-center p-2">
+                  <ArrowRight className="w-5 h-5 text-green-600 mr-2" />
+                  <span className="text-sm font-medium">Payment Proof Required</span>
                 </div>
-
-                <div className="w-8 border-t border-gray-300 mx-2"></div>
-
-                <div className="flex items-center opacity-60">
-                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-medium text-gray-600">3</span>
-                  </div>
-                  <span className="ml-2 text-sm font-medium">Verification</span>
+                <div className="flex items-center justify-center p-2 opacity-60">
+                  <span className="text-sm font-medium">3. Verification</span>
                 </div>
               </div>
             </div>

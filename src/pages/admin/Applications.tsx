@@ -47,7 +47,8 @@ import {
   ArrowDown,
   Receipt,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CreditCard
 } from "lucide-react";
 
 interface Application {
@@ -131,6 +132,7 @@ const Applications = () => {
   // Sorting state
   const [sortField, setSortField] = useState<'membershipType' | 'application_status' | 'created_at'>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc'); // Default to newest first
+  const [isMarkingPaid, setIsMarkingPaid] = useState(false);
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -176,6 +178,55 @@ const Applications = () => {
       window.removeEventListener('paymentVerified', handlePaymentVerified);
     };
   }, [fetchApplications]);
+
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showConfirmMarkPaidDialog, setShowConfirmMarkPaidDialog] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [applicationToApprove, setApplicationToApprove] = useState<Application | null>(null);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [pendingActionApplicationId, setPendingActionApplicationId] = useState<number | null>(null);
+
+  const handleMarkExistingPaid = async (memberId: number, password?: string) => {
+    // Confirmation handled by dialog now
+
+    setIsMarkingPaid(true);
+    try {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/applications/${memberId}/mark-existing-paid`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ sendEmail: true, adminPassword: password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to mark as existing paid');
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: "Application Approved",
+        description: "Member marked as existing paid and approved successfully.",
+      });
+
+      setSelectedApplication(null);
+      fetchApplications();
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error:", error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsMarkingPaid(false);
+    }
+  };
 
   const updateApplicationStatus = async (id: number, status: string, comment: string = "", loadingSetter: (value: boolean) => void) => {
     loadingSetter(true);
@@ -1783,6 +1834,24 @@ Botswana Wellbeing Pathways Admin Team`);
                                       <div className="flex gap-3 flex-wrap">
                                         {(selectedApplication.application_status === 'pending' || selectedApplication.application_status === 'under_review') ? (
                                           <>
+                                            {selectedApplication.payment_status !== 'verified' && (
+                                              <Button
+                                                onClick={() => {
+                                                  setPendingActionApplicationId(selectedApplication.id);
+                                                  setShowConfirmMarkPaidDialog(true);
+                                                }}
+                                                variant="outline"
+                                                className="border-green-600 text-green-600 hover:bg-green-50"
+                                                disabled={isRequestingPayment || isApproving || isRejecting || isMarkingPaid}
+                                              >
+                                                {isMarkingPaid ? (
+                                                  <div className="w-4 h-4 mr-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                  <CreditCard className="w-4 h-4 mr-2" />
+                                                )}
+                                                Mark as Paid (Existing)
+                                              </Button>
+                                            )}
                                             <Button
                                               onClick={() => handleRequestPayment(selectedApplication.id)}
                                               className="bg-blue-600 hover:bg-blue-700"
@@ -1796,7 +1865,18 @@ Botswana Wellbeing Pathways Admin Team`);
                                               {isRequestingPayment ? "Requesting..." : "Request Proof of Payment"}
                                             </Button>
                                             <Button
-                                              onClick={() => handleApprove(selectedApplication.id)}
+                                              onClick={() => {
+                                                if (selectedApplication.payment_status !== 'verified') {
+                                                  toast({
+                                                    title: "Approval Blocked",
+                                                    description: "Application cannot be approved until payment is verified.",
+                                                    variant: "destructive"
+                                                  });
+                                                  return;
+                                                }
+                                                setApplicationToApprove(selectedApplication);
+                                                setShowApproveDialog(true);
+                                              }}
                                               className="bg-green-600 hover:bg-green-700"
                                               disabled={isRequestingPayment || isApproving || isRejecting}
                                             >
@@ -1953,6 +2033,72 @@ Botswana Wellbeing Pathways Admin Team`);
           </CardContent>
         </Card>
 
+        {/* Password Confirmation Dialog */}
+        <Dialog open={showPasswordDialog} onOpenChange={(open) => {
+          setShowPasswordDialog(open);
+          if (!open) setPasswordInput("");
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Security Check Required</DialogTitle>
+              <DialogDescription>
+                You are about to bypass payment verification for <strong>{applications.find(a => a.id === pendingActionApplicationId)?.name}</strong>. Please confirm your identity by entering your admin password.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="admin-password">Admin Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Enter your password"
+                className="mt-2"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (pendingActionApplicationId) {
+                    handleMarkExistingPaid(pendingActionApplicationId, passwordInput);
+                    setShowPasswordDialog(false);
+                    setPasswordInput("");
+                  }
+                }}
+                disabled={!passwordInput}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Confirm & Approve
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Initial Confirmation Dialog for Mark as Paid */}
+        <Dialog open={showConfirmMarkPaidDialog} onOpenChange={setShowConfirmMarkPaidDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Action</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to mark this applicant as an EXISTING USER? This will instantly approve them and bypass payment verification.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowConfirmMarkPaidDialog(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  setShowConfirmMarkPaidDialog(false);
+                  setShowPasswordDialog(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Yes, Proceed
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
           <Card>
@@ -2029,6 +2175,33 @@ Botswana Wellbeing Pathways Admin Team`);
                 disabled={isDeleting}
               >
                 {isDeleting ? "Deleting..." : "Delete Application"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Approve Application Confirmation Dialog */}
+        <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Approval</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to approve this application? This will grant full member access.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowApproveDialog(false)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (applicationToApprove) {
+                    handleApprove(applicationToApprove.id);
+                    setShowApproveDialog(false);
+                    setApplicationToApprove(null);
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Yes, Approve
               </Button>
             </div>
           </DialogContent>

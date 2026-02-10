@@ -712,7 +712,7 @@ const ProfessionalMembershipForm = () => {
                   name="certificates"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Upload Professional Certificates</FormLabel>
+                      <FormLabel>Upload Professional Certificates,Police Clearance and References</FormLabel>
                       <FormControl>
                         <Input
                           type="file"
