@@ -20,6 +20,7 @@ interface Counsellor {
   specializations: string[];
   city: string;
   physical_address?: string;
+  postal_address?: string;
   profile_photo_url: string;
   years_experience: string;
   availability: string;
@@ -32,36 +33,36 @@ interface Counsellor {
 }
 
 const serviceCategories = [{
-    icon: Heart,
-    title: 'Individual Therapy',
-    description: 'Depression, anxiety, stress management, and personal growth',
-    color: 'bg-primary/10 text-primary',
-    subcategories: ['Depression & Anxiety', 'Stress Management', 'Self-esteem Issues', 'Life Transitions']
-  }, { 
-    icon: Users,
-    title: 'Couples Counselling',
-    description: 'Relationship issues, communication, and pre-marital counselling',
-    color: 'bg-terracotta/10 text-terracotta',
-    subcategories: ['Relationship Issues', 'Communication Problems', 'Pre-marital Counselling', 'Separation Support']
-  }, {
-    icon: Home,
-    title: 'Family Therapy',
-    description: 'Family conflicts, parenting support, and generational issues',
-    color: 'bg-dusty/10 text-dusty',
-    subcategories: ['Family Conflicts', 'Parenting Support', 'Blended Family Issues', 'Generational Conflicts']
-  }, {
-    icon: Sprout,
-    title: 'Child & Adolescent',
-    description: 'Behavioral issues, school problems, and teen mental health',
-    color: 'bg-accent/10 text-accent',
-    subcategories: ['Behavioral Issues', 'School Problems', 'Developmental Concerns', 'Teen Mental Health']
-  }, {
-    icon: Shield,
-    title: 'Specialized Services',
-    description: 'Trauma, PTSD, addiction, grief, and career counselling',
-    color: 'bg-primary/10 text-primary',
-    subcategories: ['Trauma & PTSD', 'Addiction Support', 'Grief & Loss', 'Career Counselling']
-  }];
+  icon: Heart,
+  title: 'Individual Therapy',
+  description: 'Depression, anxiety, stress management, and personal growth',
+  color: 'bg-primary/10 text-primary',
+  subcategories: ['Depression & Anxiety', 'Stress Management', 'Self-esteem Issues', 'Life Transitions']
+}, {
+  icon: Users,
+  title: 'Couples Counselling',
+  description: 'Relationship issues, communication, and pre-marital counselling',
+  color: 'bg-terracotta/10 text-terracotta',
+  subcategories: ['Relationship Issues', 'Communication Problems', 'Pre-marital Counselling', 'Separation Support']
+}, {
+  icon: Home,
+  title: 'Family Therapy',
+  description: 'Family conflicts, parenting support, and generational issues',
+  color: 'bg-dusty/10 text-dusty',
+  subcategories: ['Family Conflicts', 'Parenting Support', 'Blended Family Issues', 'Generational Conflicts']
+}, {
+  icon: Sprout,
+  title: 'Child & Adolescent',
+  description: 'Behavioral issues, school problems, and teen mental health',
+  color: 'bg-accent/10 text-accent',
+  subcategories: ['Behavioral Issues', 'School Problems', 'Developmental Concerns', 'Teen Mental Health']
+}, {
+  icon: Shield,
+  title: 'Specialized Services',
+  description: 'Trauma, PTSD, addiction, grief, and career counselling',
+  color: 'bg-primary/10 text-primary',
+  subcategories: ['Trauma & PTSD', 'Addiction Support', 'Grief & Loss', 'Career Counselling']
+}];
 
 const FindCounsellor = () => {
   const [counsellors, setCounsellors] = useState<Counsellor[]>([]);
@@ -177,17 +178,17 @@ const FindCounsellor = () => {
     }
 
     const filtered = counsellors.filter(c => {
-        const specializationMatch = selectedConcern ? c.specializations.includes(selectedConcern) : true;
-        const locationMatch = formData.location ? c.city.toLowerCase() === formData.location.toLowerCase() : true;
-        let sessionTypeMatch = true;
-        if (formData.sessionType) {
-            if (formData.sessionType === 'both') {
-                sessionTypeMatch = c.session_types.includes('in-person') && c.session_types.includes('online');
-            } else {
-                sessionTypeMatch = c.session_types.includes(formData.sessionType);
-            }
+      const specializationMatch = selectedConcern ? c.specializations.includes(selectedConcern) : true;
+      const locationMatch = formData.location ? c.city.toLowerCase() === formData.location.toLowerCase() : true;
+      let sessionTypeMatch = true;
+      if (formData.sessionType) {
+        if (formData.sessionType === 'both') {
+          sessionTypeMatch = c.session_types.includes('in-person') && c.session_types.includes('online');
+        } else {
+          sessionTypeMatch = c.session_types.includes(formData.sessionType);
         }
-        return specializationMatch && locationMatch && sessionTypeMatch;
+      }
+      return specializationMatch && locationMatch && sessionTypeMatch;
     });
     setFilteredCounsellors(filtered);
     setShowAll(false);
@@ -206,7 +207,7 @@ const FindCounsellor = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -215,17 +216,17 @@ const FindCounsellor = () => {
               Find Your Perfect Counsellor
             </h1>
             <p className="font-source text-xl text-cream/90 max-w-3xl mx-auto">
-              Connect with qualified mental health professionals who understand your unique needs 
+              Connect with qualified mental health professionals who understand your unique needs
               and can support you on your wellness journey.
             </p>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
-            <Button size="lg" className="bg-cream text-primary hover:bg-cream/90 font-source font-semibold text-lg px-8 py-6 rounded-2xl shadow-warm" onClick={() => needsFormRef.current?.scrollIntoView({ behavior: 'smooth' }) }>
+            <Button size="lg" className="bg-cream text-primary hover:bg-cream/90 font-source font-semibold text-lg px-8 py-6 rounded-2xl shadow-warm" onClick={() => needsFormRef.current?.scrollIntoView({ behavior: 'smooth' })}>
               Tell Us What You Need
             </Button>
-            
-            <Button size="lg" variant="outline" className="border-cream text-cream font-source font-semibold text-lg px-8 py-6 rounded-2xl bg-[#86995c]" onClick={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' }) }>
+
+            <Button size="lg" variant="outline" className="border-cream text-cream font-source font-semibold text-lg px-8 py-6 rounded-2xl bg-[#86995c]" onClick={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth' })}>
               Browse All Counsellors
             </Button>
           </div>
@@ -251,15 +252,15 @@ const FindCounsellor = () => {
                   <div className={`w-16 h-16 ${category.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
                     <category.icon className="w-8 h-8" />
                   </div>
-                  
+
                   <h3 className="font-poppins font-semibold text-xl text-foreground mb-3 text-center">
                     {category.title}
                   </h3>
-                  
+
                   <p className="font-source text-muted-foreground mb-4 text-center leading-relaxed">
                     {category.description}
                   </p>
-                  
+
                   <RadioGroup onValueChange={(value) => setSelectedConcern(value)} value={selectedConcern || ''} className="space-y-2 mb-6">
                     {category.subcategories.map((sub, idx) => (
                       <div key={idx} className="flex items-center space-x-2">
@@ -270,7 +271,7 @@ const FindCounsellor = () => {
                       </div>
                     ))}
                   </RadioGroup>
-                  
+
                   <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300" onClick={handleCategorySelect}>
                     Select This Category
                   </Button>
@@ -420,11 +421,11 @@ const FindCounsellor = () => {
               <Button onClick={() => window.location.reload()} className="mt-4">Retry</Button>
             </div>
           )}
-          
+
           {noResults && (
             <div className="text-center py-10">
-                <p className="text-lg text-muted-foreground mb-4">No counsellors found matching your criteria.</p>
-                <Button onClick={handleBrowseAll}>Browse All Counsellors</Button>
+              <p className="text-lg text-muted-foreground mb-4">No counsellors found matching your criteria.</p>
+              <Button onClick={handleBrowseAll}>Browse All Counsellors</Button>
             </div>
           )}
 
@@ -439,19 +440,21 @@ const FindCounsellor = () => {
                         {`${counsellor.years_experience}${counsellor.years_experience.toLowerCase().includes('year') ? '' : ' years'}`}
                       </div>
                     </div>
-                    
+
                     <div className="p-6">
                       <div className="mb-4">
                         <h3 className="font-poppins font-semibold text-lg text-foreground mb-1">
                           {counsellor.title} {counsellor.full_name}
                         </h3>
 
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                          <MapPin className="w-4 h-4" />
-                          <span>{counsellor.city}</span>
-                        </div>
+                        {counsellor.city && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                            <MapPin className="w-4 h-4" />
+                            <span>{counsellor.city}</span>
+                          </div>
+                        )}
                       </div>
-                      
+
                       <div className="mb-4">
                         <div className="flex flex-wrap gap-1">
                           {counsellor.specializations && counsellor.specializations.slice(0, 2).map((spec, idx) => (
@@ -466,7 +469,7 @@ const FindCounsellor = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="mb-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Monitor className="w-4 h-4" />
@@ -476,7 +479,7 @@ const FindCounsellor = () => {
                           <strong>Languages:</strong> {counsellor.languages && counsellor.languages.join(', ')}
                         </div>
                       </div>
-                      
+
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="flex-1" onClick={() => fetchCounsellorDetails(counsellor.id)}>
                           View Profile
@@ -491,7 +494,7 @@ const FindCounsellor = () => {
               ))}
             </div>
           )}
-          
+
           <div className="text-center mt-12">
             <Button variant="outline" size="lg" className="px-8">
               Load More Counsellors
@@ -531,17 +534,24 @@ const FindCounsellor = () => {
                 </DialogHeader>
 
                 <div className="space-y-4 text-muted-foreground font-source text-sm">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div>{selectedCounsellor.city}</div>
-                      {selectedCounsellor.physical_address && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {selectedCounsellor.physical_address}
-                        </div>
-                      )}
+                  {(selectedCounsellor.city || selectedCounsellor.physical_address || selectedCounsellor.postal_address) && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        {selectedCounsellor.city && <div>{selectedCounsellor.city}</div>}
+                        {selectedCounsellor.physical_address && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {selectedCounsellor.physical_address}
+                          </div>
+                        )}
+                        {selectedCounsellor.postal_address && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Postal: {selectedCounsellor.postal_address}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <p className="leading-relaxed">
                     {selectedCounsellor.bio || "No biography available."}
                   </p>

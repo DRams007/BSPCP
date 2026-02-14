@@ -3217,7 +3217,7 @@ app.get('/api/counsellors', async (req, res) => {
         CONCAT(m.first_name, ' ', m.last_name) AS full_name,
         mpd.title,
         mpd.specializations,
-        mcd.city,
+        CASE WHEN mcd.show_address THEN mcd.city ELSE NULL END AS city,
         mpd_doc.profile_image_path,
         mpd.bio,
         mpd.languages,
@@ -3274,8 +3274,9 @@ app.get('/api/counsellors/:id', async (req, res) => {
         CONCAT(m.first_name, ' ', m.last_name) AS full_name,
         mpd.title,
         mpd.specializations,
-        mcd.city,
-        mcd.physical_address,
+        CASE WHEN mcd.show_address THEN mcd.city ELSE NULL END AS city,
+        CASE WHEN mcd.show_address THEN mcd.physical_address ELSE NULL END AS physical_address,
+        CASE WHEN mcd.show_address THEN mcd.postal_address ELSE NULL END AS postal_address,
         mpd_doc.profile_image_path,
         mpd.bio,
         mpd.languages,
@@ -4975,7 +4976,7 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
     // Calculate member growth
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     // Get count of currently approved members who were created before this month
     // Note: This is an approximation as we don't track exact "approved_at" date for historical point-in-time
     const prevMembersResult = await client.query(`
@@ -4983,17 +4984,17 @@ app.get('/api/admin/dashboard-stats', authenticateAdminToken, async (req, res) =
       FROM members
       WHERE application_status = 'approved' AND created_at < $1
     `, [startOfMonth]);
-    
+
     const prevCount = parseInt(prevMembersResult.rows[0].prev_count, 10);
     const currentCount = parseInt(membersResult.rows[0].total_members, 10);
-    
+
     let memberGrowth = 0;
     if (prevCount > 0) {
       memberGrowth = Math.round(((currentCount - prevCount) / prevCount) * 100);
     } else if (currentCount > 0) {
       memberGrowth = 100;
     }
-    
+
     stats.memberGrowth = memberGrowth;
     console.log('Dashboard stats being returned:', stats);
 
