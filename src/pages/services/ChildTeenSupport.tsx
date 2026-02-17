@@ -39,7 +39,7 @@ const ChildTeenSupport = () => {
       color: 'bg-accent/10 text-accent'
     },
     {
-      age: '13-17 Years', 
+      age: '13-17 Years',
       title: 'Teenagers',
       description: 'Talk therapy and skill-building approaches tailored to adolescent development and challenges.',
       icon: Book,
@@ -50,7 +50,7 @@ const ChildTeenSupport = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,7 +65,7 @@ const ChildTeenSupport = () => {
                 </h1>
               </div>
               <p className="font-source text-xl text-cream/90 mb-8 leading-relaxed">
-                Specialized counselling services for children and teenagers, using age-appropriate 
+                Specialized counselling services for children and teenagers, using age-appropriate
                 approaches to support healthy development and emotional wellbeing.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -78,7 +78,7 @@ const ChildTeenSupport = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
@@ -89,7 +89,7 @@ const ChildTeenSupport = () => {
                   <p className="text-cream/90">45-60 minutes</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
                   <Calendar className="w-8 h-8 text-white mx-auto mb-3" />
@@ -147,9 +147,9 @@ const ChildTeenSupport = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {issues.map((issue, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
+              <Badge
+                key={index}
+                variant="secondary"
                 className="text-center py-3 px-4 text-sm font-medium"
               >
                 {issue}
@@ -221,7 +221,7 @@ const ChildTeenSupport = () => {
                   Parent Consultation
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Regular check-ins to discuss progress, strategies, and how to 
+                  Regular check-ins to discuss progress, strategies, and how to
                   support your child at home.
                 </p>
               </CardContent>
@@ -236,7 +236,7 @@ const ChildTeenSupport = () => {
                   Educational Resources
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Access to helpful resources about child development, parenting 
+                  Access to helpful resources about child development, parenting
                   strategies, and mental health.
                 </p>
               </CardContent>
@@ -251,7 +251,7 @@ const ChildTeenSupport = () => {
                   Family Sessions
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  When appropriate, family sessions to improve communication 
+                  When appropriate, family sessions to improve communication
                   and strengthen relationships.
                 </p>
               </CardContent>
@@ -269,21 +269,6 @@ const ChildTeenSupport = () => {
           <p className="font-source text-xl text-white/90 mb-8">
             Every child deserves to feel understood, supported, and equipped with healthy coping skills.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-accent hover:bg-cream"
-            >
-              Find a Child Counsellor
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-accent"
-            >
-              Schedule Initial Consultation
-            </Button>
-          </div>
         </div>
       </section>
 

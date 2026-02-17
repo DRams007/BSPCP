@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 const TraumaCrisis = () => {
   const navigate = useNavigate();
   const traumaTypes = [
-    'Acute Trauma', 'Complex PTSD', 'Childhood Trauma', 'Sexual Assault', 
+    'Acute Trauma', 'Complex PTSD', 'Childhood Trauma', 'Sexual Assault',
     'Domestic Violence', 'Accident Trauma', 'Workplace Trauma', 'Medical Trauma'
   ];
 
@@ -34,7 +34,7 @@ const TraumaCrisis = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,7 +49,7 @@ const TraumaCrisis = () => {
                 </h1>
               </div>
               <p className="font-source text-xl text-cream/90 mb-8 leading-relaxed">
-                Specialized care for trauma survivors and immediate crisis intervention services. 
+                Specialized care for trauma survivors and immediate crisis intervention services.
                 We provide compassionate, evidence-based treatment to help you heal and reclaim your life.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -62,7 +62,7 @@ const TraumaCrisis = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
@@ -74,7 +74,7 @@ const TraumaCrisis = () => {
                   <p className="text-cream/70 text-sm">24/7 Support</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
                   <Heart className="w-8 h-8 text-white mx-auto mb-3" />
@@ -89,18 +89,7 @@ const TraumaCrisis = () => {
         </div>
       </section>
 
-      {/* Crisis Warning Banner */}
-      <section className="py-6 bg-destructive">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center gap-4 text-white">
-            <AlertTriangle className="w-6 h-6" />
-            <p className="font-source text-center">
-              <strong>Crisis Emergency:</strong> If you're experiencing a mental health emergency or having thoughts of self-harm, 
-              call 16222 immediately or visit your nearest emergency room.
-            </p>
-          </div>
-        </div>
-      </section>
+
 
       {/* Types of Trauma We Address */}
       <section className="py-20 bg-background">
@@ -116,9 +105,9 @@ const TraumaCrisis = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
             {traumaTypes.map((type, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
+              <Badge
+                key={index}
+                variant="secondary"
                 className="text-center py-3 px-4 text-sm font-medium"
               >
                 {type}
@@ -185,7 +174,7 @@ const TraumaCrisis = () => {
                   Immediate Crisis Response
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  24/7 crisis intervention, safety planning, and emergency stabilization 
+                  24/7 crisis intervention, safety planning, and emergency stabilization
                   when you need it most.
                 </p>
               </CardContent>
@@ -200,7 +189,7 @@ const TraumaCrisis = () => {
                   Trauma-Informed Care
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Specialized therapy approaches designed specifically for trauma recovery 
+                  Specialized therapy approaches designed specifically for trauma recovery
                   and post-traumatic growth.
                 </p>
               </CardContent>
@@ -215,7 +204,7 @@ const TraumaCrisis = () => {
                   Long-Term Support
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Ongoing therapy, support groups, and resources to help you rebuild 
+                  Ongoing therapy, support groups, and resources to help you rebuild
                   and thrive after trauma.
                 </p>
               </CardContent>
@@ -233,21 +222,6 @@ const TraumaCrisis = () => {
           <p className="font-source text-xl text-primary-foreground/90 mb-8">
             Help is available. Take the first step towards healing and recovery.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              Crisis Support: 16222
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-primary"
-            >
-              Find a Trauma Specialist
-            </Button>
-          </div>
         </div>
       </section>
 

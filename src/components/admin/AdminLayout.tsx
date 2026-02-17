@@ -13,7 +13,7 @@ import {
   BarChart3,
   Home,
   Menu,
-  Search,
+
   MessageSquare,
   LogOut,
   User,
@@ -22,7 +22,7 @@ import {
   Bell,
   X,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+
 import AdminNotifications from "@/components/admin/AdminNotifications";
 
 interface AdminLayoutProps {
@@ -92,19 +92,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            className="pl-10 h-9"
-          />
-        </div>
-      </div>
+
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className="flex-1 px-4 space-y-2 pt-4">
         {filteredNavigation.map((item) => {
           const Icon = item.icon;
           return (

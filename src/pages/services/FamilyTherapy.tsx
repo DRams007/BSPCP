@@ -31,7 +31,7 @@ const FamilyTherapy = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,26 +46,26 @@ const FamilyTherapy = () => {
                 </h1>
               </div>
               <p className="font-source text-xl text-cream/90 mb-8 leading-relaxed">
-                Strengthen family bonds and improve communication through comprehensive family therapy. 
+                Strengthen family bonds and improve communication through comprehensive family therapy.
                 Work together to resolve conflicts and create a more harmonious family environment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-primary hover:bg-cream"
                 >
                   Find a Family Therapist
                 </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
+                <Button
+                  size="lg"
+                  variant="outline"
                   className="border-white text-white hover:bg-white hover:text-primary"
                 >
                   Schedule Assessment
                 </Button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
@@ -76,7 +76,7 @@ const FamilyTherapy = () => {
                   <p className="text-cream/90">60-90 minutes</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
                   <Calendar className="w-8 h-8 text-white mx-auto mb-3" />
@@ -105,9 +105,9 @@ const FamilyTherapy = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
             {issues.map((issue, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
+              <Badge
+                key={index}
+                variant="secondary"
                 className="text-center py-3 px-4 text-sm font-medium"
               >
                 {issue}
@@ -174,7 +174,7 @@ const FamilyTherapy = () => {
                   Nuclear Families
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Parents and children working together to improve communication, 
+                  Parents and children working together to improve communication,
                   resolve conflicts, and strengthen family bonds.
                 </p>
               </CardContent>
@@ -189,7 +189,7 @@ const FamilyTherapy = () => {
                   Blended Families
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Step-families navigating new relationships, establishing boundaries, 
+                  Step-families navigating new relationships, establishing boundaries,
                   and creating harmony in merged households.
                 </p>
               </CardContent>
@@ -204,7 +204,7 @@ const FamilyTherapy = () => {
                   Single Parent Families
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Single parents and their children developing strong support systems 
+                  Single parents and their children developing strong support systems
                   and healthy coping strategies.
                 </p>
               </CardContent>
@@ -294,21 +294,6 @@ const FamilyTherapy = () => {
           <p className="font-source text-xl text-white/90 mb-8">
             Take the first step towards a more harmonious and connected family life.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-dusty hover:bg-cream"
-            >
-              Find Your Family Therapist
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-dusty"
-            >
-              Learn More About Process
-            </Button>
-          </div>
         </div>
       </section>
 

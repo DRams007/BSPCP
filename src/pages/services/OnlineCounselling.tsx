@@ -40,7 +40,7 @@ const OnlineCounselling = () => {
     },
     {
       icon: MessageSquare,
-      title: 'Audio Sessions', 
+      title: 'Audio Sessions',
       description: 'Voice-only counselling for those who prefer audio-only or have limited bandwidth.',
       color: 'bg-secondary/10 text-secondary'
     },
@@ -55,7 +55,7 @@ const OnlineCounselling = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,7 +70,7 @@ const OnlineCounselling = () => {
                 </h1>
               </div>
               <p className="font-source text-xl text-cream/90 mb-8 leading-relaxed">
-                Access professional counselling services from the comfort and privacy of your own home. 
+                Access professional counselling services from the comfort and privacy of your own home.
                 Same quality care, delivered conveniently through secure online platforms.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -83,7 +83,7 @@ const OnlineCounselling = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
@@ -94,7 +94,7 @@ const OnlineCounselling = () => {
                   <p className="text-cream/90">45-60 minutes</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
                   <Calendar className="w-8 h-8 text-white mx-auto mb-3" />
@@ -147,9 +147,9 @@ const OnlineCounselling = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {platforms.map((platform, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
+              <Badge
+                key={index}
+                variant="secondary"
                 className="text-center py-3 px-4 text-sm font-medium"
               >
                 {platform}
@@ -204,7 +204,7 @@ const OnlineCounselling = () => {
                     </h4>
                   </div>
                   <p className="font-source text-muted-foreground text-sm">
-                    All online sessions use end-to-end encrypted platforms that meet healthcare 
+                    All online sessions use end-to-end encrypted platforms that meet healthcare
                     privacy standards. Your conversations are completely confidential and secure.
                   </p>
                 </CardContent>
@@ -295,21 +295,6 @@ const OnlineCounselling = () => {
           <p className="font-source text-xl text-white/90 mb-8">
             Professional mental health support is just a click away. Access quality counselling from anywhere.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-secondary hover:bg-cream"
-            >
-              Get Started Now
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-secondary"
-            >
-              Technical Support
-            </Button>
-          </div>
         </div>
       </section>
 

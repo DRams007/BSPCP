@@ -17,7 +17,7 @@ const IndividualTherapy = () => {
   ];
 
   const conditions = [
-    'Depression', 'Anxiety', 'Stress Management', 'Trauma & PTSD', 
+    'Depression', 'Anxiety', 'Stress Management', 'Trauma & PTSD',
     'Grief & Loss', 'Life Transitions', 'Self-Esteem Issues', 'Anger Management'
   ];
 
@@ -33,7 +33,7 @@ const IndividualTherapy = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
+
       {/* Hero Section */}
       <section className="py-20 bg-gradient-warm text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -48,7 +48,7 @@ const IndividualTherapy = () => {
                 </h1>
               </div>
               <p className="font-source text-xl text-cream/90 mb-8 leading-relaxed">
-                One-on-one personalized counselling sessions designed to support your mental health, 
+                One-on-one personalized counselling sessions designed to support your mental health,
                 personal growth, and overall wellbeing in a confidential and supportive environment.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -61,7 +61,7 @@ const IndividualTherapy = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
@@ -72,7 +72,7 @@ const IndividualTherapy = () => {
                   <p className="text-cream/90">45-60 minutes</p>
                 </CardContent>
               </Card>
-              
+
               <Card className="bg-white/10 border-white/20">
                 <CardContent className="p-6 text-center">
                   <Calendar className="w-8 h-8 text-white mx-auto mb-3" />
@@ -101,9 +101,9 @@ const IndividualTherapy = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
             {conditions.map((condition, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
+              <Badge
+                key={index}
+                variant="secondary"
                 className="text-center py-3 px-4 text-sm font-medium"
               >
                 {condition}
@@ -170,7 +170,7 @@ const IndividualTherapy = () => {
                   1. Initial Consultation
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  We'll discuss your concerns, goals, and match you with the right counsellor 
+                  We'll discuss your concerns, goals, and match you with the right counsellor
                   for your specific needs.
                 </p>
               </CardContent>
@@ -185,7 +185,7 @@ const IndividualTherapy = () => {
                   2. Treatment Planning
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Together with your counsellor, you'll develop a personalized treatment plan 
+                  Together with your counsellor, you'll develop a personalized treatment plan
                   that aligns with your goals.
                 </p>
               </CardContent>
@@ -200,7 +200,7 @@ const IndividualTherapy = () => {
                   3. Regular Sessions
                 </h3>
                 <p className="font-source text-muted-foreground">
-                  Attend regular sessions where you'll work through challenges and develop 
+                  Attend regular sessions where you'll work through challenges and develop
                   healthy coping strategies.
                 </p>
               </CardContent>
@@ -218,21 +218,6 @@ const IndividualTherapy = () => {
           <p className="font-source text-xl text-primary-foreground/90 mb-8">
             Take the first step towards better mental health and personal growth.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-white text-primary hover:bg-cream"
-            >
-              Find Your Counsellor
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="border-white text-white hover:bg-white hover:text-primary"
-            >
-              Learn About Costs
-            </Button>
-          </div>
         </div>
       </section>
 
