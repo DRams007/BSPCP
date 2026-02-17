@@ -1179,7 +1179,7 @@ app.put('/api/applications/:id/status', authenticateAdminToken, async (req, res)
 // New API endpoint to mark application as existing paid (approves and bypasses payment)
 app.post('/api/applications/:id/mark-existing-paid', authenticateAdminToken, async (req, res) => {
   const { id } = req.params;
-  const { sendEmail = true, adminPassword } = req.body;
+  const { sendEmail = true, adminPassword, membershipNumber } = req.body;
   let client;
 
   if (!adminPassword) {
@@ -1212,6 +1212,16 @@ app.post('/api/applications/:id/mark-existing-paid', authenticateAdminToken, asy
       return res.status(404).json({ error: 'Application not found' });
     }
     const member = memberResult.rows[0];
+
+    // 1b. Validate custom membership number if provided
+    if (membershipNumber && membershipNumber.trim() !== '') {
+      const existingCheck = await client.query('SELECT id FROM members WHERE bspcp_membership_number = $1 AND id != $2', [membershipNumber, id]);
+      if (existingCheck.rows.length > 0) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: `Membership number '${membershipNumber}' already exists.` });
+      }
+    }
 
     // 2. Update status to approved and payment to verified
     // Initialize renewal_date to now + 1 year
@@ -1251,21 +1261,31 @@ app.post('/api/applications/:id/mark-existing-paid', authenticateAdminToken, asy
         id,
         req.admin.id,
         'payment_verified_manual',
-        `Marked as Existing/Paid by admin ${req.admin.firstName} ${req.admin.lastName}`,
+        `Marked as Existing/Paid by admin ${req.admin.firstName} ${req.admin.lastName}${membershipNumber ? ' with number ' + membershipNumber : ''}`,
         req.ip
       ]
     );
 
     // 5. Handle Authentication (Generate Username)
-    // Generate membership number if missing
-    let membershipNumber = updatedMember.bspcp_membership_number;
-    if (!membershipNumber) {
-      const nextNumResult = await client.query('SELECT nextval(\'bspcp_membership_number_seq\') AS next_num');
-      const nextNum = nextNumResult.rows[0].next_num;
-      membershipNumber = `BSPCP ${String(nextNum).padStart(4, '0')}`;
+    // Handle Membership Number Assignment
+    let finalMembershipNumber = updatedMember.bspcp_membership_number;
+
+    // If a custom number was provided, use it (update the member)
+    if (membershipNumber && membershipNumber.trim() !== '') {
       await client.query(
         'UPDATE members SET bspcp_membership_number = $1 WHERE id = $2',
         [membershipNumber, id]
+      );
+      finalMembershipNumber = membershipNumber;
+    }
+    // Otherwise, if they still don't have one, generate it
+    else if (!finalMembershipNumber) {
+      const nextNumResult = await client.query('SELECT nextval(\'bspcp_membership_number_seq\') AS next_num');
+      const nextNum = nextNumResult.rows[0].next_num;
+      finalMembershipNumber = `BSPCP ${String(nextNum).padStart(4, '0')}`;
+      await client.query(
+        'UPDATE members SET bspcp_membership_number = $1 WHERE id = $2',
+        [finalMembershipNumber, id]
       );
     }
 

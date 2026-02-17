@@ -184,9 +184,10 @@ const Applications = () => {
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [applicationToApprove, setApplicationToApprove] = useState<Application | null>(null);
   const [passwordInput, setPasswordInput] = useState("");
+  const [membershipNumberInput, setMembershipNumberInput] = useState("");
   const [pendingActionApplicationId, setPendingActionApplicationId] = useState<number | null>(null);
 
-  const handleMarkExistingPaid = async (memberId: number, password?: string) => {
+  const handleMarkExistingPaid = async (memberId: number, password?: string, membershipNumber?: string) => {
     // Confirmation handled by dialog now
 
     setIsMarkingPaid(true);
@@ -198,7 +199,11 @@ const Applications = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ sendEmail: true, adminPassword: password }),
+        body: JSON.stringify({
+          sendEmail: true,
+          adminPassword: password,
+          membershipNumber: membershipNumber
+        }),
       });
 
       if (!response.ok) {
@@ -2033,10 +2038,12 @@ Botswana Wellbeing Pathways Admin Team`);
           </CardContent>
         </Card>
 
-        {/* Password Confirmation Dialog */}
         <Dialog open={showPasswordDialog} onOpenChange={(open) => {
           setShowPasswordDialog(open);
-          if (!open) setPasswordInput("");
+          if (!open) {
+            setPasswordInput("");
+            setMembershipNumberInput("");
+          }
         }}>
           <DialogContent>
             <DialogHeader>
@@ -2045,25 +2052,42 @@ Botswana Wellbeing Pathways Admin Team`);
                 You are about to bypass payment verification for <strong>{applications.find(a => a.id === pendingActionApplicationId)?.name}</strong>. Please confirm your identity by entering your admin password.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-              <Label htmlFor="admin-password">Admin Password</Label>
-              <Input
-                id="admin-password"
-                type="password"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Enter your password"
-                className="mt-2"
-              />
+            <div className="py-4 space-y-4">
+              <div>
+                <Label htmlFor="admin-password">Admin Password</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Enter your password"
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="membership-number">Existing Membership Number (Optional)</Label>
+                <Input
+                  id="membership-number"
+                  value={membershipNumberInput}
+                  onChange={(e) => setMembershipNumberInput(e.target.value)}
+                  placeholder="e.g. BSPCP 0001 (Leave empty to auto-generate)"
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  If provided, the system will use this number instead of generating a new one.
+                </p>
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>Cancel</Button>
               <Button
                 onClick={() => {
                   if (pendingActionApplicationId) {
-                    handleMarkExistingPaid(pendingActionApplicationId, passwordInput);
+                    handleMarkExistingPaid(pendingActionApplicationId, passwordInput, membershipNumberInput);
                     setShowPasswordDialog(false);
                     setPasswordInput("");
+                    setMembershipNumberInput("");
                   }
                 }}
                 disabled={!passwordInput}
