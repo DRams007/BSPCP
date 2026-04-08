@@ -64,11 +64,12 @@ const studentMembershipSchema = z.object({
 
   // Member Personal Documents Table Fields
   idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
+  policeClearance: z.any().refine((f) => f instanceof File, 'Police clearance is required'),
+  references: z.any().refine((f) => f instanceof File, 'Reference document is required'),
   profileImage: z.any().optional(),
 
   // Member Certificates Table Fields
   certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
-
 });
 
 type StudentMembershipFormData = z.infer<typeof studentMembershipSchema>;
@@ -92,6 +93,8 @@ const StudentMembershipForm = () => {
       showPhone: true,
       showAddress: false,
       idDocument: undefined,
+      policeClearance: undefined,
+      references: undefined,
       profileImage: undefined,
 
       certificates: [],
@@ -108,7 +111,7 @@ const StudentMembershipForm = () => {
 
     // Append all text fields
     for (const key in data) {
-      if (key === 'idDocument' || key === 'certificates' || key === 'profileImage') {
+      if (key === 'idDocument' || key === 'certificates' || key === 'profileImage' || key === 'policeClearance' || key === 'references') {
         continue; // Skip file fields for now, handle separately
       }
 
@@ -129,6 +132,12 @@ const StudentMembershipForm = () => {
     // Append files
     if (data.idDocument) {
       formData.append('idDocument', data.idDocument);
+    }
+    if (data.policeClearance) {
+      formData.append('policeClearance', data.policeClearance);
+    }
+    if (data.references) {
+      formData.append('references', data.references);
     }
     if (data.profileImage) {
       formData.append('profileImage', data.profileImage);
@@ -291,7 +300,7 @@ const StudentMembershipForm = () => {
       ]);
     } else if (currentStep === 2) {
       isValid = await form.trigger([
-        'institutionName', 'studyYear', 'counsellingCoursework', 'certificates'
+        'institutionName', 'studyYear', 'counsellingCoursework', 'policeClearance', 'references', 'certificates'
       ]);
     } else if (currentStep === 3) {
       isValid = await form.trigger([
@@ -645,6 +654,54 @@ const StudentMembershipForm = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Upload your certificates, transcripts, or training completion documents.
                   </p>
+
+                  <FormField
+                    control={form.control}
+                    name="references"
+                    render={({ field }) => (
+                      <FormItem className="mb-6">
+                        <FormLabel>Academic/Professional References (PDF, JPG, PNG)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            className="file:text-sm file:font-medium"
+                            onChange={(e) => field.onChange(e.target.files?.[0])}
+                          />
+                        </FormControl>
+                        {field.value && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            ✓ Selected: {field.value?.name}
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="policeClearance"
+                    render={({ field }) => (
+                      <FormItem className="mb-6">
+                        <FormLabel>Process Police Clearance (PDF, JPG, PNG)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            className="file:text-sm file:font-medium"
+                            onChange={(e) => field.onChange(e.target.files?.[0])}
+                          />
+                        </FormControl>
+                        {field.value && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            ✓ Selected: {field.value?.name}
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <FormField
                     control={form.control}

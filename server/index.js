@@ -266,6 +266,8 @@ app.get('/api/db-test', async (req, res) => {
 app.post('/api/membership', upload.fields([
   { name: 'idDocument', maxCount: 1 },
   { name: 'certificates', maxCount: 10 },
+  { name: 'policeClearance', maxCount: 1 },
+  { name: 'references', maxCount: 1 },
   { name: 'profileImage', maxCount: 1 } // Added for profile image upload
 ]), async (req, res) => {
   const client = await pool.connect();
@@ -402,17 +404,25 @@ app.post('/api/membership', upload.fields([
     // 4. Insert into member_personal_documents table
     let idDocumentPath = null;
     let profileImagePath = null;
+    let policeClearancePath = null;
+    let referencesPath = null;
     if (uploadedFiles.idDocument) {
       idDocumentPath = uploadedFiles.idDocument[0].path;
     }
     if (uploadedFiles.profileImage) {
       profileImagePath = uploadedFiles.profileImage[0].path;
     }
-    if (idDocumentPath || profileImagePath) {
+    if (uploadedFiles.policeClearance) {
+      policeClearancePath = uploadedFiles.policeClearance[0].path;
+    }
+    if (uploadedFiles.references) {
+      referencesPath = uploadedFiles.references[0].path;
+    }
+    if (idDocumentPath || profileImagePath || policeClearancePath || referencesPath) {
       await client.query(
-        `INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path)
-         VALUES ($1, $2, $3)`,
-        [memberId, idDocumentPath, profileImagePath]
+        `INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path, police_clearance_path, references_path)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [memberId, idDocumentPath, profileImagePath, policeClearancePath, referencesPath]
       );
     }
 
@@ -516,7 +526,12 @@ app.get('/api/applications', async (req, res) => {
           WHERE mc.member_id = m.id
         ) AS certificates,
         (
-          SELECT json_build_object('idDocumentPath', mpd2.id_document_path, 'profileImagePath', mpd2.profile_image_path)
+          SELECT json_build_object(
+            'idDocumentPath', mpd2.id_document_path, 
+            'profileImagePath', mpd2.profile_image_path,
+            'policeClearancePath', mpd2.police_clearance_path,
+            'referencesPath', mpd2.references_path
+          )
           FROM member_personal_documents mpd2
           WHERE mpd2.member_id = m.id
         ) AS personal_documents,
@@ -623,6 +638,12 @@ app.get('/api/applications', async (req, res) => {
       if (row.personal_documents && row.personal_documents.idDocumentPath) {
         documents.push({ name: "ID Document", uploaded: true, url: getFullUrl(row.personal_documents.idDocumentPath, req) });
       }
+      if (row.personal_documents && row.personal_documents.policeClearancePath) {
+        documents.push({ name: "Police Clearance", uploaded: true, url: getFullUrl(row.personal_documents.policeClearancePath, req) });
+      }
+      if (row.personal_documents && row.personal_documents.referencesPath) {
+        documents.push({ name: "Professional References", uploaded: true, url: getFullUrl(row.personal_documents.referencesPath, req) });
+      }
       // Exclude Profile Image as per new requirement
       // if (row.personal_documents && row.personal_documents.profileImagePath) {
       //   documents.push({ name: "Profile Image", uploaded: true, url: getFullUrl(row.personal_documents.profileImagePath, req) });
@@ -720,6 +741,9 @@ app.get('/api/applications', async (req, res) => {
         memberDocuments: {
           idDocument: row.personal_documents && row.personal_documents.idDocumentPath
             ? { name: 'ID Document', url: getFullUrl(row.personal_documents.idDocumentPath, req) }
+            : null,
+          policeClearance: row.personal_documents && row.personal_documents.policeClearancePath
+            ? { name: 'Police Clearance', url: getFullUrl(row.personal_documents.policeClearancePath, req) }
             : null,
           certificates: row.certificates ? row.certificates.map(cert => ({
             name: cert.name,

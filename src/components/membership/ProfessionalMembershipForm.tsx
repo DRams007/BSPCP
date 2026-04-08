@@ -59,12 +59,12 @@ const professionalMembershipSchema = z.object({
 
   // Member Personal Documents Table Fields
   idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
+  policeClearance: z.any().refine((f) => f instanceof File, 'Police clearance is required'),
+  references: z.any().refine((f) => f instanceof File, 'Reference document is required'),
   profileImage: z.any().optional(),
 
   // Member Certificates Table Fields
   certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
-
-
 });
 
 type ProfessionalMembershipFormData = z.infer<typeof professionalMembershipSchema>;
@@ -88,6 +88,8 @@ const ProfessionalMembershipForm = () => {
       showPhone: true,
       showAddress: false,
       idDocument: undefined,
+      policeClearance: undefined,
+      references: undefined,
       profileImage: undefined,
       certificates: [],
       otherSpecialization: '',
@@ -100,7 +102,7 @@ const ProfessionalMembershipForm = () => {
 
     // Append all text fields
     for (const key in data) {
-      if (key === 'idDocument' || key === 'certificates' || key === 'profileImage') {
+      if (key === 'idDocument' || key === 'certificates' || key === 'profileImage' || key === 'policeClearance' || key === 'references') {
         continue; // Skip file fields for now, handle separately
       }
 
@@ -125,6 +127,12 @@ const ProfessionalMembershipForm = () => {
     // Append files
     if (data.idDocument) {
       formData.append('idDocument', data.idDocument);
+    }
+    if (data.policeClearance) {
+      formData.append('policeClearance', data.policeClearance);
+    }
+    if (data.references) {
+      formData.append('references', data.references);
     }
     if (data.profileImage) {
       formData.append('profileImage', data.profileImage);
@@ -286,7 +294,7 @@ const ProfessionalMembershipForm = () => {
       ]);
     } else if (currentStep === 2) {
       isValid = await form.trigger([
-        'highestQualification', 'specializations', 'certificates'
+        'highestQualification', 'specializations', 'policeClearance', 'references', 'certificates'
       ]);
     } else if (currentStep === 3) {
       isValid = await form.trigger([
@@ -581,9 +589,26 @@ const ProfessionalMembershipForm = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Highest Educational Qualification</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Master of Science in Clinical Psychology" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your highest qualification" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Diploma">Diploma</SelectItem>
+                          <SelectItem value="Bachelor of Education (Counselling)">Bachelor of Education (Counselling)</SelectItem>
+                          <SelectItem value="Bachelor of Education (Guidance and Counselling)">Bachelor of Education (Guidance and Counselling)</SelectItem>
+                          <SelectItem value="Bachelor of Arts (Counselling)">Bachelor of Arts (Counselling)</SelectItem>
+                          <SelectItem value="Bachelor of Education Honors (Guidance and Counselling)">Bachelor of Education Honors (Guidance and Counselling)</SelectItem>
+                          <SelectItem value="Master of Education (Guidance and Counselling)">Master of Education (Guidance and Counselling)</SelectItem>
+                          <SelectItem value="Master of Education (Counselling and Human Services)">Master of Education (Counselling and Human Services)</SelectItem>
+                          <SelectItem value="Master of Arts (Life Skills Counselling)">Master of Arts (Life Skills Counselling)</SelectItem>
+                          <SelectItem value="Master of Arts (Counselling/Counselling Psychology)">Master of Arts (Counselling/Counselling Psychology)</SelectItem>
+                          <SelectItem value="Master of Science (Neuro Psychology)">Master of Science (Neuro Psychology)</SelectItem>
+                          <SelectItem value="PhD Counselling">PhD Counselling</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -709,23 +734,74 @@ const ProfessionalMembershipForm = () => {
 
                 <FormField
                   control={form.control}
+                  name="policeClearance"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Process Police Clearance (PDF, JPG, PNG)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          onChange={(e) => field.onChange(e.target.files?.[0])}
+                        />
+                      </FormControl>
+                      {field.value && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Selected: {field.value?.name}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="references"
+                  render={({ field }) => (
+                    <FormItem className="mb-6">
+                      <FormLabel>Professional References (PDF, JPG, PNG)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          className="file:text-sm file:font-medium"
+                          onChange={(e) => field.onChange(e.target.files?.[0])}
+                        />
+                      </FormControl>
+                      {field.value && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          ✓ Selected: {field.value?.name}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="certificates"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Upload Professional Certificates,Police Clearance and References</FormLabel>
+                      <FormLabel>Upload Professional Certificates</FormLabel>
                       <FormControl>
                         <Input
                           type="file"
                           multiple
                           accept="application/pdf,image/*"
+                          className="file:text-sm file:font-medium"
                           onChange={(e) => field.onChange(Array.from(e.target.files || []))}
                         />
                       </FormControl>
                       {Array.isArray(field.value) && field.value.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {field.value.length} file(s) selected
+                        <p className="text-xs text-muted-foreground mt-2">
+                          ✓ {field.value.length} file(s) selected
                         </p>
                       )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Accepted formats: PDF, JPG, PNG (max 5MB each)
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}

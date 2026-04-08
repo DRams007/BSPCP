@@ -262,6 +262,8 @@ async function setupDatabase() {
           member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
           id_document_path VARCHAR(500),
           profile_image_path VARCHAR(500),
+          police_clearance_path VARCHAR(500),
+          references_path VARCHAR(500),
           uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);

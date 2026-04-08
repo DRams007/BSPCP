@@ -1,71 +1,1624 @@
 {
-  "columns": [
+  "admin_activities": [
     {
       "column_name": "id",
-      "data_type": "uuid"
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
     },
     {
-      "column_name": "counsellor_id",
-      "data_type": "uuid"
+      "column_name": "activity_type",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
     },
     {
-      "column_name": "client_name",
-      "data_type": "character varying"
+      "column_name": "title",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
     },
     {
-      "column_name": "phone_number",
-      "data_type": "character varying"
+      "column_name": "message",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
     },
     {
-      "column_name": "email",
-      "data_type": "character varying"
+      "column_name": "details",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
     },
     {
-      "column_name": "category",
-      "data_type": "character varying"
+      "column_name": "related_entity",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
     },
     {
-      "column_name": "needs",
-      "data_type": "text"
+      "column_name": "related_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
     },
     {
-      "column_name": "session_type",
-      "data_type": "character varying"
+      "column_name": "priority",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'medium'::character varying"
     },
     {
-      "column_name": "support_urgency",
-      "data_type": "character varying"
+      "column_name": "admin_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
     },
     {
-      "column_name": "booking_date",
-      "data_type": "date"
-    },
-    {
-      "column_name": "booking_time",
-      "data_type": "time without time zone"
-    },
-    {
-      "column_name": "status",
-      "data_type": "character varying"
+      "column_name": "is_read",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
     },
     {
       "column_name": "created_at",
-      "data_type": "timestamp with time zone"
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
     }
   ],
-  "firstRow": {
-    "id": "8234fece-136b-441b-9158-eb3717b27592",
-    "counsellor_id": "f290b160-1d17-4ccf-bc49-f4eb809cc189",
-    "client_name": "Ditiro Ramaduba",
-    "phone_number": "+2677141232",
-    "email": "DRamaduba@gmail.com",
-    "category": null,
-    "needs": "A",
-    "session_type": "in-person",
-    "support_urgency": "immediate",
-    "booking_date": "2025-11-28T22:00:00.000Z",
-    "booking_time": "11:30:00",
-    "status": "confirmed",
-    "created_at": "2025-11-28T10:10:32.474Z"
-  }
+  "admin_audit_log": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "admin_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "action",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "resource_type",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "resource_id",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "old_values",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "new_values",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "ip_address",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "user_agent",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'success'::character varying"
+    },
+    {
+      "column_name": "details",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "admin_permissions": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "admin_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "resource",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "action",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "allowed",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "admin_sessions": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "admin_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "token_hash",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "ip_address",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "user_agent",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "expires_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "admins": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "username",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "password_hash",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "salt",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "role",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'admin'::character varying"
+    },
+    {
+      "column_name": "first_name",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "last_name",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "phone",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "last_login",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "password_changed_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "login_attempts",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "0"
+    },
+    {
+      "column_name": "locked_until",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "backup_records": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "filename",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "filepath",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "filesize",
+      "data_type": "bigint",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "file_count",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "0"
+    },
+    {
+      "column_name": "backup_type",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'database'::character varying"
+    },
+    {
+      "column_name": "formats",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": "ARRAY['dump'::text, 'bak'::text, 'sql'::text]"
+    },
+    {
+      "column_name": "includes",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'[]'::jsonb"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'active'::character varying"
+    },
+    {
+      "column_name": "created_by",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'BSPCP_admin'::character varying"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "deleted_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    }
+  ],
+  "bookings": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "counsellor_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "client_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "phone_number",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "category",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "needs",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "session_type",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "support_urgency",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "booking_date",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "booking_time",
+      "data_type": "time without time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'pending'::character varying"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "contact_messages": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "first_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "last_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "phone",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "inquiry_type",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "subject",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "message",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'unread'::character varying"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "content": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "title",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "slug",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "type",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": "'Draft'::character varying"
+    },
+    {
+      "column_name": "content",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "author",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "location",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "event_date",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "event_time",
+      "data_type": "time without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "meta_description",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "tags",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "featured_image_path",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "counsellor_notification_preferences": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "booking_notifications",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "member_authentication": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": "nextval('member_authentication_id_seq'::regclass)"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "username",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "password_hash",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "salt",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "member_certificates": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": "nextval('member_certificates_id_seq'::regclass)"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "file_path",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "original_filename",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "uploaded_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "member_contact_details": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": "nextval('member_contact_details_id_seq'::regclass)"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "phone",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "website",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "physical_address",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "city",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "postal_address",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "emergency_contact",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "emergency_phone",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "show_email",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "show_phone",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "show_address",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    }
+  ],
+  "member_cpd": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "title",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "points",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "document_path",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'approved'::character varying"
+    },
+    {
+      "column_name": "completion_date",
+      "data_type": "date",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "uploaded_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "member_payments": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": "nextval('member_payments_id_seq'::regclass)"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "first_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "last_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "fee_type",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "proof_of_payment_path",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_date",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "verified_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "member_personal_documents": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": "nextval('member_personal_documents_id_seq'::regclass)"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "id_document_path",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "profile_image_path",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "uploaded_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "police_clearance_path",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "references_path",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    }
+  ],
+  "member_professional_details": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": "nextval('member_professional_details_id_seq'::regclass)"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "occupation",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "organization_name",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "highest_qualification",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "other_qualifications",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "scholarly_publications",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "specializations",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "employment_status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "years_experience",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "bio",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "title",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "languages",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "session_types",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "availability",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    }
+  ],
+  "members": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "full_name",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "first_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "last_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "bspcp_membership_number",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "id_number",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "date_of_birth",
+      "data_type": "date",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "gender",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "nationality",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "membership_type",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'professional'::character varying"
+    },
+    {
+      "column_name": "institution_name",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "study_year",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "counselling_coursework",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "internship_supervisor_name",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "internship_supervisor_license",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "internship_supervisor_contact",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "supervised_practice_hours",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "application_status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'pending'::character varying"
+    },
+    {
+      "column_name": "member_status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'pending'::character varying"
+    },
+    {
+      "column_name": "review_comment",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "cpd_document",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "cpd_points",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "0"
+    },
+    {
+      "column_name": "payment_proof_url",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_upload_token",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'not_requested'::character varying"
+    },
+    {
+      "column_name": "payment_requested_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_uploaded_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_verified_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_rejected_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_verified_by",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "payment_request_count",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "0"
+    },
+    {
+      "column_name": "counsellor_visible",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "renewal_date",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "renewal_status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'not_requested'::character varying"
+    },
+    {
+      "column_name": "renewal_proof_url",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "renewal_uploaded_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "renewal_token",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "renewal_token_expires_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "membership_categories": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": "nextval('membership_categories_id_seq'::regclass)"
+    },
+    {
+      "column_name": "category_type",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "joining_fee",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "annual_fee",
+      "data_type": "numeric",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "requires_supervisor_info",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "column_name": "active",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "notification_recipients": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "notification_settings": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "setting_name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "setting_value",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "payment_audit_log": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "admin_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "action",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "details",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "ip_address",
+      "data_type": "inet",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "payment_upload_logs": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "upload_token",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "original_filename",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "stored_filename",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "file_size",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "file_type",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "ip_address",
+      "data_type": "inet",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "user_agent",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "uploaded_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "renewal_audit_log": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "member_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "admin_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "action",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "details",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "ip_address",
+      "data_type": "inet",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "testimonials": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "column_name": "name",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "email",
+      "data_type": "character varying",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "role",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "column_name": "content",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "rating",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "column_name": "anonymous",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "false"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "is_nullable": "YES",
+      "column_default": "'pending'::character varying"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "column_default": "CURRENT_TIMESTAMP"
+    }
+  ]
 }
