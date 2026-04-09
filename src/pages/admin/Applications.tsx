@@ -58,6 +58,7 @@ interface Application {
   occupation: string;
   nationality: string;
   qualification: string;
+  other_qualifications?: string;
   experience: string;
   organization: string;
   documents: { name: string; uploaded: boolean; url?: string }[];
@@ -75,8 +76,9 @@ interface Application {
   };
   phone: string;
   // Professional details
-  specializations?: string[];
-  languages?: string[];
+  specializations: string[];
+  other_specialization?: string;
+  languages: string[];
   session_types?: string[];
   availability?: string;
   // Payment verification data
@@ -838,24 +840,39 @@ Botswana Wellbeing Pathways Admin Team`);
                                   </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3 text-sm">
-                                  <div><strong>Occupation:</strong> {selectedApplication.occupation}</div>
-                                  <div><strong>Organization:</strong> {selectedApplication.organization}</div>
-                                  <div><strong>Qualification:</strong> {selectedApplication.qualification}</div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><strong>Occupation:</strong> {selectedApplication.occupation}</div>
+                                    <div><strong>Organization:</strong> {selectedApplication.organization}</div>
+                                    <div><strong>Qualification:</strong> {selectedApplication.qualification}</div>
+                                    <div><strong>Other Qualifications:</strong> {selectedApplication.other_qualifications || 'None'}</div>
+                                  </div>
                                   <div><strong>Experience:</strong> {selectedApplication.experience}</div>
 
-                                  {/* Specializations */}
-                                  {selectedApplication.specializations && Array.isArray(selectedApplication.specializations) && selectedApplication.specializations.length > 0 && (
-                                    <div>
-                                      <strong>Specializations:</strong>
-                                      <div className="flex flex-wrap gap-1 mt-1">
-                                        {selectedApplication.specializations.map((spec, index) => (
-                                          <Badge key={index} variant="secondary" className="text-xs">
-                                            {spec}
-                                          </Badge>
-                                        ))}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Specializations */}
+                                    {selectedApplication.specializations && Array.isArray(selectedApplication.specializations) && selectedApplication.specializations.length > 0 && (
+                                      <div>
+                                        <strong>Specializations:</strong>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {selectedApplication.specializations.map((spec, index) => (
+                                            <Badge key={index} variant="secondary" className="text-xs">
+                                              {spec}
+                                            </Badge>
+                                          ))}
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
+                                    )}
+
+                                    {/* Other Specialization */}
+                                    {selectedApplication.other_specialization && (
+                                      <div>
+                                        <strong>Other Specialization:</strong>
+                                        <p className="mt-1 text-sm bg-secondary/50 p-2 rounded-md">
+                                          {selectedApplication.other_specialization}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
 
                                   {/* Languages */}
                                   {selectedApplication.languages && Array.isArray(selectedApplication.languages) && selectedApplication.languages.length > 0 && (
@@ -1444,20 +1461,30 @@ Botswana Wellbeing Pathways Admin Team`);
                                   </Card>
 
                                   {/* Professional Information */}
-                                  <Card>
-                                    <CardHeader className="pb-3">
-                                      <CardTitle className="text-lg flex items-center">
-                                        <GraduationCap className="w-5 h-5 mr-2" />
-                                        Professional Details
-                                      </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2 text-sm">
-                                      <div><strong>Occupation:</strong> {selectedApplication.occupation}</div>
-                                      <div><strong>Organization:</strong> {selectedApplication.organization}</div>
-                                      <div><strong>Qualification:</strong> {selectedApplication.qualification}</div>
-                                      <div><strong>Experience:</strong> {selectedApplication.experience}</div>
-                                    </CardContent>
-                                  </Card>
+                                    <Card>
+                                      <CardHeader className="pb-3">
+                                        <CardTitle className="text-lg flex items-center">
+                                          <GraduationCap className="w-5 h-5 mr-2" />
+                                          {selectedApplication.membershipType === 'student' ? 'Educational Background' : 'Professional Details'}
+                                        </CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-2 text-sm">
+                                        {selectedApplication.membershipType === 'student' ? (
+                                          <>
+                                            <div><strong>Institution:</strong> {selectedApplication.institution_name}</div>
+                                            <div><strong>Program of Study:</strong> {selectedApplication.program_name}</div>
+                                            <div><strong>Year of Study:</strong> {selectedApplication.study_year}</div>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <div><strong>Occupation:</strong> {selectedApplication.occupation}</div>
+                                            <div><strong>Organization:</strong> {selectedApplication.organization}</div>
+                                            <div><strong>Qualification:</strong> {selectedApplication.qualification}</div>
+                                            <div><strong>Experience:</strong> {selectedApplication.experience}</div>
+                                          </>
+                                        )}
+                                      </CardContent>
+                                    </Card>
 
                                   {/* Documents */}
                                   <Card className="md:col-span-2">

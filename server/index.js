@@ -251,24 +251,15 @@ function extractPaymentRejectionReason(details) {
   return null;
 }
 
-app.get('/api/db-test', async (req, res) => {
-  try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW()');
-    client.release();
-    res.json({ message: `Database connected successfully! Current time from DB: ${result.rows[0].now}` });
-  } catch (err) {
-    console.error('Database connection error:', err);
-    res.status(500).json({ error: `Failed to connect to database: ${err.message}` });
-  }
-});
+// Removed /api/db-test endpoint per security and cleanup requirements
 
 app.post('/api/membership', upload.fields([
   { name: 'idDocument', maxCount: 1 },
   { name: 'certificates', maxCount: 10 },
   { name: 'policeClearance', maxCount: 1 },
-  { name: 'references', maxCount: 1 },
-  { name: 'profileImage', maxCount: 1 } // Added for profile image upload
+  { name: 'references', maxCount: 10 },
+  { name: 'profileImage', maxCount: 1 }, // Added for profile image upload
+  { name: 'studentConfirmationLetter', maxCount: 1 }
 ]), async (req, res) => {
   const client = await pool.connect();
   try {
@@ -298,13 +289,13 @@ app.post('/api/membership', upload.fields([
       cpdDocument, cpdPoints,
 
       // Student-specific fields
-      institutionName, studyYear, counsellingCoursework,
-      internshipSupervisorName, internshipSupervisorLicense, internshipSupervisorContact,
-      supervisedPracticeHours,
+      institutionName, studyYear, programName,
+      studentConfirmationLetter,
+      internshipSupervisorName, internshipSupervisorContact,
 
       // From member_professional_details table
-      occupation, organizationName, highestQualification, otherQualifications,
-      scholarlyPublications, specializations, employmentStatus, yearsExperience,
+      occupation, organizationName, highestQualification,
+      specializations, otherSpecialization, employmentStatus, yearsExperience,
       bio, title, languages, sessionTypes, availability,
 
       // From member_contact_details table
@@ -336,7 +327,7 @@ app.post('/api/membership', upload.fields([
     const memberQuery = membershipType === 'student' ?
       `INSERT INTO members (
         first_name, last_name, full_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality,
-        institution_name, study_year, counselling_coursework, internship_supervisor_name, internship_supervisor_contact,
+        institution_name, study_year, program_name, internship_supervisor_name, internship_supervisor_contact,
         cpd_document, cpd_points, membership_type, created_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, CURRENT_TIMESTAMP)
       RETURNING id` :
@@ -347,7 +338,7 @@ app.post('/api/membership', upload.fields([
 
     const memberParams = membershipType === 'student' ?
       [firstName, lastName, calculatedFullName, bspcp_membership_number || null, idNumber, dateOfBirth, gender, nationality,
-        institutionName, studyYear, counsellingCoursework, internshipSupervisorName, internshipSupervisorContact,
+        institutionName, studyYear, programName, internshipSupervisorName, internshipSupervisorContact,
         cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType] :
       [firstName, lastName, calculatedFullName, bspcp_membership_number, idNumber, dateOfBirth, gender, nationality,
         cpdDocument || null, parseInt(cpdPoints, 10) || 0, membershipType];
@@ -371,13 +362,14 @@ app.post('/api/membership', upload.fields([
 
     await client.query(
       `INSERT INTO member_professional_details (
-        member_id, occupation, organization_name, highest_qualification, other_qualifications,
-        scholarly_publications, specializations, employment_status, years_experience,
+        member_id, occupation, organization_name, highest_qualification,
+        specializations, other_specialization, employment_status, years_experience,
         bio, title, languages, session_types, availability
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
       [
-        memberId, effectiveOccupation, effectiveOrganizationName, highestQualification, otherQualifications,
-        scholarlyPublications, specializations ? JSON.parse(specializations) : [], // Assuming specializations is sent as a JSON string array
+        memberId, effectiveOccupation, effectiveOrganizationName, highestQualification,
+        specializations ? JSON.parse(specializations) : [], 
+        otherSpecialization,
         effectiveEmploymentStatus, effectiveYearsExperience, bio, title,
         languages ? JSON.parse(languages) : [], // Assuming languages is sent as a JSON string array
         sessionTypes ? JSON.parse(sessionTypes) : [], // Assuming sessionTypes is sent as a JSON string array
@@ -405,7 +397,7 @@ app.post('/api/membership', upload.fields([
     let idDocumentPath = null;
     let profileImagePath = null;
     let policeClearancePath = null;
-    let referencesPath = null;
+    let studentConfirmationLetterPath = null;
     if (uploadedFiles.idDocument) {
       idDocumentPath = uploadedFiles.idDocument[0].path;
     }
@@ -415,14 +407,14 @@ app.post('/api/membership', upload.fields([
     if (uploadedFiles.policeClearance) {
       policeClearancePath = uploadedFiles.policeClearance[0].path;
     }
-    if (uploadedFiles.references) {
-      referencesPath = uploadedFiles.references[0].path;
+    if (uploadedFiles.studentConfirmationLetter) {
+      studentConfirmationLetterPath = uploadedFiles.studentConfirmationLetter[0].path;
     }
-    if (idDocumentPath || profileImagePath || policeClearancePath || referencesPath) {
+    if (idDocumentPath || profileImagePath || policeClearancePath || studentConfirmationLetterPath) {
       await client.query(
-        `INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path, police_clearance_path, references_path)
+        `INSERT INTO member_personal_documents (member_id, id_document_path, profile_image_path, police_clearance_path, student_confirmation_letter_path)
          VALUES ($1, $2, $3, $4, $5)`,
-        [memberId, idDocumentPath, profileImagePath, policeClearancePath, referencesPath]
+        [memberId, idDocumentPath, profileImagePath, policeClearancePath, studentConfirmationLetterPath]
       );
     }
 
@@ -431,6 +423,17 @@ app.post('/api/membership', upload.fields([
       for (const file of uploadedFiles.certificates) {
         await client.query(
           `INSERT INTO member_certificates (member_id, file_path, original_filename)
+           VALUES ($1, $2, $3)`,
+          [memberId, file.path, file.originalname]
+        );
+      }
+    }
+
+    // 6. Insert into member_references table
+    if (uploadedFiles.references) {
+      for (const file of uploadedFiles.references) {
+        await client.query(
+          `INSERT INTO member_references (member_id, file_path, original_filename)
            VALUES ($1, $2, $3)`,
           [memberId, file.path, file.originalname]
         );
@@ -495,12 +498,16 @@ app.get('/api/applications', async (req, res) => {
         mpd.organization_name AS organization,
         mpd.highest_qualification AS qualification,
         mpd.years_experience AS experience,
+        m.program_name,
+        m.institution_name,
+        m.study_year,
         m.created_at,
         m.application_status,
         m.member_status,
         m.payment_status,
         m.review_comment,
         mpd.specializations,
+        mpd.other_specialization,
         mpd.languages,
         mpd.session_types,
        
@@ -526,11 +533,15 @@ app.get('/api/applications', async (req, res) => {
           WHERE mc.member_id = m.id
         ) AS certificates,
         (
+          SELECT json_agg(json_build_object('name', mr.original_filename, 'uploaded', TRUE, 'url', mr.file_path))
+          FROM member_references mr
+          WHERE mr.member_id = m.id
+        ) AS references,
+        (
           SELECT json_build_object(
             'idDocumentPath', mpd2.id_document_path, 
             'profileImagePath', mpd2.profile_image_path,
-            'policeClearancePath', mpd2.police_clearance_path,
-            'referencesPath', mpd2.references_path
+            'policeClearancePath', mpd2.police_clearance_path
           )
           FROM member_personal_documents mpd2
           WHERE mpd2.member_id = m.id
@@ -641,6 +652,9 @@ app.get('/api/applications', async (req, res) => {
       if (row.personal_documents && row.personal_documents.policeClearancePath) {
         documents.push({ name: "Police Clearance", uploaded: true, url: getFullUrl(row.personal_documents.policeClearancePath, req) });
       }
+      if (row.personal_documents && row.personal_documents.studentConfirmationLetterPath) {
+        documents.push({ name: "Student Confirmation Letter", uploaded: true, url: getFullUrl(row.personal_documents.studentConfirmationLetterPath, req) });
+      }
       if (row.personal_documents && row.personal_documents.referencesPath) {
         documents.push({ name: "Professional References", uploaded: true, url: getFullUrl(row.personal_documents.referencesPath, req) });
       }
@@ -677,6 +691,14 @@ app.get('/api/applications', async (req, res) => {
         }));
         documents.push(...certificateDocs);
       }
+      if (row.references) {
+        const referenceDocs = row.references.map(ref => ({
+          name: ref.name || 'Professional Reference',
+          uploaded: ref.uploaded,
+          url: getFullUrl(ref.url, req)
+        }));
+        documents.push(...referenceDocs);
+      }
 
       return {
         id: row.id,
@@ -689,6 +711,9 @@ app.get('/api/applications', async (req, res) => {
         organization: row.organization,
         qualification: row.qualification,
         experience: row.experience,
+        program_name: row.program_name,
+        institution_name: row.institution_name,
+        study_year: row.study_year,
         created_at: row.created_at,
         application_status: row.application_status,
         member_status: row.member_status,
@@ -696,6 +721,7 @@ app.get('/api/applications', async (req, res) => {
         cpd_points: (parseInt(row.cpd_points || 0) + parseInt(row.total_cpd_points || 0)),
         // Add professional fields
         specializations: row.specializations,
+        other_specialization: row.other_specialization,
         languages: row.languages,
         sessionTypes: row.session_types,
         availability: row.availability,
@@ -748,6 +774,10 @@ app.get('/api/applications', async (req, res) => {
           certificates: row.certificates ? row.certificates.map(cert => ({
             name: cert.name,
             url: getFullUrl(cert.url, req)
+          })) : [],
+          references: row.references ? row.references.map(ref => ({
+            name: ref.name || 'Professional Reference',
+            url: getFullUrl(ref.url, req)
           })) : [],
           cpdDocuments: row.cpd_documents ? row.cpd_documents.map(cpd => ({
             title: cpd.title,

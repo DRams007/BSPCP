@@ -9,6 +9,7 @@ async function setupDatabase() {
     await pool.query(`DROP TABLE IF EXISTS member_authentication CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_payments CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_certificates CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS member_references CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_personal_documents CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_contact_details CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_professional_details CASCADE;`);
@@ -125,14 +126,11 @@ async function setupDatabase() {
           gender VARCHAR(10) NOT NULL,
           nationality VARCHAR(100) NOT NULL,
           membership_type VARCHAR(50) DEFAULT 'professional' CHECK (membership_type IN ('professional', 'student')),
-          -- Student-specific fields
           institution_name VARCHAR(255),
           study_year VARCHAR(50),
-          counselling_coursework TEXT,
+          program_name VARCHAR(255),
           internship_supervisor_name VARCHAR(255),
-          internship_supervisor_license VARCHAR(100),
           internship_supervisor_contact VARCHAR(255),
-          supervised_practice_hours VARCHAR(50),
           application_status VARCHAR(50) DEFAULT 'pending',
           member_status VARCHAR(50) DEFAULT 'pending',
           review_comment TEXT,
@@ -199,8 +197,6 @@ async function setupDatabase() {
           occupation VARCHAR(255),
           organization_name VARCHAR(255),
           highest_qualification TEXT,
-          other_qualifications TEXT,
-          scholarly_publications TEXT,
           specializations TEXT[],
           employment_status VARCHAR(50),
           years_experience VARCHAR(50),
@@ -208,7 +204,8 @@ async function setupDatabase() {
           title VARCHAR(255),
           languages TEXT[],
           session_types TEXT[],
-          availability VARCHAR(100)
+          availability VARCHAR(100),
+          other_specialization VARCHAR(500)
       );
     `);
 
@@ -263,13 +260,23 @@ async function setupDatabase() {
           id_document_path VARCHAR(500),
           profile_image_path VARCHAR(500),
           police_clearance_path VARCHAR(500),
-          references_path VARCHAR(500),
+          student_confirmation_letter_path VARCHAR(500),
           uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
     await pool.query(`
       CREATE TABLE member_certificates (
+          id SERIAL PRIMARY KEY,
+          member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+          file_path VARCHAR(500) NOT NULL,
+          original_filename VARCHAR(255),
+          uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE member_references (
           id SERIAL PRIMARY KEY,
           member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
           file_path VARCHAR(500) NOT NULL,

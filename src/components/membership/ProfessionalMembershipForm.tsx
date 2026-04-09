@@ -33,8 +33,6 @@ const professionalMembershipSchema = z.object({
   occupation: z.string().min(2, 'Occupation is required'),
   organizationName: z.string().min(2, 'Organization name is required'),
   highestQualification: z.string().min(2, 'Highest qualification is required'),
-  otherQualifications: z.string().optional(),
-  scholarlyPublications: z.string().optional(),
   specializations: z.array(z.string()).min(1, 'At least one specialization is required'),
   otherSpecialization: z.string().optional(),
   employmentStatus: z.enum(['employed', 'self-employed', 'unemployed', 'retired']),
@@ -60,7 +58,7 @@ const professionalMembershipSchema = z.object({
   // Member Personal Documents Table Fields
   idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
   policeClearance: z.any().refine((f) => f instanceof File, 'Police clearance is required'),
-  references: z.any().refine((f) => f instanceof File, 'Reference document is required'),
+  references: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one reference document is required'),
   profileImage: z.any().optional(),
 
   // Member Certificates Table Fields
@@ -88,10 +86,8 @@ const ProfessionalMembershipForm = () => {
       showPhone: true,
       showAddress: false,
       idDocument: undefined,
-      policeClearance: undefined,
-      references: undefined,
-      profileImage: undefined,
       certificates: [],
+      references: [],
       otherSpecialization: '',
     },
   });
@@ -108,15 +104,7 @@ const ProfessionalMembershipForm = () => {
 
       const value = (data as ProfessionalMembershipFormData)[key as keyof ProfessionalMembershipFormData];
       if (Array.isArray(value)) {
-        if (key === 'specializations') {
-          const combinedSpecializations = [...value];
-          if (data.otherSpecialization) {
-            combinedSpecializations.push(data.otherSpecialization);
-          }
-          formData.append(key, JSON.stringify(combinedSpecializations));
-        } else {
-          formData.append(key, JSON.stringify(value)); // Stringify arrays for backend
-        }
+        formData.append(key, JSON.stringify(value)); // Stringify arrays for backend
       } else if (typeof value === 'boolean') {
         formData.append(key, value ? 'true' : 'false');
       } else if (value !== undefined && value !== null) {
@@ -131,15 +119,17 @@ const ProfessionalMembershipForm = () => {
     if (data.policeClearance) {
       formData.append('policeClearance', data.policeClearance);
     }
-    if (data.references) {
-      formData.append('references', data.references);
-    }
     if (data.profileImage) {
       formData.append('profileImage', data.profileImage);
     }
     if (data.certificates && data.certificates.length > 0) {
       data.certificates.forEach((file) => {
         formData.append('certificates', file);
+      });
+    }
+    if (data.references && data.references.length > 0) {
+      data.references.forEach((file) => {
+        formData.append('references', file);
       });
     }
 
@@ -583,154 +573,128 @@ const ProfessionalMembershipForm = () => {
                   </p>
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="highestQualification"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Highest Educational Qualification</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select your highest qualification" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Diploma">Diploma</SelectItem>
-                          <SelectItem value="Bachelor of Education (Counselling)">Bachelor of Education (Counselling)</SelectItem>
-                          <SelectItem value="Bachelor of Education (Guidance and Counselling)">Bachelor of Education (Guidance and Counselling)</SelectItem>
-                          <SelectItem value="Bachelor of Arts (Counselling)">Bachelor of Arts (Counselling)</SelectItem>
-                          <SelectItem value="Bachelor of Education Honors (Guidance and Counselling)">Bachelor of Education Honors (Guidance and Counselling)</SelectItem>
-                          <SelectItem value="Master of Education (Guidance and Counselling)">Master of Education (Guidance and Counselling)</SelectItem>
-                          <SelectItem value="Master of Education (Counselling and Human Services)">Master of Education (Counselling and Human Services)</SelectItem>
-                          <SelectItem value="Master of Arts (Life Skills Counselling)">Master of Arts (Life Skills Counselling)</SelectItem>
-                          <SelectItem value="Master of Arts (Counselling/Counselling Psychology)">Master of Arts (Counselling/Counselling Psychology)</SelectItem>
-                          <SelectItem value="Master of Science (Neuro Psychology)">Master of Science (Neuro Psychology)</SelectItem>
-                          <SelectItem value="PhD Counselling">PhD Counselling</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="otherQualifications"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Other Professional Qualifications</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="e.g., Diploma in Trauma Counselling, Certificate in CBT" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="scholarlyPublications"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Scholarly Publications (Past 5 Years)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Number of articles, papers, or books published" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="specializations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Areas of Specialization</FormLabel>
-                      <FormControl>
-                        <div className="space-y-3">
-                          <Select
-                            onValueChange={(value) => {
-                              const currentSpecializations = form.getValues('specializations') || [];
-                              if (!currentSpecializations.includes(value)) {
-                                field.onChange([...currentSpecializations, value]);
-                              }
-                            }}
-                            value="" // Always reset to empty to allow re-selecting different options
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select specializations to add" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="highestQualification"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Highest Educational Qualification</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your highest qualification" />
                             </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Depression & Anxiety">Depression & Anxiety</SelectItem>
-                              <SelectItem value="Stress Management">Stress Management</SelectItem>
-                              <SelectItem value="Self-esteem Issues">Self-esteem Issues</SelectItem>
-                              <SelectItem value="Life Transitions">Life Transitions</SelectItem>
-                              <SelectItem value="Relationship Issues">Relationship Issues</SelectItem>
-                              <SelectItem value="Communication Problems">Communication Problems</SelectItem>
-                              <SelectItem value="Pre-Marital Counselling">Pre-Marital Counselling</SelectItem>
-                              <SelectItem value="Separation Support">Separation Support</SelectItem>
-                              <SelectItem value="Family Conflicts">Family Conflicts</SelectItem>
-                              <SelectItem value="Parenting Support">Parenting Support</SelectItem>
-                              <SelectItem value="Blended Family Issues">Blended Family Issues</SelectItem>
-                              <SelectItem value="Generational Conflicts">Generational Conflicts</SelectItem>
-                              <SelectItem value="Behavioral Issues">Behavioral Issues</SelectItem>
-                              <SelectItem value="School Problems">School Problems</SelectItem>
-                              <SelectItem value="Developmental Concerns">Developmental Concerns</SelectItem>
-                              <SelectItem value="Teen Mental Health">Teen Mental Health</SelectItem>
-                              <SelectItem value="Trauma & PTSD">Trauma & PTSD</SelectItem>
-                              <SelectItem value="Addiction Support">Addiction Support</SelectItem>
-                              <SelectItem value="Grief & Loss">Grief & Loss</SelectItem>
-                              <SelectItem value="Career Counselling">Career Counselling</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Diploma">Diploma</SelectItem>
+                            <SelectItem value="Bachelor of Education (Counselling)">Bachelor of Education (Counselling)</SelectItem>
+                            <SelectItem value="Bachelor of Education (Guidance and Counselling)">Bachelor of Education (Guidance and Counselling)</SelectItem>
+                            <SelectItem value="Bachelor of Arts (Counselling)">Bachelor of Arts (Counselling)</SelectItem>
+                            <SelectItem value="Bachelor of Education Honors (Guidance and Counselling)">Bachelor of Education Honors (Guidance and Counselling)</SelectItem>
+                            <SelectItem value="Master of Education (Guidance and Counselling)">Master of Education (Guidance and Counselling)</SelectItem>
+                            <SelectItem value="Master of Education (Counselling and Human Services)">Master of Education (Counselling and Human Services)</SelectItem>
+                            <SelectItem value="Master of Arts (Life Skills Counselling)">Master of Arts (Life Skills Counselling)</SelectItem>
+                            <SelectItem value="Master of Arts (Counselling/Counselling Psychology)">Master of Arts (Counselling/Counselling Psychology)</SelectItem>
+                            <SelectItem value="Master of Science (Neuro Psychology)">Master of Science (Neuro Psychology)</SelectItem>
+                            <SelectItem value="PhD Counselling">PhD Counselling</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                          {/* Selected Specializations List */}
-                          {field.value && field.value.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {field.value.map((spec, index) => (
-                                <div
-                                  key={index}
-                                  className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                                >
-                                  <span>{spec}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const newSpecializations = [...field.value];
-                                      newSpecializations.splice(index, 1);
-                                      field.onChange(newSpecializations);
-                                    }}
-                                    className="text-muted-foreground hover:text-destructive focus:outline-none"
+                  <FormField
+                    control={form.control}
+                    name="specializations"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Areas of Specialization</FormLabel>
+                        <FormControl>
+                          <div className="space-y-3">
+                            <Select
+                              onValueChange={(value) => {
+                                const currentSpecializations = form.getValues('specializations') || [];
+                                if (!currentSpecializations.includes(value)) {
+                                  field.onChange([...currentSpecializations, value]);
+                                }
+                              }}
+                              value="" // Always reset to empty to allow re-selecting different options
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select specializations to add" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Depression & Anxiety">Depression & Anxiety</SelectItem>
+                                <SelectItem value="Stress Management">Stress Management</SelectItem>
+                                <SelectItem value="Self-esteem Issues">Self-esteem Issues</SelectItem>
+                                <SelectItem value="Life Transitions">Life Transitions</SelectItem>
+                                <SelectItem value="Relationship Issues">Relationship Issues</SelectItem>
+                                <SelectItem value="Communication Problems">Communication Problems</SelectItem>
+                                <SelectItem value="Pre-Marital Counselling">Pre-Marital Counselling</SelectItem>
+                                <SelectItem value="Separation Support">Separation Support</SelectItem>
+                                <SelectItem value="Family Conflicts">Family Conflicts</SelectItem>
+                                <SelectItem value="Parenting Support">Parenting Support</SelectItem>
+                                <SelectItem value="Blended Family Issues">Blended Family Issues</SelectItem>
+                                <SelectItem value="Generational Conflicts">Generational Conflicts</SelectItem>
+                                <SelectItem value="Behavioral Issues">Behavioral Issues</SelectItem>
+                                <SelectItem value="School Problems">School Problems</SelectItem>
+                                <SelectItem value="Developmental Concerns">Developmental Concerns</SelectItem>
+                                <SelectItem value="Teen Mental Health">Teen Mental Health</SelectItem>
+                                <SelectItem value="Trauma & PTSD">Trauma & PTSD</SelectItem>
+                                <SelectItem value="Addiction Support">Addiction Support</SelectItem>
+                                <SelectItem value="Grief & Loss">Grief & Loss</SelectItem>
+                                <SelectItem value="Career Counselling">Career Counselling</SelectItem>
+                              </SelectContent>
+                            </Select>
+
+                            {/* Selected Specializations List */}
+                            {field.value && field.value.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {field.value.map((spec, index) => (
+                                  <div
+                                    key={index}
+                                    className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm flex items-center gap-2"
                                   >
-                                    <span className="sr-only">Remove</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                                    <span>{spec}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const newSpecializations = [...field.value];
+                                        newSpecializations.splice(index, 1);
+                                        field.onChange(newSpecializations);
+                                      }}
+                                      className="text-muted-foreground hover:text-destructive focus:outline-none"
+                                    >
+                                      <span className="sr-only">Remove</span>
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="otherSpecialization"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Other Specialization</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Specify other specialization if not listed" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="otherSpecialization"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Other Specialization</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Specify other specialization if not listed" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}
@@ -764,15 +728,20 @@ const ProfessionalMembershipForm = () => {
                       <FormControl>
                         <Input
                           type="file"
+                          multiple
                           accept="application/pdf,image/*"
                           className="file:text-sm file:font-medium"
-                          onChange={(e) => field.onChange(e.target.files?.[0])}
+                          onChange={(e) => field.onChange(Array.from(e.target.files || []))}
                         />
                       </FormControl>
-                      {field.value && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          ✓ Selected: {field.value?.name}
-                        </p>
+                      {field.value && field.value.length > 0 && (
+                        <div className="space-y-1 mt-2">
+                          {field.value.map((file: File, index: number) => (
+                            <p key={index} className="text-xs text-muted-foreground flex items-center">
+                              <Upload className="w-3 h-3 mr-1" /> {file.name}
+                            </p>
+                          ))}
+                        </div>
                       )}
                       <FormMessage />
                     </FormItem>

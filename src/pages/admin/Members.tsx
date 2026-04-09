@@ -44,6 +44,7 @@ interface Member {
   occupation: string;
   organization: string;
   qualification: string;
+  other_qualifications?: string;
   experience: number;
   submittedDate: string;
   updated_at: string;
@@ -52,6 +53,7 @@ interface Member {
   member_status: "active" | "pending" | "suspended" | "pending_password_setup" | "expired";
   membershipType: string;
   specializations: string[];
+  other_specialization?: string;
   languages: string[];
   session_types: string[];
   availability: string;
@@ -338,12 +340,14 @@ const Members = () => {
         updated_at: app.updated_at,
         created_at: app.created_at,
         qualification: app.qualification,
+        other_qualifications: app.other_qualifications,
         organization: app.organization,
         nationality: app.nationality,
         occupation: app.occupation,
         phone: app.phone,
         experience: app.experience,
         specializations: app.specializations,
+        other_specialization: app.other_specialization,
         languages: app.languages,
         session_types: app.session_types,
         availability: app.availability,
@@ -713,11 +717,17 @@ const Members = () => {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-2 text-sm">
-                                    <div><strong>Occupation:</strong> {member.occupation}</div>
-                                    <div><strong>Organization:</strong> {member.organization}</div>
-                                    <div><strong>Highest Qualification:</strong> {member.qualification}</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div><strong>Occupation:</strong> {member.occupation}</div>
+                                      <div><strong>Organization:</strong> {member.organization}</div>
+                                      <div><strong>Highest Qualification:</strong> {member.qualification}</div>
+                                      <div><strong>Other Qualifications:</strong> {member.other_qualifications || 'None'}</div>
+                                    </div>
                                     <div><strong>Years Experience:</strong> {member.experience}</div>
-                                    <div><strong>Specializations:</strong> {member.specializations?.join(', ') || 'N/A'}</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div><strong>Specializations:</strong> {member.specializations?.join(', ') || 'N/A'}</div>
+                                      <div><strong>Other Specialization:</strong> {member.other_specialization || 'None'}</div>
+                                    </div>
                                     <div><strong>Languages:</strong> {member.languages?.join(', ') || 'N/A'}</div>
                                     <div><strong>Session Types:</strong> {member.session_types?.join(', ') || 'N/A'}</div>
                                     <div><strong>Availability:</strong> {member.availability || 'N/A'}</div>

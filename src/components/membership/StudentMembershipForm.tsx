@@ -31,7 +31,7 @@ const studentMembershipSchema = z.object({
   // Student-specific fields
   institutionName: z.string().min(2, 'Institution name is required'),
   studyYear: z.string().min(1, 'Year of study is required'),
-  counsellingCoursework: z.string().min(10, 'Counselling coursework information is required'),
+  programName: z.string().min(2, 'Full name of program is required'),
 
   // Supervision fields - Required for students
   internshipSupervisorName: z.string().min(2, 'Internship supervisor name is required'),
@@ -40,7 +40,7 @@ const studentMembershipSchema = z.object({
   // Member Professional Details Table Fields
   occupation: z.string().optional(),
   organizationName: z.string().optional(),
-  specializations: z.array(z.string()).min(1, 'At least one specialization is required'),
+  specializations: z.array(z.string()).optional(),
   otherSpecialization: z.string().optional(),
   employmentStatus: z.enum(['employed', 'self-employed', 'unemployed', 'retired']).optional(),
   yearsExperience: z.string().optional(), // Made optional for students
@@ -64,12 +64,8 @@ const studentMembershipSchema = z.object({
 
   // Member Personal Documents Table Fields
   idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
-  policeClearance: z.any().refine((f) => f instanceof File, 'Police clearance is required'),
-  references: z.any().refine((f) => f instanceof File, 'Reference document is required'),
+  studentConfirmationLetter: z.any().refine((f) => f instanceof File, 'Confirmation letter is required'),
   profileImage: z.any().optional(),
-
-  // Member Certificates Table Fields
-  certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
 });
 
 type StudentMembershipFormData = z.infer<typeof studentMembershipSchema>;
@@ -93,11 +89,8 @@ const StudentMembershipForm = () => {
       showPhone: true,
       showAddress: false,
       idDocument: undefined,
-      policeClearance: undefined,
-      references: undefined,
+      studentConfirmationLetter: undefined,
       profileImage: undefined,
-
-      certificates: [],
       otherSpecialization: '',
       // Student-specific defaults
       internshipSupervisorName: '',
@@ -111,7 +104,7 @@ const StudentMembershipForm = () => {
 
     // Append all text fields
     for (const key in data) {
-      if (key === 'idDocument' || key === 'certificates' || key === 'profileImage' || key === 'policeClearance' || key === 'references') {
+      if (key === 'idDocument' || key === 'studentConfirmationLetter' || key === 'profileImage') {
         continue; // Skip file fields for now, handle separately
       }
 
@@ -133,20 +126,11 @@ const StudentMembershipForm = () => {
     if (data.idDocument) {
       formData.append('idDocument', data.idDocument);
     }
-    if (data.policeClearance) {
-      formData.append('policeClearance', data.policeClearance);
-    }
-    if (data.references) {
-      formData.append('references', data.references);
+    if (data.studentConfirmationLetter) {
+      formData.append('studentConfirmationLetter', data.studentConfirmationLetter);
     }
     if (data.profileImage) {
       formData.append('profileImage', data.profileImage);
-    }
-
-    if (data.certificates && data.certificates.length > 0) {
-      data.certificates.forEach((file) => {
-        formData.append('certificates', file);
-      });
     }
 
     try {
@@ -300,7 +284,7 @@ const StudentMembershipForm = () => {
       ]);
     } else if (currentStep === 2) {
       isValid = await form.trigger([
-        'institutionName', 'studyYear', 'counsellingCoursework', 'policeClearance', 'references', 'certificates'
+        'institutionName', 'studyYear', 'programName', 'studentConfirmationLetter'
       ]);
     } else if (currentStep === 3) {
       isValid = await form.trigger([
@@ -578,7 +562,7 @@ const StudentMembershipForm = () => {
                 <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
                   <h3 className="font-semibold text-blue-900 mb-2">Counselling Training Program</h3>
                   <p className="text-sm text-blue-700">
-                    Tell us about your current counselling/psychotherapy training program and completed coursework.
+                    Tell us about your current counselling/psychotherapy training program.
                   </p>
                 </div>
 
@@ -631,14 +615,14 @@ const StudentMembershipForm = () => {
 
                 <FormField
                   control={form.control}
-                  name="counsellingCoursework"
+                  name="programName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Counselling Coursework Completed</FormLabel>
+                      <FormLabel className="font-medium">Full Name of Program Being Studied</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="List the counselling/psychotherapy courses you've completed, such as:&#10;• Introduction to Counselling&#10;• Ethics & Professional Practice&#10;• Counselling Theories&#10;• CBT Techniques&#10;• Skills Training"
-                          className="min-h-32"
+                        <Input
+                          placeholder="e.g., BA Psychology, Diploma in Counselling"
+                          className="h-11"
                           {...field}
                         />
                       </FormControl>
@@ -649,82 +633,34 @@ const StudentMembershipForm = () => {
 
                 <div className="border-t pt-6">
                   <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                    📚 Academic Documents
+                    📄 Letter of Confirmation
                   </h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload your certificates, transcripts, or training completion documents.
+                    Please provide a letter of confirmation that you are a student of Counselling and Psychotherapy.
+                    The letter must be from your institution, signed, and have a date stamp.
                   </p>
 
                   <FormField
                     control={form.control}
-                    name="references"
-                    render={({ field }) => (
-                      <FormItem className="mb-6">
-                        <FormLabel>Academic/Professional References (PDF, JPG, PNG)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="file"
-                            accept="application/pdf,image/*"
-                            className="file:text-sm file:font-medium"
-                            onChange={(e) => field.onChange(e.target.files?.[0])}
-                          />
-                        </FormControl>
-                        {field.value && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            ✓ Selected: {field.value?.name}
-                          </p>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="policeClearance"
-                    render={({ field }) => (
-                      <FormItem className="mb-6">
-                        <FormLabel>Process Police Clearance (PDF, JPG, PNG)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="file"
-                            accept="application/pdf,image/*"
-                            className="file:text-sm file:font-medium"
-                            onChange={(e) => field.onChange(e.target.files?.[0])}
-                          />
-                        </FormControl>
-                        {field.value && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            ✓ Selected: {field.value?.name}
-                          </p>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="certificates"
+                    name="studentConfirmationLetter"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Upload Certificates & Transcripts</FormLabel>
+                        <FormLabel>Institution Confirmation Letter (PDF, JPG, PNG)</FormLabel>
                         <FormControl>
                           <Input
                             type="file"
-                            multiple
                             accept="application/pdf,image/*"
                             className="file:text-sm file:font-medium"
-                            onChange={(e) => field.onChange(Array.from(e.target.files || []))}
+                            onChange={(e) => field.onChange(e.target.files?.[0])}
                           />
                         </FormControl>
-                        {Array.isArray(field.value) && field.value.length > 0 && (
+                        {field.value && (
                           <p className="text-xs text-muted-foreground mt-2">
-                            ✓ {field.value.length} file(s) selected
+                            ✓ Selected: {field.value?.name}
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          Accepted formats: PDF, JPG, PNG (max 5MB each)
+                          Accepted formats: PDF, JPG, PNG (max 5MB)
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -875,134 +811,7 @@ const StudentMembershipForm = () => {
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <h4 className="font-semibold text-lg mb-3">Training Focus & Specializations</h4>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Select areas you're focusing on in your training to help potential clients find you.
-                  </p>
-
-                  <FormField
-                    control={form.control}
-                    name="specializations"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Areas of Interest/Specialization</FormLabel>
-                        <FormControl>
-                          <div className="space-y-3">
-                            <Select
-                              onValueChange={(value) => {
-                                const currentSpecializations = form.getValues('specializations') || [];
-                                if (!currentSpecializations.includes(value)) {
-                                  field.onChange([...currentSpecializations, value]);
-                                }
-                              }}
-                              value="" // Always reset to empty to allow re-selecting different options
-                            >
-                              <SelectTrigger className="w-full h-11">
-                                <SelectValue placeholder="Select areas you're interested in" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Depression & Anxiety">Depression & Anxiety</SelectItem>
-                                <SelectItem value="Stress Management">Stress Management</SelectItem>
-                                <SelectItem value="Self-esteem Issues">Self-esteem Issues</SelectItem>
-                                <SelectItem value="Life Transitions">Life Transitions</SelectItem>
-                                <SelectItem value="Relationship Issues">Relationship Issues</SelectItem>
-                                <SelectItem value="Communication Problems">Communication Problems</SelectItem>
-                                <SelectItem value="Pre-Marital Counselling">Pre-Marital Counselling</SelectItem>
-                                <SelectItem value="Separation Support">Separation Support</SelectItem>
-                                <SelectItem value="Family Conflicts">Family Conflicts</SelectItem>
-                                <SelectItem value="Parenting Support">Parenting Support</SelectItem>
-                                <SelectItem value="Blended Family Issues">Blended Family Issues</SelectItem>
-                                <SelectItem value="Generational Conflicts">Generational Conflicts</SelectItem>
-                                <SelectItem value="Behavioral Issues">Behavioral Issues</SelectItem>
-                                <SelectItem value="School Problems">School Problems</SelectItem>
-                                <SelectItem value="Developmental Concerns">Developmental Concerns</SelectItem>
-                                <SelectItem value="Teen Mental Health">Teen Mental Health</SelectItem>
-                                <SelectItem value="Trauma & PTSD">Trauma & PTSD</SelectItem>
-                                <SelectItem value="Addiction Support">Addiction Support</SelectItem>
-                                <SelectItem value="Grief & Loss">Grief & Loss</SelectItem>
-                                <SelectItem value="Career Counselling">Career Counselling</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            {/* Selected Specializations List */}
-                            {field.value && field.value.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {field.value.map((spec, index) => (
-                                  <div
-                                    key={index}
-                                    className="bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                                  >
-                                    <span>{spec}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newSpecializations = [...field.value];
-                                        newSpecializations.splice(index, 1);
-                                        field.onChange(newSpecializations);
-                                      }}
-                                      className="text-muted-foreground hover:text-destructive focus:outline-none"
-                                    >
-                                      <span className="sr-only">Remove</span>
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-
-
-                  {/* Session Types */}
-                  <div className="mt-6">
-                    <FormLabel className="font-medium">Future Session Types Interest</FormLabel>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      What types of counseling sessions are you interested in providing once qualified?
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {['In-Person', 'Online Video', 'Phone Sessions'].map((type) => (
-                        <FormField
-                          key={type}
-                          control={form.control}
-                          name="sessionTypes"
-                          render={({ field }) => {
-                            return (
-                              <FormItem
-                                key={type}
-                                className="flex flex-row items-start space-x-2 space-y-0 p-3 border rounded-lg hover:bg-muted/50"
-                              >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(type)}
-                                    onCheckedChange={(checked) => {
-                                      return checked
-                                        ? field.onChange([...field.value, type])
-                                        : field.onChange(
-                                          field.value?.filter(
-                                            (value) => value !== type
-                                          )
-                                        );
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal text-sm cursor-pointer">
-                                  {type}
-                                </FormLabel>
-                              </FormItem>
-                            );
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <FormMessage>{form.formState.errors.sessionTypes?.message}</FormMessage>
-                  </div>
-                </div>
+                {/* Training Focus and Session Types sections removed per simplification request */}
               </div>
             )}
 

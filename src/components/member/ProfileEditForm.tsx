@@ -502,37 +502,39 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="highest_qualification"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Highest Qualification</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="highest_qualification"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Highest Qualification</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="other_qualifications"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Other Qualifications</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="List any other relevant qualifications"
-                  className="min-h-20"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="other_qualifications"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Other Qualifications</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="List any other relevant qualifications"
+                    className="min-h-20"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
@@ -552,45 +554,65 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
           )}
         />
 
-        {/* Specializations */}
-        <div>
-          <FormLabel>Specializations</FormLabel>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
-            {allSpecializations.map((spec) => (
-              <FormField
-                key={spec}
-                control={form.control}
-                name="specializations"
-                render={({ field }) => {
-                  return (
-                    <FormItem
-                      key={spec}
-                      className="flex flex-row items-start space-x-2 space-y-0"
-                    >
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value?.includes(spec)}
-                          onCheckedChange={(checked) => {
-                            return checked
-                              ? field.onChange([...field.value, spec])
-                              : field.onChange(
-                                field.value?.filter(
-                                  (value) => value !== spec
-                                )
-                              );
-                          }}
-                        />
-                      </FormControl>
-                      <FormLabel className="font-normal text-sm cursor-pointer">
-                        {spec}
-                      </FormLabel>
-                    </FormItem>
-                  );
-                }}
-              />
-            ))}
+        {/* Specializations and Other */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <FormLabel>Specializations</FormLabel>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              {allSpecializations.map((spec) => (
+                <FormField
+                  key={spec}
+                  control={form.control}
+                  name="specializations"
+                  render={({ field }) => {
+                    return (
+                      <FormItem
+                        key={spec}
+                        className="flex flex-row items-start space-x-2 space-y-0"
+                      >
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(spec)}
+                            onCheckedChange={(checked) => {
+                              return checked
+                                ? field.onChange([...(field.value || []), spec])
+                                : field.onChange(
+                                  field.value?.filter(
+                                    (value) => value !== spec
+                                  )
+                                );
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal text-sm cursor-pointer">
+                          {spec}
+                        </FormLabel>
+                      </FormItem>
+                    );
+                  }}
+                />
+              ))}
+            </div>
+            <FormMessage>{form.formState.errors.specializations?.message}</FormMessage>
           </div>
-          <FormMessage>{form.formState.errors.specializations?.message}</FormMessage>
+
+          <FormField
+            control={form.control}
+            name="other_specialization"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Other Specialization</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Specify other specialization if not listed"
+                    className="min-h-20"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         {/* Languages */}

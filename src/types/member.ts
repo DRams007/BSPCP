@@ -21,6 +21,7 @@ export interface IMemberProfile {
   other_qualifications?: string;
   scholarly_publications?: string;
   specializations?: string[];
+  other_specialization?: string;
   employment_status?: string;
   years_experience?: string; // VARCHAR(50)
   bio?: string;
