@@ -33,6 +33,7 @@ const professionalMembershipSchema = z.object({
   occupation: z.string().min(2, 'Occupation is required'),
   organizationName: z.string().min(2, 'Organization name is required'),
   highestQualification: z.string().min(2, 'Highest qualification is required'),
+  otherQualifications: z.string().optional(),
   specializations: z.array(z.string()).min(1, 'At least one specialization is required'),
   otherSpecialization: z.string().optional(),
   employmentStatus: z.enum(['employed', 'self-employed', 'unemployed', 'retired']),
@@ -89,6 +90,7 @@ const ProfessionalMembershipForm = () => {
       certificates: [],
       references: [],
       otherSpecialization: '',
+      otherQualifications: '',
     },
   });
 
@@ -605,6 +607,26 @@ const ProfessionalMembershipForm = () => {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="otherQualifications"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Other Qualifications</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="List any other relevant qualifications" 
+                            className="min-h-[80px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="specializations"
