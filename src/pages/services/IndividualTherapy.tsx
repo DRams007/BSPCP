@@ -17,8 +17,9 @@ const IndividualTherapy = () => {
   ];
 
   const conditions = [
-    'Depression', 'Anxiety', 'Stress Management', 'Trauma & PTSD',
-    'Grief & Loss', 'Life Transitions', 'Self-Esteem Issues', 'Anger Management'
+    'General Practice', 'Emotional Intelligence', 'Rehabilitation',
+    'Trauma & Crisis', 'Grief and Loss Counselling', 'Life Transitions',
+    'Substance Use', 'Career Counselling'
   ];
 
   const benefits = [

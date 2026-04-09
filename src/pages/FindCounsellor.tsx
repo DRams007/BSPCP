@@ -35,33 +35,39 @@ interface Counsellor {
 const serviceCategories = [{
   icon: Heart,
   title: 'Individual Therapy',
-  description: 'Depression, anxiety, stress management, and personal growth',
+  description: 'General practice, emotional intelligence, and rehabilitation',
   color: 'bg-primary/10 text-primary',
-  subcategories: ['Depression & Anxiety', 'Stress Management', 'Self-esteem Issues', 'Life Transitions']
+  subcategories: ['General Practice', 'Emotional Intelligence Facilitation & Assessment', 'Rehabilitation']
 }, {
   icon: Users,
-  title: 'Couples Counselling',
-  description: 'Relationship issues, communication, and pre-marital counselling',
+  title: 'Relationship & Family',
+  description: 'Marriage, relationships, and family support systems',
   color: 'bg-terracotta/10 text-terracotta',
-  subcategories: ['Relationship Issues', 'Communication Problems', 'Pre-marital Counselling', 'Separation Support']
-}, {
-  icon: Home,
-  title: 'Family Therapy',
-  description: 'Family conflicts, parenting support, and generational issues',
-  color: 'bg-dusty/10 text-dusty',
-  subcategories: ['Family Conflicts', 'Parenting Support', 'Blended Family Issues', 'Generational Conflicts']
+  subcategories: ['Marriage and Relationships']
 }, {
   icon: Sprout,
-  title: 'Child & Adolescent',
-  description: 'Behavioral issues, school problems, and teen mental health',
+  title: 'Child & Youth Support',
+  description: 'Specialized support for children, adolescents, and play therapy',
   color: 'bg-accent/10 text-accent',
-  subcategories: ['Behavioral Issues', 'School Problems', 'Developmental Concerns', 'Teen Mental Health']
+  subcategories: ['Adolescents & Children', 'Play Therapy']
 }, {
   icon: Shield,
-  title: 'Specialized Services',
-  description: 'Trauma, PTSD, addiction, grief, and career counselling',
+  title: 'Crisis & Recovery',
+  description: 'Trauma, crisis intervention, grief, and correctional counselling',
+  color: 'bg-dusty/10 text-dusty',
+  subcategories: ['Trauma & Crisis', 'Grief and Loss Counselling', 'Correctional and Prison Counselling']
+}, {
+  icon: Home,
+  title: 'Specialized Support',
+  description: 'Addiction, career, and faith-based pastoral counselling',
   color: 'bg-primary/10 text-primary',
-  subcategories: ['Trauma & PTSD', 'Addiction Support', 'Grief & Loss', 'Career Counselling']
+  subcategories: ['Substance Use and Addiction Counselling', 'Career Counselling', 'Pastoral (Faith Based) Counselling', 'Psychedelics Assisted Psychotherapy']
+}, {
+  icon: Monitor,
+  title: 'Professional Growth',
+  description: 'Clinical supervision and educator training for professionals',
+  color: 'bg-accent/10 text-accent',
+  subcategories: ['Clinical Supervision', 'Counsellor Trainer/Educator']
 }];
 
 const FindCounsellor = () => {

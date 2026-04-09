@@ -626,26 +626,21 @@ const ProfessionalMembershipForm = () => {
                                 <SelectValue placeholder="Select specializations to add" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Depression & Anxiety">Depression & Anxiety</SelectItem>
-                                <SelectItem value="Stress Management">Stress Management</SelectItem>
-                                <SelectItem value="Self-esteem Issues">Self-esteem Issues</SelectItem>
-                                <SelectItem value="Life Transitions">Life Transitions</SelectItem>
-                                <SelectItem value="Relationship Issues">Relationship Issues</SelectItem>
-                                <SelectItem value="Communication Problems">Communication Problems</SelectItem>
-                                <SelectItem value="Pre-Marital Counselling">Pre-Marital Counselling</SelectItem>
-                                <SelectItem value="Separation Support">Separation Support</SelectItem>
-                                <SelectItem value="Family Conflicts">Family Conflicts</SelectItem>
-                                <SelectItem value="Parenting Support">Parenting Support</SelectItem>
-                                <SelectItem value="Blended Family Issues">Blended Family Issues</SelectItem>
-                                <SelectItem value="Generational Conflicts">Generational Conflicts</SelectItem>
-                                <SelectItem value="Behavioral Issues">Behavioral Issues</SelectItem>
-                                <SelectItem value="School Problems">School Problems</SelectItem>
-                                <SelectItem value="Developmental Concerns">Developmental Concerns</SelectItem>
-                                <SelectItem value="Teen Mental Health">Teen Mental Health</SelectItem>
-                                <SelectItem value="Trauma & PTSD">Trauma & PTSD</SelectItem>
-                                <SelectItem value="Addiction Support">Addiction Support</SelectItem>
-                                <SelectItem value="Grief & Loss">Grief & Loss</SelectItem>
+                                <SelectItem value="General Practice">General Practice</SelectItem>
+                                <SelectItem value="Marriage and Relationships">Marriage and Relationships</SelectItem>
+                                <SelectItem value="Substance Use and Addiction Counselling">Substance Use and Addiction Counselling</SelectItem>
+                                <SelectItem value="Clinical Supervision">Clinical Supervision</SelectItem>
+                                <SelectItem value="Counsellor Trainer/Educator">Counsellor Trainer/Educator</SelectItem>
+                                <SelectItem value="Adolescents & Children">Adolescents & Children</SelectItem>
+                                <SelectItem value="Trauma & Crisis">Trauma & Crisis</SelectItem>
+                                <SelectItem value="Pastoral (Faith Based) Counselling">Pastoral (Faith Based) Counselling</SelectItem>
+                                <SelectItem value="Emotional Intelligence Facilitation & Assessment">Emotional Intelligence Facilitation & Assessment</SelectItem>
+                                <SelectItem value="Rehabilitation">Rehabilitation</SelectItem>
+                                <SelectItem value="Psychedelics Assisted Psychotherapy">Psychedelics Assisted Psychotherapy</SelectItem>
+                                <SelectItem value="Grief and Loss Counselling">Grief and Loss Counselling</SelectItem>
                                 <SelectItem value="Career Counselling">Career Counselling</SelectItem>
+                                <SelectItem value="Correctional and Prison Counselling">Correctional and Prison Counselling</SelectItem>
+                                <SelectItem value="Play Therapy">Play Therapy</SelectItem>
                               </SelectContent>
                             </Select>
 
