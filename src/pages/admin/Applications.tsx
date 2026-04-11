@@ -61,7 +61,10 @@ interface Application {
   other_qualifications?: string;
   experience: string;
   organization: string;
-  documents: { name: string; uploaded: boolean; url?: string }[];
+  program_name?: string;
+  institution_name?: string;
+  study_year?: string;
+  documents: { name: string; uploaded: boolean; url?: string; category?: string }[];
   application_status: string;
   created_at: Date;
   membershipType: string;
@@ -181,6 +184,16 @@ const Applications = () => {
     };
   }, [fetchApplications]);
 
+  // Keep selectedApplication in sync with the applications list
+  useEffect(() => {
+    if (selectedApplication) {
+      const updated = applications.find(app => app.id === selectedApplication.id);
+      if (updated) {
+        setSelectedApplication(updated);
+      }
+    }
+  }, [applications]);
+
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showConfirmMarkPaidDialog, setShowConfirmMarkPaidDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -220,7 +233,6 @@ const Applications = () => {
         description: "Member marked as existing paid and approved successfully.",
       });
 
-      setSelectedApplication(null);
       fetchApplications();
     } catch (err) {
       const error = err as Error;
@@ -262,7 +274,6 @@ const Applications = () => {
         description: `The membership application has been ${status} successfully.`,
       });
       setReviewComment("");
-      setSelectedApplication(null);
       fetchApplications(); // Re-fetch applications to update the list
     } catch (err) {
       const error = err as Error;
@@ -331,7 +342,6 @@ const Applications = () => {
         description: `Payment request email has been sent to ${selectedApplication?.name}. They have been provided with a secure link to upload proof of payment.`,
       });
 
-      setSelectedApplication(null);
       fetchApplications(); // Re-fetch applications to update payment status
 
     } catch (err) {
@@ -917,36 +927,54 @@ Botswana Wellbeing Pathways Admin Team`);
                                     Supporting Documents
                                   </CardTitle>
                                 </CardHeader>
-                                <CardContent>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    {selectedApplication.documents
-                                      .filter(doc => doc.name !== 'Proof of Payment') // Exclude payment proof from general documents
-                                      .map((doc, index) => (
-                                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                          <div className="flex items-center">
-                                            {doc.uploaded ? (
-                                              <Check className="w-4 h-4 text-green-500 mr-2" />
-                                            ) : (
-                                              <X className="w-4 h-4 text-red-500 mr-2" />
+                                <CardContent className="space-y-6">
+                                  {Object.entries(
+                                    selectedApplication.documents
+                                      .filter(doc => doc.category !== 'Payment Proof')
+                                      .reduce((acc, doc) => {
+                                        const cat = doc.category || 'Other Supporting Documents';
+                                        if (!acc[cat]) acc[cat] = [];
+                                        acc[cat].push(doc);
+                                        return acc;
+                                      }, {} as Record<string, typeof selectedApplication.documents>)
+                                  ).sort(([catA], [catB]) => {
+                                    const order = { 'Identification': 1, 'Police Clearance': 2, 'Qualifications': 3, 'References': 4 };
+                                    return (order[catA as keyof typeof order] || 99) - (order[catB as keyof typeof order] || 99);
+                                  }).map(([category, docs], catIndex) => (
+                                    <div key={catIndex} className="space-y-3">
+                                      <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-1">
+                                        {category}
+                                      </h4>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        {docs.map((doc, index) => (
+                                          <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-card/50 hover:bg-card transition-colors">
+                                            <div className="flex items-center overflow-hidden mr-2">
+                                              {doc.uploaded ? (
+                                                <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                                              ) : (
+                                                <X className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
+                                              )}
+                                              <span className="text-sm truncate font-medium" title={doc.name}>{doc.name}</span>
+                                            </div>
+                                            {doc.uploaded && (
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 flex-shrink-0"
+                                                onClick={() => {
+                                                  if (doc.url) {
+                                                    window.open(doc.url, "_blank");
+                                                  }
+                                                }}
+                                              >
+                                                <Download className="w-3 h-3" />
+                                              </Button>
                                             )}
-                                            <span className="text-sm">{doc.name}</span>
                                           </div>
-                                          {doc.uploaded && (
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={() => {
-                                                if (doc.url) {
-                                                  window.open(doc.url, "_blank");
-                                                }
-                                              }}
-                                            >
-                                              <Download className="w-3 h-3" />
-                                            </Button>
-                                          )}
-                                        </div>
-                                      ))}
-                                  </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
                                 </CardContent>
                               </Card>
 
@@ -1494,46 +1522,64 @@ Botswana Wellbeing Pathways Admin Team`);
                                         Supporting Documents
                                       </CardTitle>
                                     </CardHeader>
-                                    <CardContent>
-                                      <div className="grid grid-cols-2 gap-4">
-                                        {selectedApplication.documents
-                                          .filter(doc => !doc.name.startsWith('Proof of Payment')) // Exclude payment proofs from general documents
-                                          .map((doc, index) => (
-                                            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                              <div className="flex items-center">
-                                                {doc.uploaded ? (
-                                                  <Check className="w-4 h-4 text-green-500 mr-2" />
-                                                ) : (
-                                                  <X className="w-4 h-4 text-red-500 mr-2" />
+                                    <CardContent className="space-y-6">
+                                      {Object.entries(
+                                        selectedApplication.documents
+                                          .filter(doc => doc.category !== 'Payment Proof')
+                                          .reduce((acc, doc) => {
+                                            const cat = doc.category || 'Other Supporting Documents';
+                                            if (!acc[cat]) acc[cat] = [];
+                                            acc[cat].push(doc);
+                                            return acc;
+                                          }, {} as Record<string, typeof selectedApplication.documents>)
+                                      ).sort(([catA], [catB]) => {
+                                        const order = { 'Identification': 1, 'Police Clearance': 2, 'Qualifications': 3, 'References': 4 };
+                                        return (order[catA as keyof typeof order] || 99) - (order[catB as keyof typeof order] || 99);
+                                      }).map(([category, docs], catIndex) => (
+                                        <div key={catIndex} className="space-y-3">
+                                          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider border-b pb-1">
+                                            {category}
+                                          </h4>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            {docs.map((doc, index) => (
+                                              <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-card/50 hover:bg-card transition-colors">
+                                                <div className="flex items-center overflow-hidden mr-2">
+                                                  {doc.uploaded ? (
+                                                    <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                                                  ) : (
+                                                    <X className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
+                                                  )}
+                                                  <span className="text-sm truncate font-medium" title={doc.name}>{doc.name}</span>
+                                                </div>
+                                                {doc.uploaded && (
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0 flex-shrink-0"
+                                                    onClick={() => {
+                                                      if (doc.url) {
+                                                        window.open(doc.url, "_blank");
+                                                        toast({
+                                                          title: "Document Opened",
+                                                          description: `Opening ${doc.name} in a new tab.`,
+                                                        });
+                                                      } else {
+                                                        toast({
+                                                          title: "Document Not Available",
+                                                          description: `No URL found for ${doc.name}.`,
+                                                          variant: "destructive",
+                                                        });
+                                                      }
+                                                    }}
+                                                  >
+                                                    <Download className="w-3 h-3" />
+                                                  </Button>
                                                 )}
-                                                <span className="text-sm">{doc.name}</span>
                                               </div>
-                                              {doc.uploaded && (
-                                                <Button
-                                                  variant="outline"
-                                                  size="sm"
-                                                  onClick={() => {
-                                                    if (doc.url) {
-                                                      window.open(doc.url, "_blank");
-                                                      toast({
-                                                        title: "Document Opened",
-                                                        description: `Opening ${doc.name} in a new tab.`,
-                                                      });
-                                                    } else {
-                                                      toast({
-                                                        title: "Document Not Available",
-                                                        description: `No URL found for ${doc.name}.`,
-                                                        variant: "destructive",
-                                                      });
-                                                    }
-                                                  }}
-                                                >
-                                                  <Download className="w-3 h-3" />
-                                                </Button>
-                                              )}
-                                            </div>
-                                          ))}
-                                      </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ))}
                                     </CardContent>
                                   </Card>
 

@@ -657,16 +657,16 @@ app.get('/api/applications', async (req, res) => {
       const documents = [];
 
       if (row.personal_documents && row.personal_documents.idDocumentPath) {
-        documents.push({ name: "ID Document", uploaded: true, url: getFullUrl(row.personal_documents.idDocumentPath, req) });
+        documents.push({ name: "ID Document", category: "Identification", uploaded: true, url: getFullUrl(row.personal_documents.idDocumentPath, req) });
       }
       if (row.personal_documents && row.personal_documents.policeClearancePath) {
-        documents.push({ name: "Police Clearance", uploaded: true, url: getFullUrl(row.personal_documents.policeClearancePath, req) });
+        documents.push({ name: "Police Clearance", category: "Police Clearance", uploaded: true, url: getFullUrl(row.personal_documents.policeClearancePath, req) });
       }
       if (row.personal_documents && row.personal_documents.studentConfirmationLetterPath) {
-        documents.push({ name: "Student Confirmation Letter", uploaded: true, url: getFullUrl(row.personal_documents.studentConfirmationLetterPath, req) });
+        documents.push({ name: "Student Confirmation Letter", category: "Qualifications", uploaded: true, url: getFullUrl(row.personal_documents.studentConfirmationLetterPath, req) });
       }
       if (row.personal_documents && row.personal_documents.referencesPath) {
-        documents.push({ name: "Professional References", uploaded: true, url: getFullUrl(row.personal_documents.referencesPath, req) });
+        documents.push({ name: "Professional References", category: "References", uploaded: true, url: getFullUrl(row.personal_documents.referencesPath, req) });
       }
       // Exclude Profile Image as per new requirement
       // if (row.personal_documents && row.personal_documents.profileImagePath) {
@@ -680,22 +680,24 @@ app.get('/api/applications', async (req, res) => {
             proofUrls.forEach((url, index) => {
               documents.push({
                 name: `Proof of Payment ${index + 1}`,
+                category: "Payment Proof",
                 uploaded: true,
                 url: getFullUrl(url, req)
               });
             });
           } else {
             // Fallback if JSON but not array (unlikely, but safe)
-            documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
+            documents.push({ name: "Proof of Payment", category: "Payment Proof", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
           }
         } catch (e) {
           // If parsing fails, it's a legacy single file string
-          documents.push({ name: "Proof of Payment", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
+          documents.push({ name: "Proof of Payment", category: "Payment Proof", uploaded: true, url: getFullUrl(row.payment_proof_url, req) });
         }
       }
       if (row.certificates) {
         const certificateDocs = row.certificates.map(cert => ({
           name: cert.name,
+          category: "Qualifications",
           uploaded: cert.uploaded,
           url: getFullUrl(cert.url, req)
         }));
@@ -704,6 +706,7 @@ app.get('/api/applications', async (req, res) => {
       if (row.references) {
         const referenceDocs = row.references.map(ref => ({
           name: ref.name || 'Professional Reference',
+          category: "References",
           uploaded: ref.uploaded,
           url: getFullUrl(ref.url, req)
         }));
