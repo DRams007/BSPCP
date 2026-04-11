@@ -25,6 +25,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust the Nginx reverse proxy so req.protocol reflects 'https' (via X-Forwarded-Proto)
+// Without this, Express sees the internal HTTP connection and generates http:// URLs
+app.set('trust proxy', 1);
+
 // Database schema verification function
 async function verifyDatabaseSchema() {
   let client;
@@ -236,7 +240,11 @@ app.use('/uploads', express.static(uploadDir));
 // Helper to construct full URL
 const getFullUrl = (filePath, req) => {
   if (!filePath) return null;
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  // In production, always use https to avoid Mixed Content errors.
+  // req.protocol is correctly set to 'https' when trust proxy is enabled and
+  // Nginx forwards the X-Forwarded-Proto header.
+  const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
+  const baseUrl = `${protocol}://${req.get('host')}`;
   // Normalize file path to use forward slashes for consistency
   const normalizedPath = filePath.replace(/\\/g, '/');
 
