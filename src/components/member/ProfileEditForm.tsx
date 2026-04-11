@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,6 +23,11 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    return dateString.split('T')[0];
+  };
+
   const form = useForm<IMemberProfile>({
     defaultValues: {
       id: member.id,
@@ -30,7 +36,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
       full_name: member.full_name || '',
       bspcp_membership_number: member.bspcp_membership_number || '',
       id_number: member.id_number || '',
-      date_of_birth: member.date_of_birth || '',
+      date_of_birth: formatDateForInput(member.date_of_birth),
       gender: member.gender || '',
       nationality: member.nationality || '',
       application_status: member.application_status || '',
@@ -53,10 +59,6 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
     }
   });
 
-  const formatDateForInput = (dateString: string) => {
-    if (!dateString) return '';
-    return dateString.split('T')[0];
-  };
 
   useEffect(() => {
     if (member) {
@@ -127,6 +129,20 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
 
   const allLanguages = ['English', 'Setswana', 'Kalanga', 'Afrikaans', 'Other'];
   const allSessionTypes = ['In-Person', 'Online Video', 'Phone Sessions'];
+
+  const qualificationOptions = [
+    'Diploma',
+    'Bachelor of Education (Counselling)',
+    'Bachelor of Education (Guidance and Counselling)',
+    'Bachelor of Arts (Counselling)',
+    'Bachelor of Education Honors (Guidance and Counselling)',
+    'Master of Education (Guidance and Counselling)',
+    'Master of Education (Counselling and Human Services)',
+    'Master of Arts (Life Skills Counselling)',
+    'Master of Arts (Counselling/Counselling Psychology)',
+    'Master of Science (Neuro Psychology)',
+    'PhD Counselling'
+  ];
 
   const onSubmit = async (data: IMemberProfile) => {
     setIsLoading(true);
@@ -298,17 +314,17 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
                   BSPCP Membership Number
                   <Lock className="w-3 h-3 text-muted-foreground" />
                 </FormLabel>
-                <FormControl>
-                  <div className="relative">
+                <div className="relative">
+                  <FormControl>
                     <Input
                       {...field}
                       readOnly
                       disabled
                       className="bg-muted text-muted-foreground cursor-not-allowed"
                     />
-                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  </div>
-                </FormControl>
+                  </FormControl>
+                  <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   This official identification number is system-generated and cannot be changed manually.
                 </p>
@@ -504,9 +520,18 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Highest Qualification</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your highest qualification" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {qualificationOptions.map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -552,7 +577,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
         {/* Specializations and Other */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <FormLabel>Specializations</FormLabel>
+            <Label className="text-sm font-medium">Specializations</Label>
             <div className="grid grid-cols-2 gap-3 mt-2">
               {allSpecializations.map((spec) => (
                 <FormField
@@ -612,7 +637,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
 
         {/* Languages */}
         <div>
-          <FormLabel>Languages Spoken</FormLabel>
+          <Label className="text-sm font-medium">Languages Spoken</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
             {allLanguages.map((lang) => (
               <FormField
@@ -653,7 +678,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
 
         {/* Session Types */}
         <div>
-          <FormLabel>Session Types Offered</FormLabel>
+          <Label className="text-sm font-medium">Session Types Offered</Label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
             {allSessionTypes.map((type) => (
               <FormField

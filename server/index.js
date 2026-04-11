@@ -103,10 +103,20 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'application/pdf',
+      'application/msword', // .doc
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx
+    ];
+
+    if (allowedMimeTypes.includes(file.mimetype) || file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only images and PDFs are allowed.'), false);
+      cb(new Error('Invalid file type. Only images, PDFs, and Word documents are allowed.'), false);
     }
   },
 });
@@ -2320,6 +2330,7 @@ app.get('/api/member/profile', authenticateToken, async (req, res) => {
     mpd.languages,
     mpd.session_types,
     mpd.availability,
+    mpd.other_specialization,
     mpd_doc.profile_image_path
   FROM members m
   JOIN member_contact_details mcd ON m.id = mcd.member_id
@@ -2361,7 +2372,7 @@ app.put('/api/member/profile/:id', authenticateToken, async (req, res) => {
       first_name, last_name, bspcp_membership_number, id_number, date_of_birth, gender, nationality,
       occupation, organization_name, highest_qualification, other_qualifications,
       scholarly_publications, specializations, employment_status, years_experience,
-      bio, title, languages, session_types, availability
+      bio, title, languages, session_types, availability, other_specialization
     } = req.body;
 
     // Debug logging
@@ -2403,12 +2414,13 @@ app.put('/api/member/profile/:id', authenticateToken, async (req, res) => {
       `UPDATE member_professional_details SET
         occupation = $1::text, organization_name = $2::text, highest_qualification = $3::text, other_qualifications = $4::text,
         scholarly_publications = $5::text, specializations = $6::text[], employment_status = $7::text, years_experience = $8::text,
-        bio = $9::text, title = $10::text, languages = $11::text[], session_types = $12::text[], availability = $13::text
-      WHERE member_id = $14::uuid`,
+        bio = $9::text, title = $10::text, languages = $11::text[], session_types = $12::text[], availability = $13::text,
+        other_specialization = $14::text
+      WHERE member_id = $15::uuid`,
       [
         occupation, organization_name, highest_qualification, other_qualifications,
         scholarly_publications, specializations, employment_status, years_experience,
-        bio, title, languages, session_types, availability, memberId
+        bio, title, languages, session_types, availability, other_specialization, memberId
       ]
     );
 
@@ -3487,6 +3499,7 @@ app.get('/api/member/bookings', authenticateToken, async (req, res) => {
         booking_date AS date,
         booking_time AS time,
         status,
+        session_notes,
         created_at AS "createdAt"
       FROM bookings
       WHERE counsellor_id = $1
@@ -3512,7 +3525,7 @@ app.get('/api/member/bookings', authenticateToken, async (req, res) => {
 // New API endpoint to update booking status
 app.put('/api/bookings/:id/status', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { status, notes } = req.body; // notes for cancellation reason
+  const { status, notes, session_notes } = req.body; // notes for cancellation reason, session_notes for completion
   try {
     const client = await pool.connect();
     const counsellorId = req.user.memberId;
@@ -3520,11 +3533,12 @@ app.put('/api/bookings/:id/status', authenticateToken, async (req, res) => {
     let query = `
       UPDATE bookings
       SET status = $1,
-          needs = CASE WHEN $2::text IS NOT NULL THEN needs || E'\n' || $2 ELSE needs END
-      WHERE id = $3 AND counsellor_id = $4
+          needs = CASE WHEN $2::text IS NOT NULL THEN needs || E'\n' || $2 ELSE needs END,
+          session_notes = CASE WHEN $3::text IS NOT NULL THEN $3 ELSE session_notes END
+      WHERE id = $4 AND counsellor_id = $5
       RETURNING *;
     `;
-    const result = await client.query(query, [status, notes, id, counsellorId]);
+    const result = await client.query(query, [status, notes, session_notes, id, counsellorId]);
     client.release();
 
     if (result.rows.length > 0) {

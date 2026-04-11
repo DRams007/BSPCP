@@ -95,6 +95,7 @@ const FindCounsellor = () => {
   const [filteredCounsellors, setFilteredCounsellors] = useState<Counsellor[]>([]);
   const [showAll, setShowAll] = useState(true);
   const [noResults, setNoResults] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const needsFormRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -139,7 +140,47 @@ const FindCounsellor = () => {
     }
   };
 
+  const performFiltering = (concern: string | null, search: string, fData: typeof formData) => {
+    const searchLower = search.toLowerCase();
+    
+    return counsellors.filter(c => {
+      // Specialization match
+      const specializationMatch = concern ? c.specializations.includes(concern) : true;
+      
+      // Location match
+      const locationMatch = fData.location ? c.city.toLowerCase() === fData.location.toLowerCase() : true;
+      
+      // Session type match
+      let sessionTypeMatch = true;
+      if (fData.sessionType) {
+        if (fData.sessionType === 'both') {
+          sessionTypeMatch = c.session_types.some(t => t.toLowerCase().includes('person')) && 
+                            c.session_types.some(t => t.toLowerCase().includes('online'));
+        } else {
+          sessionTypeMatch = c.session_types.some(t => t.toLowerCase().includes(fData.sessionType.toLowerCase()));
+        }
+      }
+
+      // Search match
+      const searchMatch = search ? (
+        c.full_name.toLowerCase().includes(searchLower) ||
+        c.specializations.some(s => s.toLowerCase().includes(searchLower)) ||
+        c.city.toLowerCase().includes(searchLower) ||
+        (c.title && c.title.toLowerCase().includes(searchLower))
+      ) : true;
+
+      return specializationMatch && locationMatch && sessionTypeMatch && searchMatch;
+    });
+  };
+
+  useEffect(() => {
+    const filtered = performFiltering(showAll ? null : selectedConcern, searchQuery, formData);
+    setFilteredCounsellors(filtered);
+    setNoResults(filtered.length === 0);
+  }, [searchQuery, selectedConcern, showAll, counsellors]);
+
   const handleCategorySelect = () => {
+    setShowAll(false);
     needsFormRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -183,22 +224,7 @@ const FindCounsellor = () => {
       return;
     }
 
-    const filtered = counsellors.filter(c => {
-      const specializationMatch = selectedConcern ? c.specializations.includes(selectedConcern) : true;
-      const locationMatch = formData.location ? c.city.toLowerCase() === formData.location.toLowerCase() : true;
-      let sessionTypeMatch = true;
-      if (formData.sessionType) {
-        if (formData.sessionType === 'both') {
-          sessionTypeMatch = c.session_types.includes('in-person') && c.session_types.includes('online');
-        } else {
-          sessionTypeMatch = c.session_types.includes(formData.sessionType);
-        }
-      }
-      return specializationMatch && locationMatch && sessionTypeMatch;
-    });
-    setFilteredCounsellors(filtered);
     setShowAll(false);
-    setNoResults(filtered.length === 0);
     resultsRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -404,7 +430,12 @@ const FindCounsellor = () => {
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                  <Input placeholder="Search by name, specialization, or location..." className="pl-10 h-12 text-lg" />
+                  <Input 
+                    placeholder="Search by name, specialization, or location..." 
+                    className="pl-10 h-12 text-lg" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
               </div>
               <Button variant="outline" size="lg" className="lg:w-auto">

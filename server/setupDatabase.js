@@ -197,6 +197,8 @@ async function setupDatabase() {
           occupation VARCHAR(255),
           organization_name VARCHAR(255),
           highest_qualification TEXT,
+          other_qualifications TEXT,
+          scholarly_publications TEXT,
           specializations TEXT[],
           employment_status VARCHAR(50),
           years_experience VARCHAR(50),
@@ -299,6 +301,7 @@ async function setupDatabase() {
           booking_date DATE NOT NULL,
           booking_time TIME NOT NULL,
           status VARCHAR(50) DEFAULT 'pending',
+          session_notes TEXT,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);

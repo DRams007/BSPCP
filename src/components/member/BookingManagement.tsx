@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Search, Filter, Phone, Mail, Eye, CalendarX, Clock, CheckCircle, Bell, Users, TrendingUp,
-         CalendarPlus, MapPin, Settings, BarChart3, UserCheck, AlertTriangle, Loader2, Repeat } from 'lucide-react';
+         CalendarPlus, MapPin, Settings, BarChart3, UserCheck, AlertTriangle, Loader2, Repeat, Edit, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import BookingModal from '@/components/BookingModal'; // Import BookingModal
 
@@ -62,6 +62,7 @@ interface Booking {
   supportUrgency?: string;
   createdAt: string;
   notes?: string; // added based on DB schema (needs is used for notes)
+  session_notes?: string;
 }
 
 interface Client {
@@ -99,6 +100,11 @@ const BookingManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [isNewBookingDialogOpen, setIsNewBookingDialogOpen] = useState(false); // New state for new booking dialog
   const [currentCounsellor, setCurrentCounsellor] = useState<Counsellor | null>(null); // State to store current counsellor's profile
+  const [isCompletionDialogOpen, setIsCompletionDialogOpen] = useState(false);
+  const [sessionNotes, setSessionNotes] = useState('');
+  const [isEditSessionNotesDialogOpen, setIsEditSessionNotesDialogOpen] = useState(false);
+  const [editingSessionBookingId, setEditingSessionBookingId] = useState<string | null>(null);
+  const [editSessionNotesContent, setEditSessionNotesContent] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [bookingStats, setBookingStats] = useState({ confirmed: 0, pending: 0, completed: 0, cancelled: 0, rescheduled: 0, totalSessions: 0 });
   const [todayBookingsState, setTodayBookingsState] = useState<Booking[]>([]); // New state for today's bookings
@@ -257,12 +263,62 @@ const BookingManagement = () => {
     });
   };
 
-  const upcomingBookings = getUpcomingBookings();
-
-  const handleBookingAction = async (bookingId: string, action: 'confirmed' | 'cancelled' | 'completed') => {
+  const handleSaveSessionNotes = async () => {
+    if (!editingSessionBookingId) return;
+    
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No authentication token found.');
+
+      const booking = allBookings.find(b => b.id === editingSessionBookingId);
+      if (!booking) throw new Error('Booking not found.');
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${editingSessionBookingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          status: booking.status,
+          session_notes: editSessionNotesContent 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Success",
+        description: "Session notes updated successfully.",
+      });
+
+      setIsEditSessionNotesDialogOpen(false);
+      setEditingSessionBookingId(null);
+      setEditSessionNotesContent('');
+      fetchBookings(); // Refresh the list
+    } catch (err) {
+      const error = err as Error;
+      toast({
+        title: "Error",
+        description: `Failed to update notes: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const upcomingBookings = getUpcomingBookings();
+
+  const handleBookingAction = async (bookingId: string, action: 'confirmed' | 'cancelled' | 'completed', extraNotes?: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No authentication token found.');
+
+      const body: any = { status: action };
+      if (action === 'completed' && extraNotes) {
+        body.session_notes = extraNotes;
+      }
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/bookings/${bookingId}/status`, {
         method: 'PUT',
@@ -270,7 +326,7 @@ const BookingManagement = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: action }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -279,10 +335,12 @@ const BookingManagement = () => {
 
       toast({
         title: "Booking Updated",
-        description: `Booking has been ${action}`,
+        description: action === 'completed' ? "Session completed and notes saved successfully." : `Booking has been ${action}`,
       });
       fetchBookings(); // Re-fetch bookings to update the UI
-      setActiveTab('bookings');
+      if (action !== 'completed') {
+        setActiveTab('bookings');
+      }
     } catch (err) {
       const error = err as Error;
       console.error('Error updating booking status:', error);
@@ -737,6 +795,18 @@ const BookingManagement = () => {
                               >
                                 <CheckCircle className="h-3 w-3" />
                               </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setIsRescheduleDialogOpen(true);
+                                  setRescheduleDate(booking.date);
+                                }}
+                                title="Reschedule booking"
+                              >
+                                <CalendarPlus className="h-3 w-3" />
+                              </Button>
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button
@@ -794,82 +864,31 @@ const BookingManagement = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleBookingAction(
-                                  booking.id,
-                                  booking.status === 'rescheduled' ? 'confirmed' : 'completed'
-                                )}
+                                onClick={() => {
+                                  if (booking.status === 'rescheduled') {
+                                    handleBookingAction(booking.id, 'confirmed');
+                                  } else {
+                                    setSelectedBooking(booking);
+                                    setIsCompletionDialogOpen(true);
+                                  }
+                                }}
                                 title={booking.status === 'rescheduled' ? 'Confirm booking' : 'Mark as completed'}
                               >
                                 <CheckCircle className="h-3 w-3" />
                               </Button>
-                              <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedBooking(booking);
-                                      setIsRescheduleDialogOpen(true);
-                                    }}
-                                    title="Reschedule booking"
-                                  >
-                                    <CalendarPlus className="h-3 w-3" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Reschedule Booking</DialogTitle>
-                                    <DialogDescription>
-                                      Select a new date and time for this booking.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div>
-                                        <label className="text-sm font-medium">New Date</label>
-                                        <Input
-                                          type="date"
-                                          value={rescheduleDate}
-                                          onChange={(e) => setRescheduleDate(e.target.value)}
-                                          min={new Date().toISOString().split('T')[0]}
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="text-sm font-medium">New Time</label>
-                                        <Select onValueChange={setRescheduleTime}>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select time" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="09:00 AM">09:00 AM</SelectItem>
-                                            <SelectItem value="10:00 AM">10:00 AM</SelectItem>
-                                            <SelectItem value="11:00 AM">11:00 AM</SelectItem>
-                                            <SelectItem value="12:00 PM">12:00 PM</SelectItem>
-                                            <SelectItem value="01:00 PM">01:00 PM</SelectItem>
-                                            <SelectItem value="02:00 PM">02:00 PM</SelectItem>
-                                            <SelectItem value="03:00 PM">03:00 PM</SelectItem>
-                                            <SelectItem value="04:00 PM">04:00 PM</SelectItem>
-                                            <SelectItem value="05:00 PM">05:00 PM</SelectItem>
-                                            <SelectItem value="06:00 PM">06:00 PM</SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                    </div>
-                                    <DialogFooter>
-                                      <Button variant="outline" onClick={() => {
-                                        setIsRescheduleDialogOpen(false);
-                                        setRescheduleDate('');
-                                        setRescheduleTime('');
-                                      }}>
-                                        Cancel
-                                      </Button>
-                                      <Button onClick={() => handleRescheduleBooking(booking.id)}>
-                                        Reschedule
-                                      </Button>
-                                    </DialogFooter>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setIsRescheduleDialogOpen(true);
+                              setRescheduleDate(booking.date);
+                              // Note: rescheduleTime might need to be parsed or set differently if needed
+                            }}
+                            title="Reschedule booking"
+                          >
+                            <CalendarPlus className="h-3 w-3" />
+                          </Button>
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button
@@ -962,6 +981,21 @@ const BookingManagement = () => {
                             </Dialog>
                           )}
 
+                          {booking.status === 'cancelled' && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedBooking(booking);
+                                setIsRescheduleDialogOpen(true);
+                                setRescheduleDate(booking.date);
+                              }}
+                              title="Reschedule booking"
+                            >
+                              <CalendarPlus className="h-3 w-3" />
+                            </Button>
+                          )}
+
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="outline" size="sm" title="View details">
@@ -989,14 +1023,8 @@ const BookingManagement = () => {
                                   <p><strong>Status:</strong> {booking.status}</p>
                                 </div>
 
-                                {booking.needs && (
-                                  <div>
-                                    <h4 className="font-semibold mb-2">Notes</h4>
-                                    <p className="text-sm text-muted-foreground">{booking.needs}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </DialogContent>
+                                </div>
+                              </DialogContent>
                           </Dialog>
                         </div>
                       </TableCell>
@@ -1007,6 +1035,119 @@ const BookingManagement = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Global Reschedule Dialog - centralized to avoid multiple open dialogs in the table list */}
+        <Dialog open={isRescheduleDialogOpen} onOpenChange={setIsRescheduleDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reschedule Booking</DialogTitle>
+              <DialogDescription>
+                Select a new date and time for this booking.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedBooking && (
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  <p><strong>Client:</strong> {selectedBooking.clientName}</p>
+                  <p><strong>Service:</strong> {selectedBooking.service}</p>
+                  <p><strong>Current:</strong> {formatDate(selectedBooking.date)} at {formatTime(selectedBooking.time)}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">New Date</label>
+                  <Input
+                    type="date"
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">New Time</label>
+                  <Select onValueChange={setRescheduleTime}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="09:00 AM">09:00 AM</SelectItem>
+                      <SelectItem value="10:00 AM">10:00 AM</SelectItem>
+                      <SelectItem value="11:00 AM">11:00 AM</SelectItem>
+                      <SelectItem value="12:00 PM">12:00 PM</SelectItem>
+                      <SelectItem value="01:00 PM">01:00 PM</SelectItem>
+                      <SelectItem value="02:00 PM">02:00 PM</SelectItem>
+                      <SelectItem value="03:00 PM">03:00 PM</SelectItem>
+                      <SelectItem value="04:00 PM">04:00 PM</SelectItem>
+                      <SelectItem value="05:00 PM">05:00 PM</SelectItem>
+                      <SelectItem value="06:00 PM">06:00 PM</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => {
+                  setIsRescheduleDialogOpen(false);
+                  setRescheduleDate('');
+                  setRescheduleTime('');
+                }}>
+                  Cancel
+                </Button>
+                <Button onClick={() => selectedBooking && handleRescheduleBooking(selectedBooking.id)}>
+                  Reschedule
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Session Completion Notes Dialog */}
+        <Dialog open={isCompletionDialogOpen} onOpenChange={setIsCompletionDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Mark Session as Completed</DialogTitle>
+              <DialogDescription>
+                Please add notes for this session with {selectedBooking?.clientName}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedBooking && (
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  <p><strong>Service:</strong> {selectedBooking.service}</p>
+                  <p><strong>Date:</strong> {formatDate(selectedBooking.date)} at {formatTime(selectedBooking.time)}</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Session Notes</label>
+                <Textarea
+                  placeholder="Enter details about the session outcome, follow-ups, etc..."
+                  value={sessionNotes}
+                  onChange={(e) => setSessionNotes(e.target.value)}
+                  rows={5}
+                />
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => {
+                  setIsCompletionDialogOpen(false);
+                  setSessionNotes('');
+                }}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    if (selectedBooking) {
+                      handleBookingAction(selectedBooking.id, 'completed', sessionNotes);
+                      setIsCompletionDialogOpen(false);
+                      setSessionNotes('');
+                    }
+                  }}
+                  disabled={!sessionNotes.trim()}
+                >
+                  Complete Session
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
       </TabsContent>
 
       {/* Clients Tab */}
@@ -1051,32 +1192,73 @@ const BookingManagement = () => {
                               View Notes
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
+                          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>Client Notes - {client.name}</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <h4 className="font-semibold mb-2">Session History</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {client.totalSessions} total sessions completed
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Last session: {formatDate(client.lastSession)}
+                            <div className="space-y-6 pt-2">
+                              <div className="space-y-4">
+                                <h4 className="font-semibold text-sm flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  Session History & Notes
+                                </h4>
+                                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                  {allBookings
+                                    .filter(b => b.clientName === client.name)
+                                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                    .map(booking => (
+                                      <div key={booking.id} className="border rounded-md p-3 space-y-2 bg-card">
+                                        <div className="flex justify-between items-start">
+                                          <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-medium text-sm">{formatDate(booking.date)}</span>
+                                              <Badge variant={booking.status === 'completed' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1">
+                                                {booking.status}
+                                              </Badge>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">{booking.service} • {formatTime(booking.time)}</p>
+                                          </div>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-7 w-7"
+                                            onClick={() => {
+                                              setEditingSessionBookingId(booking.id);
+                                              setEditSessionNotesContent(booking.session_notes || '');
+                                              setIsEditSessionNotesDialogOpen(true);
+                                            }}
+                                          >
+                                            <Edit className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </div>
+                                        <div className="bg-muted/30 p-2 rounded text-xs italic text-muted-foreground">
+                                          {booking.session_notes || 'No session notes added.'}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  {allBookings.filter(b => b.clientName === client.name).length === 0 && (
+                                    <p className="text-sm text-center text-muted-foreground py-4">No sessions found for this client.</p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="border-t pt-4">
+                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  General Private Notes
+                                </h4>
+                                <p className="text-sm text-muted-foreground bg-muted/20 p-3 rounded-md border border-dashed whitespace-pre-wrap">
+                                  {client.notes || 'No general notes added for this client.'}
                                 </p>
                               </div>
-                              <div>
-                                <h4 className="font-semibold mb-2">Private Notes</h4>
-                                <p className="text-sm text-muted-foreground">{client.notes}</p>
-                              </div>
+                              
                               <Dialog>
                                 <DialogTrigger asChild>
-                                  <Button variant="outline" onClick={() => {
+                                  <Button variant="outline" size="sm" className="w-full" onClick={() => {
                                     setSelectedClient(client);
                                     setEditNotes(client.notes);
                                     setIsEditDialogOpen(true);
                                   }}>
-                                    Edit Notes
+                                    Edit General Notes
                                   </Button>
                                 </DialogTrigger>
                                 <DialogContent>
@@ -1096,6 +1278,53 @@ const BookingManagement = () => {
                                       </Button>
                                     </DialogFooter>
                                   </div>
+                                </DialogContent>
+                              </Dialog>
+
+                              {/* Edit Session Notes Dialog - Nested here to avoid focus blocking */}
+                              <Dialog open={isEditSessionNotesDialogOpen} onOpenChange={setIsEditSessionNotesDialogOpen}>
+                                <DialogContent className="sm:max-w-[500px]">
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Session Notes</DialogTitle>
+                                    <DialogDescription>
+                                      Update the notes for this specific session.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="space-y-4 py-4">
+                                    {editingSessionBookingId && (
+                                      <div className="text-sm bg-muted/50 p-3 rounded-md border border-muted">
+                                        {(() => {
+                                          const booking = allBookings.find(b => b.id === editingSessionBookingId);
+                                          if (!booking) return null;
+                                          return (
+                                            <div className="space-y-1">
+                                              <p><strong>Client:</strong> {booking.clientName}</p>
+                                              <p><strong>Session:</strong> {formatDate(booking.date)} at {formatTime(booking.time)}</p>
+                                              <p><strong>Service:</strong> {booking.service}</p>
+                                            </div>
+                                          );
+                                        })()}
+                                      </div>
+                                    )}
+                                    <div className="space-y-2">
+                                      <label className="text-sm font-medium">Notes</label>
+                                      <Textarea
+                                        placeholder="Enter session notes..."
+                                        value={editSessionNotesContent}
+                                        onChange={(e) => setEditSessionNotesContent(e.target.value)}
+                                        rows={8}
+                                        className="resize-none"
+                                      />
+                                    </div>
+                                  </div>
+                                  <DialogFooter>
+                                    <Button variant="outline" onClick={() => setIsEditSessionNotesDialogOpen(false)}>
+                                      Cancel
+                                    </Button>
+                                    <Button onClick={handleSaveSessionNotes}>
+                                      Save Changes
+                                    </Button>
+                                  </DialogFooter>
                                 </DialogContent>
                               </Dialog>
                             </div>
