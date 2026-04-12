@@ -240,11 +240,22 @@ app.use('/uploads', express.static(uploadDir));
 // Helper to construct full URL
 const getFullUrl = (filePath, req) => {
   if (!filePath) return null;
-  // In production, always use https to avoid Mixed Content errors.
-  // req.protocol is correctly set to 'https' when trust proxy is enabled and
-  // Nginx forwards the X-Forwarded-Proto header.
-  const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
-  const baseUrl = `${protocol}://${req.get('host')}`;
+  
+  const host = req.get('host') || '';
+  
+  // Determine if running locally
+  const isLocalHost = host.includes('localhost') || host.startsWith('127.0.0') || host.startsWith('192.168.');
+  
+  // Force HTTPS if NOT localhost 
+  // OR if X-Forwarded-Proto explicitly says https 
+  // OR if NODE_ENV is production
+  const protocol = (
+    !isLocalHost || 
+    req.headers['x-forwarded-proto'] === 'https' ||
+    process.env.NODE_ENV === 'production'
+  ) ? 'https' : req.protocol;
+
+  const baseUrl = `${protocol}://${host}`;
   // Normalize file path to use forward slashes for consistency
   const normalizedPath = filePath.replace(/\\/g, '/');
 

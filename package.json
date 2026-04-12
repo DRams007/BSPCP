@@ -12,6 +12,9 @@
     "db:setup": "node server/setupDatabase.js"
   },
   "dependencies": {
+    "@fontsource/merriweather": "^5.2.11",
+    "@fontsource/poppins": "^5.2.7",
+    "@fontsource/source-sans-pro": "^5.2.5",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
