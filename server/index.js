@@ -570,7 +570,8 @@ app.get('/api/applications', async (req, res) => {
           SELECT json_build_object(
             'idDocumentPath', mpd2.id_document_path, 
             'profileImagePath', mpd2.profile_image_path,
-            'policeClearancePath', mpd2.police_clearance_path
+            'policeClearancePath', mpd2.police_clearance_path,
+            'studentConfirmationLetterPath', mpd2.student_confirmation_letter_path
           )
           FROM member_personal_documents mpd2
           WHERE mpd2.member_id = m.id

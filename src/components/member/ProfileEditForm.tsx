@@ -11,6 +11,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, User, Lock } from 'lucide-react';
 import { IMemberProfile } from '@/types/member';
 import { useToast } from '@/hooks/use-toast';
+import { nationalities } from '@/lib/nationalities';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProfileEditFormProps {
   member: IMemberProfile;
@@ -383,11 +399,58 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             control={form.control}
             name="nationality"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex flex-col">
                 <FormLabel>Nationality</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter nationality" {...field} />
-                </FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                          "w-full justify-between h-10",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value
+                          ? nationalities.find(
+                            (nat) => nat === field.value
+                          )
+                          : "Select nationality"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search nationality..." />
+                      <CommandList>
+                        <CommandEmpty>No nationality found.</CommandEmpty>
+                        <CommandGroup>
+                          {nationalities.map((nat) => (
+                            <CommandItem
+                              value={nat}
+                              key={nat}
+                              onSelect={() => {
+                                form.setValue("nationality", nat);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  nat === field.value
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              {nat}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <FormMessage />
               </FormItem>
             )}
