@@ -288,7 +288,8 @@ app.post('/api/membership', upload.fields([
   { name: 'policeClearance', maxCount: 1 },
   { name: 'references', maxCount: 10 },
   { name: 'profileImage', maxCount: 1 }, // Added for profile image upload
-  { name: 'studentConfirmationLetter', maxCount: 1 }
+  { name: 'studentConfirmationLetter', maxCount: 1 },
+  { name: 'studentTranscripts', maxCount: 10 }
 ]), async (req, res) => {
   const client = await pool.connect();
   try {
@@ -469,6 +470,17 @@ app.post('/api/membership', upload.fields([
       }
     }
 
+    // 7. Insert into student_transcripts table
+    if (uploadedFiles.studentTranscripts) {
+      for (const file of uploadedFiles.studentTranscripts) {
+        await client.query(
+          `INSERT INTO student_transcripts (member_id, file_path, original_filename)
+           VALUES ($1, $2, $3)`,
+          [memberId, file.path, file.originalname]
+        );
+      }
+    }
+
     await client.query('COMMIT');
 
     // Send notification email to admin after successful submission
@@ -566,6 +578,11 @@ app.get('/api/applications', async (req, res) => {
           FROM member_references mr
           WHERE mr.member_id = m.id
         ) AS references,
+        (
+          SELECT json_agg(json_build_object('name', st.original_filename, 'uploaded', TRUE, 'url', st.file_path))
+          FROM student_transcripts st
+          WHERE st.member_id = m.id
+        ) AS transcripts,
         (
           SELECT json_build_object(
             'idDocumentPath', mpd2.id_document_path, 
@@ -731,6 +748,15 @@ app.get('/api/applications', async (req, res) => {
           url: getFullUrl(ref.url, req)
         }));
         documents.push(...referenceDocs);
+      }
+      if (row.transcripts) {
+        const transcriptDocs = row.transcripts.map(t => ({
+          name: t.name || 'Student Transcript',
+          category: "Transcripts",
+          uploaded: t.uploaded,
+          url: getFullUrl(t.url, req)
+        }));
+        documents.push(...transcriptDocs);
       }
 
       return {

@@ -10,6 +10,7 @@ async function setupDatabase() {
     await pool.query(`DROP TABLE IF EXISTS member_payments CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_certificates CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_references CASCADE;`);
+    await pool.query(`DROP TABLE IF EXISTS student_transcripts CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_personal_documents CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_contact_details CASCADE;`);
     await pool.query(`DROP TABLE IF EXISTS member_professional_details CASCADE;`);
@@ -279,6 +280,16 @@ async function setupDatabase() {
 
     await pool.query(`
       CREATE TABLE member_references (
+          id SERIAL PRIMARY KEY,
+          member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+          file_path VARCHAR(500) NOT NULL,
+          original_filename VARCHAR(255),
+          uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE student_transcripts (
           id SERIAL PRIMARY KEY,
           member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
           file_path VARCHAR(500) NOT NULL,

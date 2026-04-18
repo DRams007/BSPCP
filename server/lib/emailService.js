@@ -644,7 +644,7 @@ const getApplicationNotificationEmailTemplate = (applicationData, memberId, appl
           <strong>Name:</strong> ${applicationData.firstName} ${applicationData.lastName}<br>
           <strong>Email:</strong> ${applicationData.email}<br>
           <strong>Phone:</strong> ${applicationData.phone}<br>
-          <strong>Nationality:</strong> ${applicationData.nationality}<br>
+          <strong>Country of Citizenship:</strong> ${applicationData.nationality}<br>
           <strong>Date of Birth:</strong> ${applicationData.dateOfBirth}
         </div>
 

@@ -831,7 +831,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                       {selectedApplication.membershipType === 'professional' ? 'Professional' : 'Student'}
                                     </Badge>
                                   </div>
-                                  <div><strong>Nationality:</strong> {selectedApplication.nationality}</div>
+                                  <div><strong>Country of Citizenship:</strong> {selectedApplication.nationality}</div>
                                   <div><strong>Date of Birth:</strong> {new Date(selectedApplication.personalInfo.dateOfBirth).toLocaleDateString('en-GB')}</div>
                                   <div><strong>ID Number:</strong> {selectedApplication.personalInfo.idNumber}</div>
                                   {selectedApplication.personalInfo.membershipNumber && (
@@ -938,7 +938,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                         return acc;
                                       }, {} as Record<string, typeof selectedApplication.documents>)
                                   ).sort(([catA], [catB]) => {
-                                    const order = { 'Identification': 1, 'Police Clearance': 2, 'Qualifications': 3, 'References': 4 };
+                                    const order = { 'Identification': 1, 'Police Clearance': 2, 'Qualifications': 3, 'Transcripts': 4, 'References': 5 };
                                     return (order[catA as keyof typeof order] || 99) - (order[catB as keyof typeof order] || 99);
                                   }).map(([category, docs], catIndex) => (
                                     <div key={catIndex} className="space-y-3">
@@ -1478,7 +1478,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                           {selectedApplication.membershipType === 'professional' ? 'Professional' : 'Student'}
                                         </Badge>
                                       </div>
-                                      <div><strong>Nationality:</strong> {selectedApplication.nationality}</div>
+                                      <div><strong>Country of Citizenship:</strong> {selectedApplication.nationality}</div>
                                       <div><strong>Date of Birth:</strong> {selectedApplication.personalInfo.dateOfBirth}</div>
                                       <div><strong>ID Number:</strong> {selectedApplication.personalInfo.idNumber}</div>
                                       {selectedApplication.personalInfo.membershipNumber && (
@@ -1533,7 +1533,7 @@ Botswana Wellbeing Pathways Admin Team`);
                                             return acc;
                                           }, {} as Record<string, typeof selectedApplication.documents>)
                                       ).sort(([catA], [catB]) => {
-                                        const order = { 'Identification': 1, 'Police Clearance': 2, 'Qualifications': 3, 'References': 4 };
+                                        const order = { 'Identification': 1, 'Police Clearance': 2, 'Qualifications': 3, 'Transcripts': 4, 'References': 5 };
                                         return (order[catA as keyof typeof order] || 99) - (order[catB as keyof typeof order] || 99);
                                       }).map(([category, docs], catIndex) => (
                                         <div key={catIndex} className="space-y-3">

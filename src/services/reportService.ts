@@ -250,7 +250,7 @@ export const transformToDemographics = (members: Member[]) => {
         // We'll try to extract city or just use it if it's simple.
         // Actually `member_contact_details` has `city` column but API returns `physical_address` aliased as `physicalAddress`.
         // It does NOT return `city`.
-        // I will skip Location for now or use `nationality`.
+        // Using `nationality` field which stores Country of Citizenship (country names like "Botswana", "South Africa").
         if (m.nationality) {
             location[m.nationality] = (location[m.nationality] || 0) + 1;
         }

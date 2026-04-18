@@ -699,7 +699,7 @@ const Members = () => {
                                         {member.membershipType === 'professional' ? 'Professional' : 'Student'}
                                       </Badge>
                                     </div>
-                                    <div><strong>Nationality:</strong> {member.nationality}</div>
+                                    <div><strong>Country of Citizenship:</strong> {member.nationality}</div>
                                     <div><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}</div>
                                     <div><strong>ID Number:</strong> {member.idNumber}</div>
                                     <div><strong>Membership ID:</strong> {member.membershipId}</div>
@@ -1121,7 +1121,7 @@ const Members = () => {
                                     {member.membershipType === 'professional' ? 'Professional' : 'Student'}
                                   </Badge>
                                 </div>
-                                <div><strong>Nationality:</strong> {member.nationality}</div>
+                                <div><strong>Country of Citizenship:</strong> {member.nationality}</div>
                                 <div><strong>Date of Birth:</strong> {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString('en-GB') : 'N/A'}</div>
                                 <div><strong>ID Number:</strong> {member.idNumber}</div>
                                 <div><strong>Membership ID:</strong> {member.membershipId}</div>

@@ -478,7 +478,7 @@ const Reports = () => {
                   xAxisKey="month"
                   nameKey="month"
                 />
-                <SimplePieChart title="Nationality Distribution" data={demographics.location} dataKey="value" nameKey="name" />
+                <SimplePieChart title="Country of Citizenship Distribution" data={demographics.location} dataKey="value" nameKey="name" />
               </div>
             </div>
 

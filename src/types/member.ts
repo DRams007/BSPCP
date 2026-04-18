@@ -7,7 +7,7 @@ export interface IMemberProfile {
   id_number: string;
   date_of_birth: string; // DATE type
   gender: string;
-  nationality: string;
+  nationality: string; // Stores Country of Citizenship (country name)
   application_status: string;
   member_status: "active" | "pending" | "suspended";
   counsellor_visible: boolean;

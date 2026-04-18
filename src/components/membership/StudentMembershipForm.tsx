@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Upload, User, GraduationCap, Users } from 'lucide-react';
-import { nationalities } from '@/lib/nationalities';
+import { countries } from '@/lib/countries';
 import {
   Command,
   CommandEmpty,
@@ -42,7 +42,7 @@ const studentMembershipSchema = z.object({
   idNumber: z.string().min(5, 'ID/Passport number is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['male', 'female']),
-  nationality: z.string().min(2, 'Nationality is required'),
+  nationality: z.string().min(2, 'Country of Citizenship is required'),
 
   // Student-specific fields
   institutionName: z.string().min(2, 'Institution name is required'),
@@ -82,6 +82,8 @@ const studentMembershipSchema = z.object({
   idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
   studentConfirmationLetter: z.any().refine((f) => f instanceof File, 'Confirmation letter is required'),
   profileImage: z.any().optional(),
+  certificates: z.any().optional(),
+  transcripts: z.any().optional(),
 });
 
 type StudentMembershipFormData = z.infer<typeof studentMembershipSchema>;
@@ -120,7 +122,7 @@ const StudentMembershipForm = () => {
 
     // Append all text fields
     for (const key in data) {
-      if (key === 'idDocument' || key === 'studentConfirmationLetter' || key === 'profileImage') {
+      if (key === 'idDocument' || key === 'studentConfirmationLetter' || key === 'profileImage' || key === 'certificates' || key === 'transcripts') {
         continue; // Skip file fields for now, handle separately
       }
 
@@ -147,6 +149,18 @@ const StudentMembershipForm = () => {
     }
     if (data.profileImage) {
       formData.append('profileImage', data.profileImage);
+    }
+    // Append multiple certificate files
+    if (data.certificates && data.certificates.length > 0) {
+      Array.from(data.certificates as FileList).forEach((file: File) => {
+        formData.append('certificates', file);
+      });
+    }
+    // Append multiple transcript files
+    if (data.transcripts && data.transcripts.length > 0) {
+      Array.from(data.transcripts as FileList).forEach((file: File) => {
+        formData.append('studentTranscripts', file);
+      });
     }
 
     try {
@@ -479,7 +493,7 @@ const StudentMembershipForm = () => {
                     name="nationality"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Nationality</FormLabel>
+                        <FormLabel>Country of Citizenship</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -492,37 +506,37 @@ const StudentMembershipForm = () => {
                                 )}
                               >
                                 {field.value
-                                  ? nationalities.find(
-                                    (nat) => nat === field.value
+                                  ? countries.find(
+                                    (country) => country === field.value
                                   )
-                                  : "Select nationality"}
+                                  : "Select country..."}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                             <Command>
-                              <CommandInput placeholder="Search nationality..." />
+                              <CommandInput placeholder="Search country..." />
                               <CommandList>
-                                <CommandEmpty>No nationality found.</CommandEmpty>
+                                <CommandEmpty>No country found.</CommandEmpty>
                                 <CommandGroup>
-                                  {nationalities.map((nat) => (
+                                  {countries.map((country) => (
                                     <CommandItem
-                                      value={nat}
-                                      key={nat}
+                                      value={country}
+                                      key={country}
                                       onSelect={() => {
-                                        form.setValue("nationality", nat);
+                                        form.setValue("nationality", country);
                                       }}
                                     >
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          nat === field.value
+                                          country === field.value
                                             ? "opacity-100"
                                             : "opacity-0"
                                         )}
                                       />
-                                      {nat}
+                                      {country}
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -724,6 +738,86 @@ const StudentMembershipForm = () => {
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
                           Accepted formats: PDF, JPG, PNG (max 5MB)
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    📜 Certificates
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Upload any relevant academic certificates related to your counselling training (optional). You can select multiple files.
+                  </p>
+
+                  <FormField
+                    control={form.control}
+                    name="certificates"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Academic Certificates (PDF, JPG, PNG)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            multiple
+                            className="file:text-sm file:font-medium"
+                            onChange={(e) => field.onChange(e.target.files)}
+                          />
+                        </FormControl>
+                        {field.value && field.value.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                            <p className="font-medium text-green-700">✓ {field.value.length} file(s) selected:</p>
+                            {Array.from(field.value as FileList).map((file: File, index: number) => (
+                              <p key={index} className="pl-4">• {file.name}</p>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Accepted formats: PDF, JPG, PNG (max 5MB per file). Select multiple files at once.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    📋 Transcripts
+                  </h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Upload your academic transcripts from your counselling training program (optional). You can select multiple files.
+                  </p>
+
+                  <FormField
+                    control={form.control}
+                    name="transcripts"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Academic Transcripts (PDF, JPG, PNG)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            multiple
+                            className="file:text-sm file:font-medium"
+                            onChange={(e) => field.onChange(e.target.files)}
+                          />
+                        </FormControl>
+                        {field.value && field.value.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                            <p className="font-medium text-green-700">✓ {field.value.length} file(s) selected:</p>
+                            {Array.from(field.value as FileList).map((file: File, index: number) => (
+                              <p key={index} className="pl-4">• {file.name}</p>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Accepted formats: PDF, JPG, PNG (max 5MB per file). Select multiple files at once.
                         </p>
                         <FormMessage />
                       </FormItem>

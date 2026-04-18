@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, User, Lock } from 'lucide-react';
 import { IMemberProfile } from '@/types/member';
 import { useToast } from '@/hooks/use-toast';
-import { nationalities } from '@/lib/nationalities';
+import { countries } from '@/lib/countries';
 import {
   Command,
   CommandEmpty,
@@ -400,7 +400,7 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
             name="nationality"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel>Nationality</FormLabel>
+                <FormLabel>Country of Citizenship</FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -413,37 +413,37 @@ const ProfileEditForm = ({ member, onProfileUpdate }: ProfileEditFormProps) => {
                         )}
                       >
                         {field.value
-                          ? nationalities.find(
-                            (nat) => nat === field.value
-                          )
-                          : "Select nationality"}
+                          ? countries.find(
+                            (country) => country === field.value
+                          ) || field.value
+                          : "Select country..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
                   <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                     <Command>
-                      <CommandInput placeholder="Search nationality..." />
+                      <CommandInput placeholder="Search country..." />
                       <CommandList>
-                        <CommandEmpty>No nationality found.</CommandEmpty>
+                        <CommandEmpty>No country found.</CommandEmpty>
                         <CommandGroup>
-                          {nationalities.map((nat) => (
+                          {countries.map((country) => (
                             <CommandItem
-                              value={nat}
-                              key={nat}
+                              value={country}
+                              key={country}
                               onSelect={() => {
-                                form.setValue("nationality", nat);
+                                form.setValue("nationality", country);
                               }}
                             >
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  nat === field.value
+                                  country === field.value
                                     ? "opacity-100"
                                     : "opacity-0"
                                 )}
                               />
-                              {nat}
+                              {country}
                             </CommandItem>
                           ))}
                         </CommandGroup>

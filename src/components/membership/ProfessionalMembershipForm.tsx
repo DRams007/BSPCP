@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Upload, User, Award, Briefcase } from 'lucide-react';
-import { nationalities } from '@/lib/nationalities';
+import { countries } from '@/lib/countries';
 import {
   Command,
   CommandEmpty,
@@ -42,7 +42,7 @@ const professionalMembershipSchema = z.object({
   idNumber: z.string().min(5, 'ID/Passport number is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['male', 'female']),
-  nationality: z.string().min(2, 'Nationality is required'),
+  nationality: z.string().min(2, 'Country of Citizenship is required'),
   title: z.string().min(1, 'Professional title is required'),
 
   // Member Professional Details Table Fields
@@ -488,7 +488,7 @@ const ProfessionalMembershipForm = () => {
                     name="nationality"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Nationality</FormLabel>
+                        <FormLabel>Country of Citizenship</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -501,37 +501,37 @@ const ProfessionalMembershipForm = () => {
                                 )}
                               >
                                 {field.value
-                                  ? nationalities.find(
-                                    (nat) => nat === field.value
+                                  ? countries.find(
+                                    (country) => country === field.value
                                   )
-                                  : "Select nationality"}
+                                  : "Select country..."}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                             <Command>
-                              <CommandInput placeholder="Search nationality..." />
+                              <CommandInput placeholder="Search country..." />
                               <CommandList>
-                                <CommandEmpty>No nationality found.</CommandEmpty>
+                                <CommandEmpty>No country found.</CommandEmpty>
                                 <CommandGroup>
-                                  {nationalities.map((nat) => (
+                                  {countries.map((country) => (
                                     <CommandItem
-                                      value={nat}
-                                      key={nat}
+                                      value={country}
+                                      key={country}
                                       onSelect={() => {
-                                        form.setValue("nationality", nat);
+                                        form.setValue("nationality", country);
                                       }}
                                     >
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          nat === field.value
+                                          country === field.value
                                             ? "opacity-100"
                                             : "opacity-0"
                                         )}
                                       />
-                                      {nat}
+                                      {country}
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -644,7 +644,7 @@ const ProfessionalMembershipForm = () => {
                     name="highestQualification"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Highest Educational Qualification</FormLabel>
+                        <FormLabel>Highest Qualification in Counselling or Psychotherapy</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -677,10 +677,10 @@ const ProfessionalMembershipForm = () => {
                       <FormItem>
                         <FormLabel>Other Qualifications</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="List any other relevant qualifications" 
+                          <Textarea
+                            placeholder="List any other relevant qualifications"
                             className="min-h-[80px]"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
