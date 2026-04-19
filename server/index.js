@@ -326,7 +326,7 @@ app.post('/api/membership', upload.fields([
       // From member_professional_details table
       occupation, organizationName, highestQualification,
       specializations, otherSpecialization, employmentStatus, yearsExperience,
-      bio, title, languages, sessionTypes, availability,
+      bio, title, languages, sessionTypes, availability, publicationsLast3Years,
 
       // From member_contact_details table
       phone, email, website, physicalAddress, city,
@@ -394,8 +394,8 @@ app.post('/api/membership', upload.fields([
       `INSERT INTO member_professional_details (
         member_id, occupation, organization_name, highest_qualification,
         specializations, other_specialization, employment_status, years_experience,
-        bio, title, languages, session_types, availability
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+        bio, title, languages, session_types, availability, scholarly_publications
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
       [
         memberId, effectiveOccupation, effectiveOrganizationName, highestQualification,
         specializations ? JSON.parse(specializations) : [], 
@@ -403,7 +403,8 @@ app.post('/api/membership', upload.fields([
         effectiveEmploymentStatus, effectiveYearsExperience, bio, title,
         languages ? JSON.parse(languages) : [], // Assuming languages is sent as a JSON string array
         sessionTypes ? JSON.parse(sessionTypes) : [], // Assuming sessionTypes is sent as a JSON string array
-        availability
+        availability,
+        publicationsLast3Years || null
       ]
     );
 

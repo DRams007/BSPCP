@@ -50,6 +50,7 @@ const professionalMembershipSchema = z.object({
   organizationName: z.string().min(2, 'Organization name is required'),
   highestQualification: z.string().min(2, 'Highest qualification is required'),
   otherQualifications: z.string().optional(),
+  publicationsLast3Years: z.string().optional(),
   specializations: z.array(z.string()).min(1, 'At least one specialization is required'),
   otherSpecialization: z.string().optional(),
   employmentStatus: z.enum(['employed', 'self-employed', 'unemployed', 'retired']),
@@ -107,6 +108,7 @@ const ProfessionalMembershipForm = () => {
       references: [],
       otherSpecialization: '',
       otherQualifications: '',
+      publicationsLast3Years: '',
     },
   });
 
@@ -688,6 +690,25 @@ const ProfessionalMembershipForm = () => {
                     )}
                   />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="publicationsLast3Years"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>How many books or publications have you done in the last 3 years?</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Enter number of publications (e.g. 0, 1, 5)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
