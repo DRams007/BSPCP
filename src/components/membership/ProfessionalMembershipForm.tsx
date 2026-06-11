@@ -74,13 +74,23 @@ const professionalMembershipSchema = z.object({
   showAddress: z.boolean().default(false),
 
   // Member Personal Documents Table Fields
-  idDocument: z.any().refine((f) => f instanceof File, 'ID document is required'),
-  policeClearance: z.any().refine((f) => f instanceof File, 'Police clearance is required'),
-  references: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one reference document is required'),
-  profileImage: z.any().optional(),
+  idDocument: z.any()
+    .refine((f) => f instanceof File, 'ID document is required')
+    .refine((f) => f instanceof File && f.size <= 10 * 1024 * 1024, 'Max file size is 10MB'),
+  policeClearance: z.any()
+    .refine((f) => f instanceof File, 'Police clearance is required')
+    .refine((f) => f instanceof File && f.size <= 10 * 1024 * 1024, 'Max file size is 10MB'),
+  references: z.array(z.any())
+    .refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one reference document is required')
+    .refine((arr) => arr.every((f) => f instanceof File && f.size <= 10 * 1024 * 1024), 'Each file must be less than 10MB'),
+  profileImage: z.any()
+    .optional()
+    .refine((f) => !f || (f instanceof File && f.size <= 10 * 1024 * 1024), 'Max file size is 10MB'),
 
   // Member Certificates Table Fields
-  certificates: z.array(z.any()).refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required'),
+  certificates: z.array(z.any())
+    .refine((arr) => Array.isArray(arr) && arr.length > 0, 'At least one certificate is required')
+    .refine((arr) => arr.every((f) => f instanceof File && f.size <= 10 * 1024 * 1024), 'Each file must be less than 10MB'),
 });
 
 type ProfessionalMembershipFormData = z.infer<typeof professionalMembershipSchema>;
@@ -168,7 +178,23 @@ const ProfessionalMembershipForm = () => {
         });
         navigate('/member-login');
       } else {
-        const errorData = await response.json();
+        if (response.status === 413) {
+          toast({
+            title: 'Files Too Large',
+            description: 'The total size of the uploaded files exceeds the server limit. Please upload fewer or smaller files.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        let errorData;
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          errorData = await response.json();
+        } else {
+          errorData = { error: `Server Error: ${response.statusText}` };
+        }
+
         toast({
           title: 'Submission Failed',
           description: errorData.error || 'There was an error submitting your application.',
@@ -615,7 +641,17 @@ const ProfessionalMembershipForm = () => {
                         <Input
                           type="file"
                           accept="application/pdf,image/*"
-                          onChange={(e) => field.onChange(e.target.files?.[0])}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file && file.size > 10 * 1024 * 1024) {
+                              e.target.value = '';
+                              form.setError('idDocument', { type: 'manual', message: 'File is larger than 10MB. Max is 10MB.' });
+                              field.onChange(undefined);
+                            } else {
+                              form.clearErrors('idDocument');
+                              field.onChange(file);
+                            }
+                          }}
                         />
                       </FormControl>
                       {field.value && (
@@ -807,7 +843,17 @@ const ProfessionalMembershipForm = () => {
                         <Input
                           type="file"
                           accept="application/pdf,image/*"
-                          onChange={(e) => field.onChange(e.target.files?.[0])}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file && file.size > 10 * 1024 * 1024) {
+                              e.target.value = '';
+                              form.setError('policeClearance', { type: 'manual', message: 'File is larger than 10MB. Max is 10MB.' });
+                              field.onChange(undefined);
+                            } else {
+                              form.clearErrors('policeClearance');
+                              field.onChange(file);
+                            }
+                          }}
                         />
                       </FormControl>
                       {field.value && (
@@ -832,7 +878,20 @@ const ProfessionalMembershipForm = () => {
                           multiple
                           accept="application/pdf,image/*"
                           className="file:text-sm file:font-medium"
-                          onChange={(e) => field.onChange(Array.from(e.target.files || []))}
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (files) {
+                              const hasLargeFile = Array.from(files).some(f => f.size > 10 * 1024 * 1024);
+                              if (hasLargeFile) {
+                                e.target.value = '';
+                                form.setError('references', { type: 'manual', message: 'One or more files are larger than 10MB. Max is 10MB per file.' });
+                                field.onChange([]);
+                                return;
+                              }
+                            }
+                            form.clearErrors('references');
+                            field.onChange(Array.from(files || []));
+                          }}
                         />
                       </FormControl>
                       {field.value && field.value.length > 0 && (
@@ -861,7 +920,20 @@ const ProfessionalMembershipForm = () => {
                           multiple
                           accept="application/pdf,image/*"
                           className="file:text-sm file:font-medium"
-                          onChange={(e) => field.onChange(Array.from(e.target.files || []))}
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (files) {
+                              const hasLargeFile = Array.from(files).some(f => f.size > 10 * 1024 * 1024);
+                              if (hasLargeFile) {
+                                e.target.value = '';
+                                form.setError('certificates', { type: 'manual', message: 'One or more files are larger than 10MB. Max is 10MB per file.' });
+                                field.onChange([]);
+                                return;
+                              }
+                            }
+                            form.clearErrors('certificates');
+                            field.onChange(Array.from(files || []));
+                          }}
                         />
                       </FormControl>
                       {Array.isArray(field.value) && field.value.length > 0 && (

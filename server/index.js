@@ -106,6 +106,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10 MB
+  },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = [
       'image/jpeg',
@@ -5734,6 +5737,21 @@ app.get(/^(?!\/api).*/, (req, res) => {
   });
 });
 
+
+// Global error handler for Multer and general errors
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File too large', details: 'One or more files exceed the 10 MB limit.' });
+    }
+    return res.status(400).json({ error: 'Upload Error', details: err.message });
+  } else if (err) {
+    // If it's another error during file upload or processing
+    console.error('Server error:', err);
+    return res.status(500).json({ error: 'Internal Server Error', details: err.message });
+  }
+  next();
+});
 
 app.listen(PORT, '0.0.0.0', async () => {
   try {
